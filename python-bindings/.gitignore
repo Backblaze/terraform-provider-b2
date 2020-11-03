@@ -1,0 +1,12 @@
+*.pyc
+*.egg-info
+.codacy-coverage/
+.coverage
+.eggs/
+.idea
+.nox/
+.python-version
+build
+dist
+venv
+coverage.xml
