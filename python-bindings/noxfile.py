@@ -27,7 +27,7 @@ if CI:
 @nox.session(python='3.9')
 def bundle(session):
     """Bundle the distribution."""
-    session.install('-e', '.', 'pyinstaller', 'staticx')
+    session.install('-e', '.', 'pyinstaller')
     session.run('rm', '-rf', 'build', 'dist', 'py-terraform-provider-b2.egg-info', external=True)
     session.run('pyinstaller', '--onefile', 'py-terraform-provider-b2.spec')
 
