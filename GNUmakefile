@@ -12,6 +12,10 @@ default: testacc
 format:
 	go fmt ./...
 
+deps:
+	go mod download
+	go get github.com/markbates/pkger/cmd/pkger
+
 build:
 	pkger -include /python-bindings/dist/py-terraform-provider-b2
 	go build -tags netgo -o ${BINARY}

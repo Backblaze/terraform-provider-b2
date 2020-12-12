@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/Backblaze/terraform-provider-b2/b2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
@@ -66,7 +67,8 @@ func pybinding(s string, d string) error {
 }
 
 func main() {
-	err := pybinding("/python-bindings/dist/py-terraform-provider-b2", exec)
+	err := pybinding(filepath.FromSlash("/python-bindings/dist/py-terraform-provider-b2"),
+		filepath.FromSlash(exec))
 	if err != nil {
 		fmt.Println(err)
 	} else {
