@@ -11,12 +11,17 @@
 package b2
 
 import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceB2ApplicationKey() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceB2ApplicationKeyRead,
+		Description: "B2 application key data source.",
+
+		ReadContext: dataSourceB2ApplicationKeyRead,
 
 		Schema: map[string]*schema.Schema{
 			"key_name": {
@@ -33,7 +38,7 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 	}
 }
 
-func dataSourceB2ApplicationKeyRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
 	input := map[string]string{
@@ -42,7 +47,7 @@ func dataSourceB2ApplicationKeyRead(d *schema.ResourceData, meta interface{}) er
 
 	output, err := client.apply("data_source", "application_key_id", input)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.Set("application_key_id", output["application_key_id"])

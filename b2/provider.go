@@ -11,6 +11,9 @@
 package b2
 
 import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -39,14 +42,15 @@ func New(version string, exec string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{},
 		}
 
-		p.ConfigureFunc = configure(version, exec, p)
+		p.ConfigureContextFunc = configure(version, exec, p)
 
 		return p
 	}
 }
 
-func configure(version string, exec string, p *schema.Provider) schema.ConfigureFunc {
-	return func(d *schema.ResourceData) (interface{}, error) {
+
+func configure(version string, exec string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		client := &Client{
 			Exec:             exec,
 			Version:          version,
