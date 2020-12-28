@@ -12,8 +12,10 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"context"
+	"flag"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -67,11 +69,25 @@ func pybinding(s string, d string) error {
 }
 
 func main() {
-	err := pybinding(filepath.FromSlash("/python-bindings/dist/py-terraform-provider-b2"),
-		filepath.FromSlash(exec))
+	var debugMode bool
+
+	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.Parse()
+
+	err := pybinding(filepath.FromSlash("/python-bindings/dist/py-terraform-provider-b2"), filepath.FromSlash(exec))
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err.Error())
+		return
+	}
+
+	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, exec)}
+	if debugMode {
+		err := plugin.Debug(context.Background(), "registry.terraform.io/Backblaze/b2", opts)
+		if err != nil {
+			log.Fatal(err.Error())
+			return
+		}
 	} else {
-		plugin.Serve(&plugin.ServeOpts{ProviderFunc: b2.New(version, exec)})
+		plugin.Serve(opts)
 	}
 }

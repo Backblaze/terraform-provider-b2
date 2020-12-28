@@ -4,8 +4,8 @@ Terraform Provider B2
 Requirements
 ------------
 
--	[Terraform](https://www.terraform.io/downloads.html) >= 0.12.x
--	[Go](https://golang.org/doc/install) >= 1.12
+-	[Terraform](https://www.terraform.io/downloads.html) >= 0.13.x
+-	[Go](https://golang.org/doc/install) >= 1.15
 -	[Python](https://github.com/pyenv/pyenv) >= 3.9
 
 Building
