@@ -1,6 +1,6 @@
 //####################################################################
 //
-// File: b2/data_source_b2_application_key_test.go
+// File: b2/resource_b2_application_key_test.go
 //
 // Copyright 2020 Backblaze Inc. All Rights Reserved.
 //
@@ -18,36 +18,32 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceB2ApplicationKey(t *testing.T) {
+func TestAccResourceB2ApplicationKey(t *testing.T) {
 	resourceName := "b2_application_key.test"
-	dataSourceName := "data.b2_application_key.test"
 
-	keyName := fmt.Sprintf("test-datasource-%d", acctest.RandInt())
+	keyName := fmt.Sprintf("test-resource-%d", acctest.RandInt())
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceB2ApplicationKeyConfig(keyName),
+				Config: testAccResourceB2ApplicationKeyConfig(keyName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(dataSourceName, "capabilities", resourceName, "capabilities"),
-					resource.TestCheckResourceAttr(dataSourceName, "key_name", keyName),
+					resource.TestCheckResourceAttr(resourceName, "key_name", keyName),
+					resource.TestCheckResourceAttr(resourceName, "capabilities.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "capabilities.0", "readFiles"),
 				),
 			},
 		},
 	})
 }
 
-func testAccDataSourceB2ApplicationKeyConfig(keyName string) string {
+func testAccResourceB2ApplicationKeyConfig(keyName string) string {
 	return fmt.Sprintf(`
 resource "b2_application_key" "test" {
   key_name = "%s"
   capabilities = ["readFiles"]
-}
-
-data "b2_application_key" "test" {
-  key_name = b2_application_key.test.key_name
 }
 `, keyName)
 }

@@ -29,6 +29,14 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"capabilities": {
+				Description: "A list of capabilities.",
+				Type:        schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
+			},
 			"application_key_id": {
 				Description: "The ID of the key.",
 				Type:        schema.TypeString,
@@ -41,17 +49,18 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
-	input := map[string]string{
+	input := map[string]interface{}{
 		"key_name": d.Get("key_name").(string),
 	}
 
-	output, err := client.apply("data_source", "application_key_id", input)
+	output, err := client.apply(TYPE_DATA_SOURCE, "application_key_id", CRUD_READ, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.Set("application_key_id", output["application_key_id"])
-	d.SetId(output["application_key_id"])
+	d.Set("capabilities", output["capabilities"])
+	d.SetId(output["application_key_id"].(string))
 
 	return nil
 }

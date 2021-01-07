@@ -11,10 +11,15 @@ terraform {
 provider "b2" {
 }
 
-data "b2_application_key" "test" {
+resource "b2_application_key" "example" {
   key_name = "TestKey"
+  capabilities = ["readFiles"]
+}
+
+data "b2_application_key" "example" {
+  key_name = b2_application_key.example.key_name
 }
 
 output "application_key_id" {
-  value = data.b2_application_key.test
+  value = data.b2_application_key.example
 }

@@ -39,7 +39,9 @@ func New(version string, exec string) func() *schema.Provider {
 			DataSourcesMap: map[string]*schema.Resource{
 				"b2_application_key": dataSourceB2ApplicationKey(),
 			},
-			ResourcesMap: map[string]*schema.Resource{},
+			ResourcesMap: map[string]*schema.Resource{
+				"b2_application_key": resourceB2ApplicationKey(),
+			},
 		}
 
 		p.ConfigureContextFunc = configure(version, exec, p)
@@ -47,7 +49,6 @@ func New(version string, exec string) func() *schema.Provider {
 		return p
 	}
 }
-
 
 func configure(version string, exec string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {

@@ -18,6 +18,16 @@ import (
 	"os/exec"
 )
 
+const (
+	TYPE_DATA_SOURCE string = "data_source"
+	TYPE_RESOURCE    string = "resource"
+
+	CRUD_CREATE string = "create"
+	CRUD_READ   string = "read"
+	CRUD_UPDATE string = "update"
+	CRUD_DELETE string = "delete"
+)
+
 type Client struct {
 	Exec             string
 	Version          string
@@ -25,8 +35,8 @@ type Client struct {
 	ApplicationKey   string
 }
 
-func (c Client) apply(type_ string, name string, input map[string]string) (map[string]string, error) {
-	cmd := exec.Command(c.Exec, type_, name)
+func (c Client) apply(type_ string, name string, crud string, input map[string]interface{}) (map[string]interface{}, error) {
+	cmd := exec.Command(c.Exec, type_, name, crud)
 
 	input["_application_key_id"] = c.ApplicationKeyId
 	input["_application_key"] = c.ApplicationKey
@@ -54,7 +64,7 @@ func (c Client) apply(type_ string, name string, input map[string]string) (map[s
 		}
 	}
 
-	output := map[string]string{}
+	output := map[string]interface{}{}
 	err = json.Unmarshal(outputJson, &output)
 	if err != nil {
 		return nil, err
