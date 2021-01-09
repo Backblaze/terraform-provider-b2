@@ -21,6 +21,7 @@ from b2sdk.v1 import (
     # SqliteAccountInfo,
 )
 from b2_terraform.arg_parser import ArgumentParser
+from b2_terraform.json_encoder import B2ProviderJsonEncoder
 
 
 def mixed_case_to_underscores(s):
@@ -75,7 +76,10 @@ class Command:
 
     def run(self, args, data_in):
         handler = getattr(self, f'{args.TYPE}_{args.CRUD}')
-        data_out = json.dumps(handler(**json.loads(data_in)))
+        result = handler(**json.loads(data_in))
+        data_out = json.dumps(
+            {mixed_case_to_underscores(k): v for k, v in result.items()}, cls=B2ProviderJsonEncoder
+        )
         return data_out
 
 
@@ -86,7 +90,7 @@ class B2Provider(Command):
         self.provider_authorize_account(**json.loads(data_in))
         return {}
 
-    def provider_authorize_account(self, _application_key_id, _application_key, **kwargs):
+    def provider_authorize_account(self, *, _application_key_id, _application_key, **kwargs):
         if not _application_key_id or not _application_key:
             raise RuntimeError('B2 Application Key and Application Key ID must be provided')
 
@@ -95,7 +99,7 @@ class B2Provider(Command):
 
 @B2Provider.register_subcommand
 class ApplicationKey(Command):
-    def data_source_read(self, key_name, **kwargs):
+    def data_source_read(self, *, key_name, **kwargs):
         next_id = None
         while True:
             response = self.api.list_keys(next_id)
@@ -103,10 +107,7 @@ class ApplicationKey(Command):
 
             for key in keys:
                 if key_name == key['keyName']:
-                    return {
-                        'application_key_id': key['applicationKeyId'],
-                        'capabilities': key['capabilities'],
-                    }
+                    return key
 
             next_id = response.get('nextApplicationKeyId')
             if next_id is None:
@@ -115,7 +116,7 @@ class ApplicationKey(Command):
         raise RuntimeError(f'Could not find Application Key ID for "{key_name}"')
 
     def resource_create(
-        self, key_name, capabilities, bucket=None, duration=None, name_prefix=None, **kwargs
+        self, *, key_name, capabilities, bucket=None, duration=None, name_prefix=None, **kwargs
     ):
         if bucket is not None:
             bucket = self.api.get_bucket_by_name(bucket).id_
@@ -129,14 +130,11 @@ class ApplicationKey(Command):
         )
 
         try:
-            return {
-                'application_key_id': response['applicationKeyId'],
-                'application_key': response['applicationKey'],
-            }
+            return response
         except KeyError:
             raise RuntimeError(f'Could not create Application Key for "{key_name}"')
 
-    def resource_read(self, application_key_id, **kwargs):
+    def resource_read(self, *, application_key_id, **kwargs):
         next_id = None
         while True:
             response = self.api.list_keys(next_id)
@@ -144,10 +142,7 @@ class ApplicationKey(Command):
 
             for key in keys:
                 if application_key_id == key['applicationKeyId']:
-                    return {
-                        'key_name': key['keyName'],
-                        'capabilities': key['capabilities'],
-                    }
+                    return key
 
             next_id = response.get('nextApplicationKeyId')
             if next_id is None:
@@ -160,10 +155,65 @@ class ApplicationKey(Command):
             'Update is not available for Application Keys, every change requires recreation.'
         )
 
-    def resource_delete(self, application_key_id, **kwargs):
+    def resource_delete(self, *, application_key_id, **kwargs):
         self.api.delete_key(application_key_id=application_key_id)
 
         return {}
+
+
+@B2Provider.register_subcommand
+class Bucket(Command):
+    def data_source_read(self, *, bucket_name, **kwargs):
+        bucket = self.api.get_bucket_by_name(bucket_name)
+        return bucket.as_dict()
+
+    def resource_create(
+        self,
+        *,
+        bucket_name,
+        bucket_type,
+        bucket_info=None,
+        cors_rules=None,
+        lifecycle_rules=None,
+        **kwargs,
+    ):
+        bucket = self.api.create_bucket(
+            bucket_name,
+            bucket_type,
+            bucket_info=bucket_info,
+            cors_rules=cors_rules,
+            lifecycle_rules=lifecycle_rules,
+        )
+        return bucket.as_dict()
+
+    def resource_read(self, *, bucket_id, bucket_name, **kwargs):
+        bucket = self._get_bucket_by_id_and_name(bucket_id, bucket_name)
+        return bucket.as_dict()
+
+    def resource_update(self, bucket_id, bucket_name, account_id, bucket_type=None, bucket_info=None, cors_rules=None, lifecycle_rules=None, **kwargs):
+        self.api.session.update_bucket(
+            account_id,
+            bucket_id,
+            bucket_type=bucket_type,
+            bucket_info=bucket_info,
+            cors_rules=cors_rules,
+            lifecycle_rules=lifecycle_rules,
+        )
+        bucket = self._get_bucket_by_id_and_name(bucket_id, bucket_name)
+        return bucket.as_dict()
+
+    def resource_delete(self, *, bucket_id, bucket_name, **kwargs):
+        bucket = self._get_bucket_by_id_and_name(bucket_id, bucket_name)
+        self.api.delete_bucket(bucket)
+
+        return {}
+
+    def _get_bucket_by_id_and_name(self, bucket_id, bucket_name):
+        bucket = self.api.get_bucket_by_name(bucket_name)
+        if bucket.id_ != bucket_id:
+            raise RuntimeError(f'Could not find bucket with ID "{bucket_id}" and name "{bucket_name}"')
+
+        return bucket
 
 
 class ProviderTool:

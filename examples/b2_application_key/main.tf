@@ -12,7 +12,7 @@ provider "b2" {
 }
 
 resource "b2_application_key" "example" {
-  key_name = "TestKey"
+  key_name = "Example-TestKey"
   capabilities = ["readFiles"]
 }
 
@@ -20,6 +20,6 @@ data "b2_application_key" "example" {
   key_name = b2_application_key.example.key_name
 }
 
-output "application_key_id" {
+output "application_key" {
   value = data.b2_application_key.example
 }

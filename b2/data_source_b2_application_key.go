@@ -29,6 +29,11 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"application_key_id": {
+				Description: "The ID of the key.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"capabilities": {
 				Description: "A list of capabilities.",
 				Type:        schema.TypeSet,
@@ -36,11 +41,6 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Computed: true,
-			},
-			"application_key_id": {
-				Description: "The ID of the key.",
-				Type:        schema.TypeString,
-				Computed:    true,
 			},
 		},
 	}

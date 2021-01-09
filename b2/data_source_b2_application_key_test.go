@@ -22,7 +22,7 @@ func TestAccDataSourceB2ApplicationKey(t *testing.T) {
 	resourceName := "b2_application_key.test"
 	dataSourceName := "data.b2_application_key.test"
 
-	keyName := fmt.Sprintf("test-datasource-%d", acctest.RandInt())
+	keyName := fmt.Sprintf("test-datasource-b2-application-key-%d", acctest.RandInt())
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -31,8 +31,9 @@ func TestAccDataSourceB2ApplicationKey(t *testing.T) {
 			{
 				Config: testAccDataSourceB2ApplicationKeyConfig(keyName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(dataSourceName, "capabilities", resourceName, "capabilities"),
 					resource.TestCheckResourceAttr(dataSourceName, "key_name", keyName),
+					resource.TestCheckResourceAttr(resourceName, "capabilities.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "capabilities.0", "readFiles"),
 				),
 			},
 		},

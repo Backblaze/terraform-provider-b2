@@ -101,12 +101,11 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 		"application_key_id": d.Id(),
 	}
 
-	output, err := client.apply(TYPE_RESOURCE, "application_key", CRUD_DELETE, input)
+	_, err := client.apply(TYPE_RESOURCE, "application_key", CRUD_DELETE, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.Set("application_key_id", output["application_key_id"])
 	d.SetId("")
 
 	return nil
