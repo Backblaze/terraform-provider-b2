@@ -65,7 +65,7 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 		"capabilities": d.Get("capabilities").(*schema.Set).List(),
 	}
 
-	output, err := client.apply(TYPE_RESOURCE, "application_key_id", CRUD_CREATE, input)
+	output, err := client.apply(TYPE_RESOURCE, "application_key", CRUD_CREATE, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -84,7 +84,7 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		"application_key_id": d.Id(),
 	}
 
-	output, err := client.apply(TYPE_RESOURCE, "application_key_id", CRUD_READ, input)
+	output, err := client.apply(TYPE_RESOURCE, "application_key", CRUD_READ, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -101,7 +101,7 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 		"application_key_id": d.Id(),
 	}
 
-	output, err := client.apply(TYPE_RESOURCE, "application_key_id", CRUD_DELETE, input)
+	output, err := client.apply(TYPE_RESOURCE, "application_key", CRUD_DELETE, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}

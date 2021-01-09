@@ -36,7 +36,7 @@ type Client struct {
 }
 
 func (c Client) apply(type_ string, name string, crud string, input map[string]interface{}) (map[string]interface{}, error) {
-	cmd := exec.Command(c.Exec, type_, name, crud)
+	cmd := exec.Command(c.Exec, name, type_, crud)
 
 	input["_application_key_id"] = c.ApplicationKeyId
 	input["_application_key"] = c.ApplicationKey

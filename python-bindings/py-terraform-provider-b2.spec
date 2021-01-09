@@ -2,7 +2,7 @@
 
 block_cipher = None
 
-a = Analysis(['tf_provider_b2/__main__.py'],
+a = Analysis(['b2_terraform/provider_tool.py'],
              pathex=['.'],
              binaries=[],
              datas=[],

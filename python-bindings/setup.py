@@ -38,8 +38,8 @@ setup(
     packages=find_packages(exclude=['test']),
     dependency_links=[],
     install_requires=requirements,
-    package_data={'py-terraform-provider-b2': ['requirements.txt', 'LICENSE']},
+    package_data={'py-terraform-provider-b2': ['LICENSE']},
     entry_points={
-        'console_scripts': ['py-terraform-provider-b2=tf_provider_b2.__main__:main'],
+        'console_scripts': ['py-terraform-provider-b2=b2_terraform.provider_tool:main'],
     },
 )
