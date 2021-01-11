@@ -92,7 +92,7 @@ func dataSourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_name": d.Get("bucket_name").(string),
 	}
 
-	output, err := client.apply(TYPE_DATA_SOURCE, "bucket", CRUD_READ, input)
+	output, err := client.apply("bucket", DATA_SOURCE_READ, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -63,8 +63,7 @@ class Command:
         if cls.subcommands_registry:
             if not parents:
                 common_parser = ArgumentParser(add_help=False)
-                common_parser.add_argument('TYPE')
-                common_parser.add_argument('CRUD')
+                common_parser.add_argument('OP')
                 parents = [common_parser]
 
             subparsers = parser.add_subparsers(prog=parser.prog, title='usages', dest='command')
@@ -75,7 +74,7 @@ class Command:
         return parser
 
     def run(self, args, data_in):
-        handler = getattr(self, f'{args.TYPE}_{args.CRUD}')
+        handler = getattr(self, args.OP)
         result = handler(**json.loads(data_in))
         data_out = json.dumps(
             {mixed_case_to_underscores(k): v for k, v in result.items()}, cls=B2ProviderJsonEncoder

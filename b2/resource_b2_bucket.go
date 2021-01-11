@@ -97,7 +97,7 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_type": d.Get("bucket_type").(string),
 	}
 
-	output, err := client.apply(TYPE_RESOURCE, "bucket", CRUD_CREATE, input)
+	output, err := client.apply("bucket", RESOURCE_CREATE, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -122,7 +122,7 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 		"bucket_name": d.Get("bucket_name").(string),
 	}
 
-	output, err := client.apply(TYPE_RESOURCE, "bucket", CRUD_READ, input)
+	output, err := client.apply("bucket", RESOURCE_READ, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -151,7 +151,7 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		"lifecycle_rules": d.Get("lifecycle_rules").(*schema.Set).List(),
 	}
 
-	output, err := client.apply(TYPE_RESOURCE, "bucket", CRUD_UPDATE, input)
+	output, err := client.apply("bucket", RESOURCE_UPDATE, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -172,7 +172,7 @@ func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_name": d.Get("bucket_name").(string),
 	}
 
-	_, err := client.apply(TYPE_RESOURCE, "bucket", CRUD_DELETE, input)
+	_, err := client.apply("bucket", RESOURCE_DELETE, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}

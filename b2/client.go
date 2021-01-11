@@ -19,13 +19,12 @@ import (
 )
 
 const (
-	TYPE_DATA_SOURCE string = "data_source"
-	TYPE_RESOURCE    string = "resource"
+	DATA_SOURCE_READ string = "data_source_read"
 
-	CRUD_CREATE string = "create"
-	CRUD_READ   string = "read"
-	CRUD_UPDATE string = "update"
-	CRUD_DELETE string = "delete"
+	RESOURCE_CREATE string = "resource_create"
+	RESOURCE_READ   string = "resource_read"
+	RESOURCE_UPDATE string = "resource_update"
+	RESOURCE_DELETE string = "resource_delete"
 )
 
 type Client struct {
@@ -35,8 +34,8 @@ type Client struct {
 	ApplicationKey   string
 }
 
-func (c Client) apply(type_ string, name string, crud string, input map[string]interface{}) (map[string]interface{}, error) {
-	cmd := exec.Command(c.Exec, name, type_, crud)
+func (c Client) apply(name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
+	cmd := exec.Command(c.Exec, name, op)
 
 	input["_application_key_id"] = c.ApplicationKeyId
 	input["_application_key"] = c.ApplicationKey

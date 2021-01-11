@@ -53,7 +53,7 @@ func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData,
 		"key_name": d.Get("key_name").(string),
 	}
 
-	output, err := client.apply(TYPE_DATA_SOURCE, "application_key", CRUD_READ, input)
+	output, err := client.apply("application_key", DATA_SOURCE_READ, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
