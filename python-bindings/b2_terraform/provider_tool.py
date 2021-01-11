@@ -115,23 +115,14 @@ class ApplicationKey(Command):
         raise RuntimeError(f'Could not find Application Key ID for "{key_name}"')
 
     def resource_create(
-        self, *, key_name, capabilities, bucket=None, duration=None, name_prefix=None, **kwargs
+        self, *, key_name, capabilities, bucket_id, name_prefix, **kwargs
     ):
-        if bucket is not None:
-            bucket = self.api.get_bucket_by_name(bucket).id_
-
-        response = self.api.create_key(
-            capabilities=capabilities,
+        return self.api.create_key(
             key_name=key_name,
-            valid_duration_seconds=duration,
-            bucket_id=bucket,
-            name_prefix=name_prefix,
+            capabilities=capabilities,
+            bucket_id=bucket_id or None,
+            name_prefix=name_prefix or None,
         )
-
-        try:
-            return response
-        except KeyError:
-            raise RuntimeError(f'Could not create Application Key for "{key_name}"')
 
     def resource_read(self, *, application_key_id, **kwargs):
         next_id = None

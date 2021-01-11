@@ -34,8 +34,27 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"bucket_id": {
+				Description: "The ID of the bucket.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"capabilities": {
 				Description: "A list of capabilities.",
+				Type:        schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
+			},
+			"name_prefix": {
+				Description: "A prefix to restrict access to files",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"options": {
+				Description: "List of application key options.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -59,7 +78,10 @@ func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData,
 	}
 
 	d.Set("application_key_id", output["application_key_id"])
+	d.Set("bucket_id", output["bucket_id"])
 	d.Set("capabilities", output["capabilities"])
+	d.Set("name_prefix", output["name_prefix"])
+	d.Set("options", output["options"])
 	d.SetId(output["application_key_id"].(string))
 
 	return nil

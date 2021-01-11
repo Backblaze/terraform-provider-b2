@@ -29,18 +29,13 @@ func dataSourceB2Bucket() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"bucket_type": {
-				Description: "The bucket type.",
+			"account_id": {
+				Description: "Account ID that the bucket belongs to.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"bucket_id": {
 				Description: "The ID of the bucket.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"account_id": {
-				Description: "Account ID that the bucket belongs to.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -51,6 +46,11 @@ func dataSourceB2Bucket() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Computed: true,
+			},
+			"bucket_type": {
+				Description: "The bucket type.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"cors_rules": {
 				Description: "CORS rules.",
@@ -97,10 +97,10 @@ func dataSourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	d.Set("bucket_id", output["bucket_id"])
 	d.Set("account_id", output["account_id"])
-	d.Set("bucket_type", output["bucket_type"])
+	d.Set("bucket_id", output["bucket_id"])
 	d.Set("bucket_info", output["bucket_info"])
+	d.Set("bucket_type", output["bucket_type"])
 	d.Set("cors_rules", output["cors_rules"])
 	d.Set("lifecycle_rules", output["lifecycle_rules"])
 	d.Set("options", output["options"])

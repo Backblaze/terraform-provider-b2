@@ -32,6 +32,7 @@ func TestAccDataSourceB2Bucket(t *testing.T) {
 				Config: testAccDataSourceB2BucketConfig(bucketName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_type", resourceName, "bucket_type"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "account_id", resourceName, "account_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_info", resourceName, "bucket_info"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "cors_rules", resourceName, "cors_rules"),

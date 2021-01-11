@@ -31,9 +31,14 @@ func TestAccDataSourceB2ApplicationKey(t *testing.T) {
 			{
 				Config: testAccDataSourceB2ApplicationKeyConfig(keyName),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(dataSourceName, "key_name", resourceName, "key_name"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "capabilities", resourceName, "capabilities"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "name_prefix", resourceName, "name_prefix"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "options", resourceName, "options"),
 					resource.TestCheckResourceAttr(dataSourceName, "key_name", keyName),
-					resource.TestCheckResourceAttr(resourceName, "capabilities.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "capabilities.0", "readFiles"),
+					resource.TestCheckResourceAttr(dataSourceName, "capabilities.#", "1"),
+					resource.TestCheckResourceAttr(dataSourceName, "capabilities.0", "readFiles"),
 				),
 			},
 		},

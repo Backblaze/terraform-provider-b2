@@ -41,16 +41,36 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"application_key_id": {
-				Description: "The ID of the key.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
 			"application_key": {
 				Description: "The key.",
 				Type:        schema.TypeString,
 				Computed:    true,
 				Sensitive:   true,
+			},
+			"application_key_id": {
+				Description: "The ID of the key.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"bucket_id": {
+				Description: "The ID of the bucket.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew: true,
+			},
+			"name_prefix": {
+				Description: "A prefix to restrict access to files",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew: true,
+			},
+			"options": {
+				Description: "List of application key options.",
+				Type:        schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
 			},
 		},
 	}
@@ -62,6 +82,8 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 	input := map[string]interface{}{
 		"key_name":     d.Get("key_name").(string),
 		"capabilities": d.Get("capabilities").(*schema.Set).List(),
+		"bucket_id": d.Get("bucket_id").(string),
+		"name_prefix": d.Get("name_prefix").(string),
 	}
 
 	output, err := client.apply("application_key", RESOURCE_CREATE, input)
@@ -69,8 +91,13 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	d.Set("application_key_id", output["application_key_id"])
+
+	d.Set("capabilities", output["capabilities"])
 	d.Set("application_key", output["application_key"])
+	d.Set("application_key_id", output["application_key_id"])
+	d.Set("bucket_id", output["bucket_id"])
+	d.Set("name_prefix", output["name_prefix"])
+	d.Set("options", output["options"])
 	d.SetId(output["application_key_id"].(string))
 
 	return nil
@@ -88,7 +115,10 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
+	d.Set("bucket_id", output["bucket_id"])
 	d.Set("capabilities", output["capabilities"])
+	d.Set("name_prefix", output["name_prefix"])
+	d.Set("options", output["options"])
 
 	return nil
 }
