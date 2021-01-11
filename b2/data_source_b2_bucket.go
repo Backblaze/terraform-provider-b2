@@ -2,7 +2,7 @@
 //
 // File: b2/data_source_b2_bucket.go
 //
-// Copyright 2020 Backblaze Inc. All Rights Reserved.
+// Copyright 2021 Backblaze Inc. All Rights Reserved.
 //
 // License https://www.backblaze.com/using_b2_code.html
 //

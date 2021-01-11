@@ -13,13 +13,7 @@ import sys
 
 from class_registry import ClassRegistry
 
-from b2sdk.v1 import (
-    # AuthInfoCache,
-    B2Api,
-    InMemoryAccountInfo,
-    InMemoryCache,
-    # SqliteAccountInfo,
-)
+from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
 
@@ -112,11 +106,9 @@ class ApplicationKey(Command):
             if next_id is None:
                 break
 
-        raise RuntimeError(f'Could not find Application Key ID for "{key_name}"')
+        raise RuntimeError(f'Could not find Application Key for "{key_name}"')
 
-    def resource_create(
-        self, *, key_name, capabilities, bucket_id, name_prefix, **kwargs
-    ):
+    def resource_create(self, *, key_name, capabilities, bucket_id, name_prefix, **kwargs):
         return self.api.create_key(
             key_name=key_name,
             capabilities=capabilities,
@@ -138,7 +130,7 @@ class ApplicationKey(Command):
             if next_id is None:
                 break
 
-        raise RuntimeError(f'Could not find Application Key ID for ID "{application_key_id}"')
+        raise RuntimeError(f'Could not find Application Key for ID "{application_key_id}"')
 
     def resource_update(self, **kwargs):
         raise NotImplementedError(
@@ -176,11 +168,13 @@ class Bucket(Command):
         )
         return bucket.as_dict()
 
-    def resource_read(self, *, bucket_id, bucket_name, **kwargs):
-        bucket = self._get_bucket_by_id_and_name(bucket_id, bucket_name)
+    def resource_read(self, *, bucket_id, **kwargs):
+        bucket = self.api.get_bucket_by_id(bucket_id)
         return bucket.as_dict()
 
-    def resource_update(self, bucket_id, bucket_name, account_id, bucket_type=None, bucket_info=None, cors_rules=None, lifecycle_rules=None, **kwargs):
+    def resource_update(
+        self, bucket_id, account_id, bucket_type, bucket_info, cors_rules, lifecycle_rules, **kwargs
+    ):
         self.api.session.update_bucket(
             account_id,
             bucket_id,
@@ -189,21 +183,14 @@ class Bucket(Command):
             cors_rules=cors_rules,
             lifecycle_rules=lifecycle_rules,
         )
-        bucket = self._get_bucket_by_id_and_name(bucket_id, bucket_name)
+        bucket = self.api.get_bucket_by_id(bucket_id)
         return bucket.as_dict()
 
-    def resource_delete(self, *, bucket_id, bucket_name, **kwargs):
-        bucket = self._get_bucket_by_id_and_name(bucket_id, bucket_name)
+    def resource_delete(self, *, bucket_id, **kwargs):
+        bucket = self.api.get_bucket_by_id(bucket_id)
         self.api.delete_bucket(bucket)
 
         return {}
-
-    def _get_bucket_by_id_and_name(self, bucket_id, bucket_name):
-        bucket = self.api.get_bucket_by_name(bucket_name)
-        if bucket.id_ != bucket_id:
-            raise RuntimeError(f'Could not find bucket with ID "{bucket_id}" and name "{bucket_name}"')
-
-        return bucket
 
 
 class ProviderTool:
@@ -228,12 +215,7 @@ class ProviderTool:
 
 
 def main():
-    # info = SqliteAccountInfo()
-    # cache = AuthInfoCache(info)
-    info = InMemoryAccountInfo()
-    cache = InMemoryCache()
-    # TODO: Append Terraform version to the User-Agent
-    b2_api = B2Api(info, cache=cache)
+    b2_api = B2ApiWrapper()
     provider_tool = ProviderTool(b2_api=b2_api)
     return provider_tool.run_command(sys.argv)
 

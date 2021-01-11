@@ -43,6 +43,7 @@ func New(version string, exec string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"b2_application_key": resourceB2ApplicationKey(),
 				"b2_bucket":          resourceB2Bucket(),
+				"b2_bucket_object":          resourceB2BucketObject(),
 			},
 		}
 
@@ -60,18 +61,6 @@ func configure(version string, exec string, p *schema.Provider) func(context.Con
 			ApplicationKeyId: d.Get("application_key_id").(string),
 			ApplicationKey:   d.Get("application_key").(string),
 		}
-
-		// 		if version != "test" {
-		// 			input := map[string]string{
-		// 				"application_key_id": d.Get("application_key_id").(string),
-		// 				"application_key":    d.Get("application_key").(string),
-		// 			}
-		//
-		// 			_, err := client.apply("provider", "authorize_account", input)
-		// 			if err != nil {
-		// 				return nil, err
-		// 			}
-		// 		}
 
 		return client, nil
 	}

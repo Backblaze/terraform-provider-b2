@@ -1,8 +1,8 @@
 //####################################################################
 //
-// File: b2/resource_b2_application_key.go
+// File: b2/resource_b2_bucket.go
 //
-// Copyright 2020 Backblaze Inc. All Rights Reserved.
+// Copyright 2021 Backblaze Inc. All Rights Reserved.
 //
 // License https://www.backblaze.com/using_b2_code.html
 //
@@ -20,7 +20,7 @@ import (
 
 func resourceB2Bucket() *schema.Resource {
 	return &schema.Resource{
-		Description: "B2 application key resource.",
+		Description: "B2 bucket resource.",
 
 		CreateContext: resourceB2BucketCreate,
 		ReadContext:   resourceB2BucketRead,
@@ -122,7 +122,6 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	input := map[string]interface{}{
 		"bucket_id":   d.Id(),
-		"bucket_name": d.Get("bucket_name").(string),
 	}
 
 	output, err := client.apply("bucket", RESOURCE_READ, input)
@@ -147,7 +146,6 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	input := map[string]interface{}{
 		"bucket_id":       d.Id(),
 		"account_id":     d.Get("account_id").(string),
-		"bucket_name":     d.Get("bucket_name").(string),
 		"bucket_type":     d.Get("bucket_type").(string),
 		"bucket_info":     d.Get("bucket_info").(map[string]interface{}),
 		"cors_rules":      d.Get("cors_rules").(*schema.Set).List(),
@@ -172,7 +170,6 @@ func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta in
 
 	input := map[string]interface{}{
 		"bucket_id":   d.Id(),
-		"bucket_name": d.Get("bucket_name").(string),
 	}
 
 	_, err := client.apply("bucket", RESOURCE_DELETE, input)
