@@ -15,6 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceB2ApplicationKey() *schema.Resource {
@@ -31,6 +32,7 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"capabilities": {
 				Description: "A list of capabilities.",

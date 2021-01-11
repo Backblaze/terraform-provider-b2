@@ -15,6 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func dataSourceB2ApplicationKey() *schema.Resource {
@@ -28,6 +29,7 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Description: "The name assigned when the key was created.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"application_key_id": {
 				Description: "The ID of the key.",

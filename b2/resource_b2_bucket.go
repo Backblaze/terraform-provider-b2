@@ -15,6 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceB2Bucket() *schema.Resource {
@@ -32,11 +33,13 @@ func resourceB2Bucket() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_type": {
 				Description: "The bucket type.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_id": {
 				Description: "The ID of the bucket.",
