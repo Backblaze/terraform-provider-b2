@@ -28,10 +28,10 @@ func resourceB2ApplicationKey() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"key_name": {
-				Description: "The name of the key.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:  "The name of the key.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"capabilities": {
@@ -58,13 +58,13 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Description: "The ID of the bucket.",
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew: true,
+				ForceNew:    true,
 			},
 			"name_prefix": {
 				Description: "A prefix to restrict access to files",
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew: true,
+				ForceNew:    true,
 			},
 			"options": {
 				Description: "List of application key options.",
@@ -84,15 +84,14 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 	input := map[string]interface{}{
 		"key_name":     d.Get("key_name").(string),
 		"capabilities": d.Get("capabilities").(*schema.Set).List(),
-		"bucket_id": d.Get("bucket_id").(string),
-		"name_prefix": d.Get("name_prefix").(string),
+		"bucket_id":    d.Get("bucket_id").(string),
+		"name_prefix":  d.Get("name_prefix").(string),
 	}
 
 	output, err := client.apply("application_key", RESOURCE_CREATE, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 
 	d.Set("capabilities", output["capabilities"])
 	d.Set("application_key", output["application_key"])

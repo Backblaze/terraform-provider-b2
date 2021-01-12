@@ -26,9 +26,9 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"key_name": {
-				Description: "The name assigned when the key was created.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The name assigned when the key was created.",
+				Type:         schema.TypeString,
+				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"application_key_id": {

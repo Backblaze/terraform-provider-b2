@@ -29,16 +29,16 @@ func resourceB2Bucket() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
-				Description: "The name of the bucket.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description:  "The name of the bucket.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_type": {
-				Description: "The bucket type.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The bucket type.",
+				Type:         schema.TypeString,
+				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_id": {
@@ -96,10 +96,10 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 	client := meta.(*Client)
 
 	input := map[string]interface{}{
-		"bucket_name": d.Get("bucket_name").(string),
-		"bucket_type": d.Get("bucket_type").(string),
-		"bucket_info": d.Get("bucket_info").(map[string]interface{}),
-		"cors_rules": d.Get("cors_rules").(*schema.Set).List(),
+		"bucket_name":     d.Get("bucket_name").(string),
+		"bucket_type":     d.Get("bucket_type").(string),
+		"bucket_info":     d.Get("bucket_info").(map[string]interface{}),
+		"cors_rules":      d.Get("cors_rules").(*schema.Set).List(),
 		"lifecycle_rules": d.Get("lifecycle_rules").(*schema.Set).List(),
 	}
 
@@ -124,7 +124,7 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 	client := meta.(*Client)
 
 	input := map[string]interface{}{
-		"bucket_id":   d.Id(),
+		"bucket_id": d.Id(),
 	}
 
 	output, err := client.apply("bucket", RESOURCE_READ, input)
@@ -148,7 +148,7 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	input := map[string]interface{}{
 		"bucket_id":       d.Id(),
-		"account_id":     d.Get("account_id").(string),
+		"account_id":      d.Get("account_id").(string),
 		"bucket_type":     d.Get("bucket_type").(string),
 		"bucket_info":     d.Get("bucket_info").(map[string]interface{}),
 		"cors_rules":      d.Get("cors_rules").(*schema.Set).List(),
@@ -172,7 +172,7 @@ func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta in
 	client := meta.(*Client)
 
 	input := map[string]interface{}{
-		"bucket_id":   d.Id(),
+		"bucket_id": d.Id(),
 	}
 
 	_, err := client.apply("bucket", RESOURCE_DELETE, input)

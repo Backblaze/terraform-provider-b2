@@ -26,9 +26,9 @@ func dataSourceB2Bucket() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
-				Description: "The name of the bucket.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The name of the bucket.",
+				Type:         schema.TypeString,
+				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"account_id": {
