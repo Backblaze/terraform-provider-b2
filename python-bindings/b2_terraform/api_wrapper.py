@@ -9,6 +9,7 @@
 ######################################################################
 
 from b2sdk.v1 import B2Api, InMemoryAccountInfo
+from b2sdk.v1.exception import NonExistentBucket
 
 
 class B2ApiWrapper(B2Api):

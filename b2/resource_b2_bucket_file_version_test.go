@@ -22,7 +22,7 @@ func TestAccResourceB2BucketFileVersion(t *testing.T) {
 	parentResourceName := "b2_bucket.test"
 	resourceName := "b2_bucket_file_version.test"
 
-	bucketName := acctest.RandomWithPrefix("test-b2-tfp-")
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFile(t, "hello")
 
 	resource.UnitTest(t, resource.TestCase{

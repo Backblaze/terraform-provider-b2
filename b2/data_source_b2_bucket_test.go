@@ -22,7 +22,7 @@ func TestAccDataSourceB2Bucket(t *testing.T) {
 	resourceName := "b2_bucket.test"
 	dataSourceName := "data.b2_bucket.test"
 
-	bucketName := acctest.RandomWithPrefix("test-b2-tfp-")
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

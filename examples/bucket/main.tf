@@ -30,6 +30,10 @@ output "bucket" {
   value = data.b2_bucket.example
 }
 
+data "b2_bucket_files" "example" {
+  bucket_id = b2_bucket_file_version.example.bucket_id
+}
+
 output "bucket_file_info" {
-  value = b2_bucket_file_version.example
+  value = data.b2_bucket_files.example
 }

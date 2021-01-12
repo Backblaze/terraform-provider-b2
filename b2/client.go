@@ -48,9 +48,11 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 
 	cmd.Stdin = bytes.NewReader(inputJson)
 
+	log.Printf("[TRACE] Executing pybindings for '%s' and '%s' operation\n", name, op)
+
 	outputJson, err := cmd.Output()
 
-	log.Printf("[TRACE] JSON output: %+v\n", string(outputJson))
+	log.Printf("[TRACE] Output from pybindings: %+v\n", string(outputJson))
 
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {

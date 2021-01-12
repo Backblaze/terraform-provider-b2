@@ -24,6 +24,10 @@ def mixed_case_to_underscores(s):
     )
 
 
+def change_keys(obj, converter):
+    return {converter(k): v for k, v in obj.items()}
+
+
 class Command:
     # The registry for the subcommands, should be reinitialized  in subclass
     subcommands_registry = None
@@ -71,7 +75,7 @@ class Command:
         handler = getattr(self, args.OP)
         result = handler(**json.loads(data_in))
         data_out = json.dumps(
-            {mixed_case_to_underscores(k): v for k, v in result.items()}, cls=B2ProviderJsonEncoder
+            change_keys(result, converter=mixed_case_to_underscores), cls=B2ProviderJsonEncoder
         )
         return data_out
 
@@ -195,9 +199,6 @@ class Bucket(Command):
 
 @B2Provider.register_subcommand
 class BucketFileVersion(Command):
-    def data_source_read(self, *, bucket_name, **kwargs):
-        return {}
-
     def resource_create(
         self,
         *,
@@ -224,6 +225,27 @@ class BucketFileVersion(Command):
         self.api.delete_file_version(file_id, file_name)
 
         return {}
+
+
+@B2Provider.register_subcommand
+class BucketFiles(Command):
+    def data_source_read(self, *, bucket_id, folder_name, show_versions, recursive, **kwargs):
+        bucket = self.api.get_bucket_by_id(bucket_id)
+        generator = bucket.ls(
+            folder_name,
+            show_versions=show_versions,
+            recursive=recursive,
+        )
+        return {
+            'bucketId': bucket_id,
+            'folderName': folder_name,
+            'showVersions': show_versions,
+            'recursive': recursive,
+            'fileVersions': [
+                change_keys(file_version_info.as_dict(), converter=mixed_case_to_underscores)
+                for file_version_info, _ in generator
+            ],
+        }
 
 
 class ProviderTool:
