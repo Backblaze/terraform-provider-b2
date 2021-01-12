@@ -11,6 +11,8 @@
 package b2
 
 import (
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -38,4 +40,22 @@ func testAccPreCheck(t *testing.T) {
 	// You can add code here to run prior to any test case execution, for example assertions
 	// about the appropriate environment variables being set are common to see in a pre-check
 	// function.
+}
+
+// Utility functions
+
+func createTempFile(t *testing.T, data string) string {
+	tmpFile, err := ioutil.TempFile("", "test-b2-tfp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	filename := tmpFile.Name()
+
+	err = ioutil.WriteFile(filename, []byte(data), 0644)
+	if err != nil {
+		os.Remove(filename)
+		t.Fatal(err)
+	}
+
+	return filename
 }

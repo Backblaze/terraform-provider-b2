@@ -16,10 +16,20 @@ resource "b2_bucket" "example" {
   bucket_type = "allPublic"
 }
 
+resource "b2_bucket_file_version" "example" {
+  bucket_id = b2_bucket.example.id
+  file_name = "example.txt"
+  source = "example.txt"
+}
+
 data "b2_bucket" "example" {
   bucket_name = b2_bucket.example.bucket_name
 }
 
 output "bucket" {
   value = data.b2_bucket.example
+}
+
+output "bucket_file_info" {
+  value = b2_bucket_file_version.example
 }

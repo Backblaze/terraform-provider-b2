@@ -193,6 +193,39 @@ class Bucket(Command):
         return {}
 
 
+@B2Provider.register_subcommand
+class BucketFileVersion(Command):
+    def data_source_read(self, *, bucket_name, **kwargs):
+        return {}
+
+    def resource_create(
+        self,
+        *,
+        bucket_id,
+        file_name,
+        source,
+        content_type,
+        file_info,
+        **kwargs,
+    ):
+        bucket = self.api.get_bucket_by_id(bucket_id)
+        file_info = bucket.upload_local_file(
+            local_file=source,
+            file_name=file_name,
+            content_type=content_type or None,
+            file_infos=file_info,
+        )
+        return file_info.as_dict()
+
+    def resource_read(self, *, file_id, **kwargs):
+        return self.api.get_file_info(file_id)
+
+    def resource_delete(self, *, file_id, file_name, **kwargs):
+        self.api.delete_file_version(file_id, file_name)
+
+        return {}
+
+
 class ProviderTool:
     def __init__(self, b2_api):
         self.api = b2_api
