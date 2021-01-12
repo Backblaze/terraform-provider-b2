@@ -98,6 +98,9 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 	input := map[string]interface{}{
 		"bucket_name": d.Get("bucket_name").(string),
 		"bucket_type": d.Get("bucket_type").(string),
+		"bucket_info": d.Get("bucket_info").(map[string]interface{}),
+		"cors_rules": d.Get("cors_rules").(*schema.Set).List(),
+		"lifecycle_rules": d.Get("lifecycle_rules").(*schema.Set).List(),
 	}
 
 	output, err := client.apply("bucket", RESOURCE_CREATE, input)
