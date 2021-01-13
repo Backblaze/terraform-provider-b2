@@ -114,14 +114,18 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
+	d.SetId(output["file_id"].(string))
+
 	d.Set("file_id", output["file_id"])
 	d.Set("content_md5", output["content_md5"])
 	d.Set("content_sha1", output["content_sha1"])
 	d.Set("content_type", output["content_type"])
-	d.Set("file_info", output["file_info"])
 	d.Set("size", output["size"])
 	d.Set("upload_timestamp", output["upload_timestamp"])
-	d.SetId(output["file_id"].(string))
+
+	if err := d.Set("file_info", output["file_info"]); err != nil {
+		return diag.Errorf("error setting file_info: %s", err)
+	}
 
 	return nil
 }
@@ -141,9 +145,12 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	d.Set("content_md5", output["content_md5"])
 	d.Set("content_sha1", output["content_sha1"])
 	d.Set("content_type", output["content_type"])
-	d.Set("file_info", output["file_info"])
 	d.Set("size", output["size"])
 	d.Set("upload_timestamp", output["upload_timestamp"])
+
+	if err := d.Set("file_info", output["file_info"]); err != nil {
+		return diag.Errorf("error setting file_info: %s", err)
+	}
 
 	return nil
 }

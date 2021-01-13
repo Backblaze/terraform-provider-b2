@@ -71,8 +71,11 @@ func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	d.Set("file_versions", output["file_versions"])
 	d.SetId(output["_sha1"].(string))
+
+	if err := d.Set("file_versions", output["file_versions"]); err != nil {
+		return diag.Errorf("error setting file_versions: %s", err)
+	}
 
 	return nil
 }

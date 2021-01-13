@@ -108,14 +108,28 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
+	d.SetId(output["bucket_id"].(string))
+
 	d.Set("bucket_id", output["bucket_id"])
 	d.Set("account_id", output["account_id"])
-	d.Set("bucket_info", output["bucket_info"])
-	d.Set("cors_rules", output["cors_rules"])
-	d.Set("lifecycle_rules", output["lifecycle_rules"])
-	d.Set("options", output["options"])
+	d.Set("bucket_type", output["bucket_type"])
 	d.Set("revision", output["revision"])
-	d.SetId(output["bucket_id"].(string))
+
+	if err := d.Set("bucket_info", output["bucket_info"]); err != nil {
+		return diag.Errorf("error setting bucket_info: %s", err)
+	}
+
+	if err := d.Set("cors_rules", output["cors_rules"]); err != nil {
+		return diag.Errorf("error setting cors_rules: %s", err)
+	}
+
+	if err := d.Set("lifecycle_rules", output["lifecycle_rules"]); err != nil {
+		return diag.Errorf("error setting lifecycle_rules: %s", err)
+	}
+
+	if err := d.Set("options", output["options"]); err != nil {
+		return diag.Errorf("error setting options: %s", err)
+	}
 
 	return nil
 }
@@ -134,11 +148,23 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.Set("account_id", output["account_id"])
 	d.Set("bucket_type", output["bucket_type"])
-	d.Set("bucket_info", output["bucket_info"])
-	d.Set("cors_rules", output["cors_rules"])
-	d.Set("lifecycle_rules", output["lifecycle_rules"])
-	d.Set("options", output["options"])
 	d.Set("revision", output["revision"])
+
+	if err := d.Set("bucket_info", output["bucket_info"]); err != nil {
+		return diag.Errorf("error setting bucket_info: %s", err)
+	}
+
+	if err := d.Set("cors_rules", output["cors_rules"]); err != nil {
+		return diag.Errorf("error setting cors_rules: %s", err)
+	}
+
+	if err := d.Set("lifecycle_rules", output["lifecycle_rules"]); err != nil {
+		return diag.Errorf("error setting lifecycle_rules: %s", err)
+	}
+
+	if err := d.Set("options", output["options"]); err != nil {
+		return diag.Errorf("error setting options: %s", err)
+	}
 
 	return nil
 }
@@ -161,9 +187,22 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	d.Set("bucket_type", output["bucket_type"])
-	d.Set("bucket_info", output["bucket_info"])
-	d.Set("cors_rules", output["cors_rules"])
-	d.Set("lifecycle_rules", output["lifecycle_rules"])
+
+	if err := d.Set("bucket_info", output["bucket_info"]); err != nil {
+		return diag.Errorf("error setting bucket_info: %s", err)
+	}
+
+	if err := d.Set("cors_rules", output["cors_rules"]); err != nil {
+		return diag.Errorf("error setting cors_rules: %s", err)
+	}
+
+	if err := d.Set("lifecycle_rules", output["lifecycle_rules"]); err != nil {
+		return diag.Errorf("error setting lifecycle_rules: %s", err)
+	}
+
+	if err := d.Set("options", output["options"]); err != nil {
+		return diag.Errorf("error setting options: %s", err)
+	}
 
 	return nil
 }

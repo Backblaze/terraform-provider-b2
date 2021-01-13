@@ -93,13 +93,20 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	d.Set("capabilities", output["capabilities"])
+	d.SetId(output["application_key_id"].(string))
+
 	d.Set("application_key", output["application_key"])
 	d.Set("application_key_id", output["application_key_id"])
 	d.Set("bucket_id", output["bucket_id"])
 	d.Set("name_prefix", output["name_prefix"])
-	d.Set("options", output["options"])
-	d.SetId(output["application_key_id"].(string))
+
+	if err := d.Set("capabilities", output["capabilities"]); err != nil {
+		return diag.Errorf("error setting capabilities: %s", err)
+	}
+
+	if err := d.Set("options", output["options"]); err != nil {
+		return diag.Errorf("error setting options: %s", err)
+	}
 
 	return nil
 }
@@ -117,9 +124,15 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	d.Set("bucket_id", output["bucket_id"])
-	d.Set("capabilities", output["capabilities"])
 	d.Set("name_prefix", output["name_prefix"])
-	d.Set("options", output["options"])
+
+	if err := d.Set("capabilities", output["capabilities"]); err != nil {
+		return diag.Errorf("error setting capabilities: %s", err)
+	}
+
+	if err := d.Set("options", output["options"]); err != nil {
+		return diag.Errorf("error setting options: %s", err)
+	}
 
 	return nil
 }
