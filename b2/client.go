@@ -35,6 +35,9 @@ type Client struct {
 }
 
 func (c Client) apply(name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
+	log.Printf("[TRACE] Executing pybindings for '%s' and '%s' operation\n", name, op)
+	log.Printf("[TRACE] Input for pybindings (without application key): %+v\n", input)
+
 	cmd := exec.Command(c.Exec, name, op)
 
 	input["_application_key_id"] = c.ApplicationKeyId
@@ -48,11 +51,7 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 
 	cmd.Stdin = bytes.NewReader(inputJson)
 
-	log.Printf("[TRACE] Executing pybindings for '%s' and '%s' operation\n", name, op)
-
 	outputJson, err := cmd.Output()
-
-	log.Printf("[TRACE] Output from pybindings: %+v\n", string(outputJson))
 
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -70,6 +69,15 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 	if err != nil {
 		return nil, err
 	}
+
+	// Do not log application_key
+	safeOutput := map[string]interface{}{}
+	for k, v := range output {
+		if (k != "application_key") {
+			safeOutput[k] = v
+		}
+	}
+	log.Printf("[TRACE] Output from pybindings: %+v\n", safeOutput)
 
 	return output, nil
 }
