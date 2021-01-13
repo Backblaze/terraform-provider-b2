@@ -37,9 +37,14 @@ func TestProvider(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	// You can add code here to run prior to any test case execution, for example assertions
-	// about the appropriate environment variables being set are common to see in a pre-check
-	// function.
+	_, present := os.LookupEnv("B2_APPLICATION_KEY_ID")
+	if (!present) {
+		t.Fatal("B2_APPLICATION_KEY_ID is not set")
+	}
+	_, present = os.LookupEnv("B2_APPLICATION_KEY")
+	if (!present) {
+		t.Fatal("B2_APPLICATION_KEY is not set")
+	}
 }
 
 // Utility functions
