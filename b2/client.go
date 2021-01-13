@@ -73,7 +73,7 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 	// Do not log application_key
 	safeOutput := map[string]interface{}{}
 	for k, v := range output {
-		if (k != "application_key") {
+		if k != "application_key" {
 			safeOutput[k] = v
 		}
 	}
