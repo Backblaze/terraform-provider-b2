@@ -22,7 +22,7 @@ clean:
 	rm -rf build dist py-terraform-provider-b2.egg-info
 
 build:
-	pyinstaller --onefile ${SPEC}
+	pyinstaller --log-level WARN --onefile ${SPEC}
 
 install: build
 

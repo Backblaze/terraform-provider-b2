@@ -9,6 +9,8 @@
 ######################################################################
 
 import json
+import hashlib
+import os
 import sys
 
 from class_registry import ClassRegistry
@@ -74,8 +76,11 @@ class Command:
     def run(self, args, data_in):
         handler = getattr(self, args.OP)
         result = handler(**json.loads(data_in))
+        result['_sha1'] = hashlib.sha1(data_in.encode()).hexdigest()
         data_out = json.dumps(
-            change_keys(result, converter=mixed_case_to_underscores), cls=B2ProviderJsonEncoder
+            change_keys(result, converter=mixed_case_to_underscores),
+            cls=B2ProviderJsonEncoder,
+            sort_keys=True,
         )
         return data_out
 
@@ -225,6 +230,28 @@ class BucketFileVersion(Command):
         self.api.delete_file_version(file_id, file_name)
 
         return {}
+
+
+@B2Provider.register_subcommand
+class BucketFile(Command):
+    def data_source_read(self, *, bucket_id, file_name, show_versions, **kwargs):
+        bucket = self.api.get_bucket_by_id(bucket_id)
+        folder_name = os.path.dirname(file_name)
+        generator = bucket.ls(
+            folder_name,
+            show_versions=show_versions,
+            recursive=False,
+        )
+        return {
+            'bucketId': bucket_id,
+            'fileName': file_name,
+            'showVersions': show_versions,
+            'fileVersions': [
+                change_keys(file_version_info.as_dict(), converter=mixed_case_to_underscores)
+                for file_version_info, _ in generator
+                if file_version_info.file_name == file_name
+            ],
+        }
 
 
 @B2Provider.register_subcommand

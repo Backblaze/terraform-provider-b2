@@ -39,6 +39,7 @@ func New(version string, exec string) func() *schema.Provider {
 			DataSourcesMap: map[string]*schema.Resource{
 				"b2_application_key": dataSourceB2ApplicationKey(),
 				"b2_bucket":          dataSourceB2Bucket(),
+				"b2_bucket_file":     dataSourceB2BucketFile(),
 				"b2_bucket_files":    dataSourceB2BucketFiles(),
 			},
 			ResourcesMap: map[string]*schema.Resource{

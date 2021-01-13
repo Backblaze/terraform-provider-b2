@@ -47,52 +47,10 @@ func dataSourceB2BucketFiles() *schema.Resource {
 				Optional:    true,
 			},
 			"file_versions": {
-				Description: "File versions in the bucket.",
+				Description: "File versions in the folder.",
 				Type:        schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"action": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"content_md5": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"content_sha1": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"content_type": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"file_id": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"file_info": {
-							Type: schema.TypeMap,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-							Computed: true,
-						},
-						"file_name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"size": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"upload_timestamp": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-					},
-				},
-				Computed: true,
+				Elem:        getFileVersionsElem(),
+				Computed:    true,
 			},
 		},
 	}
@@ -114,7 +72,7 @@ func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	d.Set("file_versions", output["file_versions"])
-	d.SetId(output["bucket_id"].(string))
+	d.SetId(output["_sha1"].(string))
 
 	return nil
 }
