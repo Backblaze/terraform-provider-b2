@@ -37,3 +37,11 @@ website/vendor
 
 # Skip the output from pkger
 pkged.go
+
+# Python bindings
+*.pyc
+*.egg-info
+build
+dist
+venv
+

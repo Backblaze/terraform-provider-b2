@@ -8,30 +8,29 @@ Requirements
 -	[Go](https://golang.org/doc/install) >= 1.15
 -	[Python](https://github.com/pyenv/pyenv) >= 3.9
 
-Building
---------
+Build
+-----
 
-1. Build python bindings:
-    ```sh
-    $ cd python-bindings
-    $ pip install --user nox
-    $ nox -s bundle
-    ```
-1. Build the provider: 
-    ```sh
-    $ cd ..
-    $ make install
-    ```
+```
+make build
+```
+
+Install
+-------
+
+```
+make install
+```
 
 Testing
 -------
 
-In order to run the full suite of Acceptance tests, run `make testacc`.
-
 *Note:* Acceptance tests create real resources, and often cost money to run.
 
-```sh
-$ make testacc
+```
+export B2_APPLICATION_KEY=your_app_key
+export B2_APPLICATION_KEY_ID=your_app_key_id
+make testacc
 ```
 
 Adding Dependencies
