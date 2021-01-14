@@ -12,10 +12,23 @@ package b2
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+func init() {
+	schema.DescriptionKind = schema.StringMarkdown
+
+	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
+		desc := s.Description
+		if s.Default != nil {
+			desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
+		}
+		return desc
+	}
+}
 
 func New(version string, exec string) func() *schema.Provider {
 	return func() *schema.Provider {

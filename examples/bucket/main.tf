@@ -19,13 +19,13 @@ resource "b2_bucket" "example" {
 resource "b2_bucket_file_version" "example1" {
   bucket_id = b2_bucket.example.id
   file_name = "example.txt"
-  source = "example.txt"
+  source    = "example.txt"
 }
 
 resource "b2_bucket_file_version" "example2" {
   bucket_id = b2_bucket_file_version.example1.bucket_id
   file_name = b2_bucket_file_version.example1.file_name
-  source = b2_bucket_file_version.example1.source
+  source    = b2_bucket_file_version.example1.source
   file_info = {
     description = "second version"
   }
@@ -34,7 +34,7 @@ resource "b2_bucket_file_version" "example2" {
 resource "b2_bucket_file_version" "example3" {
   bucket_id = b2_bucket_file_version.example2.bucket_id
   file_name = "dir/example.txt"
-  source = b2_bucket_file_version.example2.source
+  source    = b2_bucket_file_version.example2.source
 }
 
 data "b2_bucket" "example" {
@@ -42,8 +42,8 @@ data "b2_bucket" "example" {
 }
 
 data "b2_bucket_file" "example" {
-  bucket_id = b2_bucket_file_version.example2.bucket_id
-  file_name = b2_bucket_file_version.example2.file_name
+  bucket_id     = b2_bucket_file_version.example2.bucket_id
+  file_name     = b2_bucket_file_version.example2.file_name
   show_versions = true
 }
 

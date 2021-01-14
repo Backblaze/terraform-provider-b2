@@ -7,7 +7,7 @@ OS_ARCH=${GOOS}_${GOARCH}
 
 default: build
 
-.PHONY: _pybindings deps format testacc clean build install
+.PHONY: _pybindings deps format testacc clean build install docs
 
 _pybindings:
 	$(MAKE) -C python-bindings $(MAKECMDGOALS)
@@ -18,6 +18,7 @@ deps: _pybindings
 
 format: _pybindings
 	go fmt ./...
+	terraform fmt -recursive ./examples/
 
 testacc: _pybindings
 	TF_ACC=1 go test ./${NAME} -v -count 1 -parallel 4 $(TESTARGS) -timeout 120m
@@ -32,5 +33,8 @@ build: _pybindings
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+
+docs:
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
 all: deps testacc build
