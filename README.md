@@ -1,5 +1,10 @@
 Terraform Provider B2
 =====================
+[![Continuous Integration](https://github.com/Backblaze/terraform-provider-b2/workflows/Continuous%20Integration/badge.svg)](https://github.com/Backblaze/terraform-provider-b2/actions?query=workflow%3A%22Continuous+Integration%22)
+
+
+
+> :warning: **The provider is still in beta!**
 
 Terraform provider for Backblaze B2.
 
