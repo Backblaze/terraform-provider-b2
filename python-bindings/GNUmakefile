@@ -7,11 +7,7 @@ default: build
 .PHONY: deps format testacc clean build
 
 deps:
-ifeq ($(origin VIRTUAL_ENV), undefined)
-	pip install --user -r requirements.txt
-else
 	pip install -r requirements.txt
-endif
 
 format:
 	black -Sl 100 b2_terraform
