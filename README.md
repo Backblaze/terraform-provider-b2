@@ -1,6 +1,10 @@
 Terraform Provider B2
 =====================
 
+Terraform provider for Backblaze B2.
+
+The provider is written in go, but it uses official B2 python SDK embedded into the binary.
+
 Requirements
 ------------
 
@@ -8,15 +12,23 @@ Requirements
 -	[Go](https://golang.org/doc/install) >= 1.15
 -	[Python](https://github.com/pyenv/pyenv) >= 3.9
 
-Build
------
+Dependencies
+------------
+*Note:* You can run it inside python virtualenv as it installs the dependencies for the python bindings as well.
+
+```
+make deps
+```
+
+Building
+--------
 
 ```
 make build
 ```
 
-Install
--------
+Installing
+----------
 
 ```
 make install
@@ -33,19 +45,7 @@ export B2_APPLICATION_KEY_ID=your_app_key_id
 make testacc
 ```
 
-Adding Dependencies
--------------------
+Release History
+-----------------
 
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
-
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
-
-```
-go get github.com/author/dependency
-go mod tidy
-```
-
-Then commit the changes to `go.mod` and `go.sum`.
-
-
+Please refer to the [changelog](CHANGELOG.md).
