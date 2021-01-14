@@ -24,7 +24,7 @@ func TestAccDataSourceB2Bucket(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 
-	resource.UnitTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
@@ -56,6 +56,10 @@ resource "b2_bucket" "test" {
 
 data "b2_bucket" "test" {
   bucket_name = b2_bucket.test.bucket_name
+
+  depends_on = [
+    b2_bucket.test,
+  ]
 }
 `, bucketName)
 }

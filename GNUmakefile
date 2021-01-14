@@ -10,7 +10,12 @@ default: build
 .PHONY: _pybindings deps format testacc clean build install docs
 
 _pybindings:
+ifeq ($(origin NOPYBINDINGS), undefined)
 	$(MAKE) -C python-bindings $(MAKECMDGOALS)
+else
+	$(info Skipping python bindings (NOPYBINDINGS is defined))
+endif
+
 
 deps: _pybindings
 	go mod download
@@ -21,6 +26,7 @@ format: _pybindings
 	terraform fmt -recursive ./examples/
 
 testacc: _pybindings
+	chmod +rx python-bindings/dist/py-terraform-provider-b2
 	TF_ACC=1 go test ./${NAME} -v -count 1 -parallel 4 $(TESTARGS) -timeout 120m
 
 clean: _pybindings

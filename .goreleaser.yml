@@ -7,16 +7,14 @@ builds:
   flags:
     - -trimpath
   ldflags:
-    - '-s -w -X main.version={{.Version}} -X main.pkgerInput={{.Env.PYBINDINGS}}'
+    - '-s -w -X main.version={{.Version}}'
   goos:
     - linux
     - darwin
   goarch:
     - amd64
-    - '386'
-  ignore:
-    - goos: darwin
-      goarch: '386'
+  hooks:
+    pre: 'pkger -include /python-bindings/dist/py-terraform-provider-b2-{{.Env.RUNNER_OS}}'
 env:
   # goreleaser does not work with CGO, it could also complicate
   # usage by users in CI/CD systems like Terraform Cloud where

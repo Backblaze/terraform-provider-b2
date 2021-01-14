@@ -24,7 +24,7 @@ func TestAccResourceB2ApplicationKey(t *testing.T) {
 
 	keyName := acctest.RandomWithPrefix("test-b2-tfp")
 
-	resource.UnitTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{

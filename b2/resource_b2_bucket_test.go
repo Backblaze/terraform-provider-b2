@@ -23,7 +23,7 @@ func TestAccResourceB2BucketSingle(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 
-	resource.UnitTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
