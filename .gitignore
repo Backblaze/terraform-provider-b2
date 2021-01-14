@@ -38,10 +38,13 @@ website/vendor
 # Skip the output from pkger
 pkged.go
 
+# Provider binary
+/terraform-provider-b2
+
 # Python bindings
 *.pyc
 *.egg-info
-build
-dist
-venv
+build/
+dist/
+venv/
 

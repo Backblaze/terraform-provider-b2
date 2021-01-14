@@ -66,7 +66,7 @@ class Command:
                 common_parser.add_argument('OP')
                 parents = [common_parser]
 
-            subparsers = parser.add_subparsers(prog=parser.prog, title='usages', dest='command')
+            subparsers = parser.add_subparsers(prog=parser.prog, title='usages', dest='CMD')
             subparsers.required = True
             for subcommand in cls.subcommands_registry.values():
                 subcommand.get_parser(subparsers=subparsers, parents=parents)
@@ -144,11 +144,6 @@ class ApplicationKey(Command):
                 break
 
         raise RuntimeError(f'Could not find Application Key for ID "{application_key_id}"')
-
-    def resource_update(self, **kwargs):
-        raise NotImplementedError(
-            'Update is not available for Application Keys, every change requires recreation.'
-        )
 
     def resource_delete(self, *, application_key_id, **kwargs):
         self.api.delete_key(application_key_id=application_key_id)
@@ -288,11 +283,11 @@ class ProviderTool:
 
     def run_command(self, argv):
         try:
-            data_in = input().strip()
             b2_provider = B2Provider(self)
             args = b2_provider.get_parser().parse_args(argv[1:])
+            data_in = input().strip()
             b2_provider.run(args, data_in)
-            command_class = b2_provider.subcommands_registry.get_class(args.command)
+            command_class = b2_provider.subcommands_registry.get_class(args.CMD)
             command = command_class(self)
             data_out = command.run(args, data_in)
             print(data_out, end='')
