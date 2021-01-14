@@ -12,7 +12,7 @@ provider "b2" {
 }
 
 resource "b2_bucket" "example" {
-  bucket_name = "Example-TestBucket"
+  bucket_name = "test-b2-tfp-0000000000000000000"
   bucket_type = "allPublic"
 }
 

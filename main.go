@@ -15,6 +15,7 @@ import (
 	"context"
 	"flag"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -25,29 +26,27 @@ import (
 )
 
 var (
-	exec = "/tmp/py-terraform-provider-b2"
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary
+	pkgerInput string = "/python-bindings/dist/py-terraform-provider-b2"
 	version string = "dev"
-
-	// goreleaser can also pass the specific commit if you want
-	// commit  string = ""
 )
 
-func pybinding(s string, d string) error {
-	f1, err := pkger.Open(s)
+func embedPybindings(sourcePath string) (string, error) {
+	sourceFile, err := pkger.Open(sourcePath)
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer f1.Close()
+	defer sourceFile.Close()
 
-	f2, err := os.Create(d)
+	destinationFile, err := ioutil.TempFile("", "py-terraform-provider")
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer f2.Close()
+	defer destinationFile.Close()
 
-	reader := bufio.NewReader(f1)
+	destinationPath := destinationFile.Name()
+	reader := bufio.NewReader(sourceFile)
 	buf := make([]byte, 2048)
 
 	for {
@@ -55,17 +54,17 @@ func pybinding(s string, d string) error {
 
 		if err != nil {
 			if err != io.EOF {
-				return err
+				return destinationPath, err
 			}
-			f2.Seek(0, 0)
+			destinationFile.Seek(0, 0)
 			break
 		}
-		f2.Write(buf)
+		destinationFile.Write(buf)
 	}
-	f2.Close()
-	os.Chmod(d, 0770)
+	destinationFile.Close()
+	os.Chmod(destinationPath, 0770)
 
-	return nil
+	return destinationPath, nil
 }
 
 func main() {
@@ -74,13 +73,14 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	err := pybinding(filepath.FromSlash("/python-bindings/dist/py-terraform-provider-b2"), filepath.FromSlash(exec))
+	pkgerOutput, err := embedPybindings(filepath.FromSlash(pkgerInput))
 	if err != nil {
 		log.Fatal(err.Error())
 		return
 	}
+	defer os.Remove(pkgerOutput)
 
-	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, exec)}
+	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, pkgerOutput)}
 	if debugMode {
 		err := plugin.Debug(context.Background(), "registry.terraform.io/Backblaze/b2", opts)
 		if err != nil {

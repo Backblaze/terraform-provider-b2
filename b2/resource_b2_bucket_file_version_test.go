@@ -12,6 +12,7 @@ package b2
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -24,6 +25,7 @@ func TestAccResourceB2BucketFileVersion(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFile(t, "hello")
+	defer os.Remove(tempFile)
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

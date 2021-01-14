@@ -2,16 +2,15 @@ HOSTNAME=localhost
 NAMESPACE=backblaze
 NAME=b2
 BINARY=terraform-provider-${NAME}
-VERSION=0.1.1
+VERSION=$(shell git describe --tags --abbrev=0 | cut -c2-)
 OS_ARCH=${GOOS}_${GOARCH}
-PY_BINDINGS=python-bindings
 
 default: build
 
 .PHONY: _pybindings deps format testacc clean build install
 
 _pybindings:
-	$(MAKE) -C ${PY_BINDINGS} $(MAKECMDGOALS)
+	$(MAKE) -C python-bindings $(MAKECMDGOALS)
 
 deps: _pybindings
 	go mod download
