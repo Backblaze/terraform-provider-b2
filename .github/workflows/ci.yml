@@ -11,7 +11,7 @@ env:
   GO_DEFAULT_VERSION: 1.15
 
 jobs:
-  build:
+  test:
     env:
       B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
       B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}

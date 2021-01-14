@@ -20,7 +20,7 @@ format: _pybindings
 	go fmt ./...
 
 testacc: _pybindings
-	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m
+	TF_ACC=1 go test ./${NAME} -v -count 1 -parallel 4 $(TESTARGS) -timeout 120m
 
 clean: _pybindings
 	rm -rf pkged.go ${BINARY}

@@ -32,7 +32,7 @@ var (
 	version string = "dev"
 )
 
-func embedPybindings(sourcePath string) (string, error) {
+func extractPybindings(sourcePath string) (string, error) {
 	sourceFile, err := pkger.Open(sourcePath)
 	if err != nil {
 		return "", err
@@ -64,6 +64,7 @@ func embedPybindings(sourcePath string) (string, error) {
 	destinationFile.Close()
 	os.Chmod(destinationPath, 0770)
 
+	log.Printf("[TRACE] Extracted pybindings: %s\n", destinationFile)
 	return destinationPath, nil
 }
 
@@ -73,7 +74,7 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	pkgerOutput, err := embedPybindings(filepath.FromSlash(pkgerInput))
+	pkgerOutput, err := extractPybindings(filepath.FromSlash(pkgerInput))
 	if err != nil {
 		log.Fatal(err.Error())
 		return
