@@ -12,6 +12,7 @@ package b2
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -30,10 +31,13 @@ func TestAccResourceB2ApplicationKey(t *testing.T) {
 			{
 				Config: testAccResourceB2ApplicationKeyConfig(keyName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "key_name", keyName),
+					resource.TestMatchResourceAttr(resourceName, "application_key", regexp.MustCompile("^[\x20-\x7E]{31}$")),
+					resource.TestMatchResourceAttr(resourceName, "application_key_id", regexp.MustCompile("^[a-zA-Z0-9]{25}$")),
+					resource.TestCheckResourceAttr(resourceName, "bucket_id", ""),
 					resource.TestCheckResourceAttr(resourceName, "bucket_id", ""),
 					resource.TestCheckResourceAttr(resourceName, "capabilities.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "capabilities.0", "readFiles"),
+					resource.TestCheckResourceAttr(resourceName, "key_name", keyName),
 					resource.TestCheckResourceAttr(resourceName, "name_prefix", ""),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),

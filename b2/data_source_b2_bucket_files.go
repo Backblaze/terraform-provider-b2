@@ -58,6 +58,8 @@ func dataSourceB2BucketFiles() *schema.Resource {
 
 func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "bucket_files"
+	const op = DATA_SOURCE_READ
 
 	input := map[string]interface{}{
 		"bucket_id":     d.Get("bucket_id").(string),
@@ -66,15 +68,16 @@ func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, me
 		"recursive":     d.Get("recursive").(bool),
 	}
 
-	output, err := client.apply("bucket_files", DATA_SOURCE_READ, input)
+	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["_sha1"].(string))
 
-	if err := d.Set("file_versions", output["file_versions"]); err != nil {
-		return diag.Errorf("error setting file_versions: %s", err)
+	err = client.populate(name, op, output, d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil

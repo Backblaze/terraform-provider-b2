@@ -80,6 +80,8 @@ func resourceB2ApplicationKey() *schema.Resource {
 
 func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "application_key"
+	const op = RESOURCE_CREATE
 
 	input := map[string]interface{}{
 		"key_name":     d.Get("key_name").(string),
@@ -88,24 +90,16 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 		"name_prefix":  d.Get("name_prefix").(string),
 	}
 
-	output, err := client.apply("application_key", RESOURCE_CREATE, input)
+	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["application_key_id"].(string))
 
-	d.Set("application_key", output["application_key"])
-	d.Set("application_key_id", output["application_key_id"])
-	d.Set("bucket_id", output["bucket_id"])
-	d.Set("name_prefix", output["name_prefix"])
-
-	if err := d.Set("capabilities", output["capabilities"]); err != nil {
-		return diag.Errorf("error setting capabilities: %s", err)
-	}
-
-	if err := d.Set("options", output["options"]); err != nil {
-		return diag.Errorf("error setting options: %s", err)
+	err = client.populate(name, op, output, d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
@@ -113,25 +107,23 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 
 func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "application_key"
+	const op = RESOURCE_READ
 
 	input := map[string]interface{}{
 		"application_key_id": d.Id(),
 	}
 
-	output, err := client.apply("application_key", RESOURCE_READ, input)
+	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.Set("bucket_id", output["bucket_id"])
-	d.Set("name_prefix", output["name_prefix"])
+	output["application_key"] = d.Get("application_key").(string)
 
-	if err := d.Set("capabilities", output["capabilities"]); err != nil {
-		return diag.Errorf("error setting capabilities: %s", err)
-	}
-
-	if err := d.Set("options", output["options"]); err != nil {
-		return diag.Errorf("error setting options: %s", err)
+	err = client.populate(name, op, output, d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
@@ -139,12 +131,14 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 
 func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "application_key"
+	const op = RESOURCE_DELETE
 
 	input := map[string]interface{}{
 		"application_key_id": d.Id(),
 	}
 
-	_, err := client.apply("application_key", RESOURCE_DELETE, input)
+	_, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}

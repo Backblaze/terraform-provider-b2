@@ -89,37 +89,23 @@ func dataSourceB2Bucket() *schema.Resource {
 
 func dataSourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "bucket"
+	const op = DATA_SOURCE_READ
 
 	input := map[string]interface{}{
 		"bucket_name": d.Get("bucket_name").(string),
 	}
 
-	output, err := client.apply("bucket", DATA_SOURCE_READ, input)
+	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["bucket_id"].(string))
 
-	d.Set("account_id", output["account_id"])
-	d.Set("bucket_id", output["bucket_id"])
-	d.Set("bucket_type", output["bucket_type"])
-	d.Set("revision", output["revision"])
-
-	if err := d.Set("bucket_info", output["bucket_info"]); err != nil {
-		return diag.Errorf("error setting bucket_info: %s", err)
-	}
-
-	if err := d.Set("cors_rules", output["cors_rules"]); err != nil {
-		return diag.Errorf("error setting cors_rules: %s", err)
-	}
-
-	if err := d.Set("lifecycle_rules", output["lifecycle_rules"]); err != nil {
-		return diag.Errorf("error setting lifecycle_rules: %s", err)
-	}
-
-	if err := d.Set("options", output["options"]); err != nil {
-		return diag.Errorf("error setting options: %s", err)
+	err = client.populate(name, op, output, d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil

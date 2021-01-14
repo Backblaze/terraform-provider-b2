@@ -221,7 +221,10 @@ class BucketFileVersion(Command):
             content_type=content_type or None,
             file_infos=file_info,
         )
-        return file_info.as_dict()
+        result = file_info.as_dict()
+        result['bucketId'] = bucket_id
+        result['source'] = source
+        return result
 
     def resource_read(self, *, file_id, **kwargs):
         return self.api.get_file_info(file_id)

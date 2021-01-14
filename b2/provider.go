@@ -57,11 +57,27 @@ func New(version string, exec string) func() *schema.Provider {
 
 func configure(version string, exec string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		dataSources := map[string][]string{}
+		for k, v := range p.DataSourcesMap {
+			for kk := range v.Schema {
+				dataSources[k] = append(dataSources[k], kk)
+			}
+		}
+
+		resources := map[string][]string{}
+		for k, v := range p.ResourcesMap {
+			for kk := range v.Schema {
+				resources[k] = append(resources[k], kk)
+			}
+		}
+
 		client := &Client{
 			Exec:             exec,
 			Version:          version,
 			ApplicationKeyId: d.Get("application_key_id").(string),
 			ApplicationKey:   d.Get("application_key").(string),
+			DataSources:      dataSources,
+			Resources:        resources,
 		}
 
 		return client, nil

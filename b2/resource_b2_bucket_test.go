@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccResourceB2Bucket(t *testing.T) {
+func TestAccResourceB2BucketSingle(t *testing.T) {
 	resourceName := "b2_bucket.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")

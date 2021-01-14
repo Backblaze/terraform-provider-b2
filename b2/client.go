@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -32,11 +34,13 @@ type Client struct {
 	Version          string
 	ApplicationKeyId string
 	ApplicationKey   string
+	DataSources      map[string][]string
+	Resources        map[string][]string
 }
 
 func (c Client) apply(name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
 	log.Printf("[TRACE] Executing pybindings for '%s' and '%s' operation\n", name, op)
-	log.Printf("[TRACE] Input for pybindings (without application key): %+v\n", input)
+	log.Printf("[TRACE] Input for pybindings: %+v\n", input)
 
 	cmd := exec.Command(c.Exec, name, op)
 
@@ -77,7 +81,29 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 			safeOutput[k] = v
 		}
 	}
-	log.Printf("[TRACE] Output from pybindings: %+v\n", safeOutput)
+	log.Printf("[TRACE] Output from pybindings (without application key): %+v\n", safeOutput)
 
 	return output, nil
+}
+
+func (c Client) populate(name string, op string, output map[string]interface{}, d *schema.ResourceData) error {
+	resourceName := "b2_" + name
+	var schemaKeys []string
+	if op == DATA_SOURCE_READ {
+		schemaKeys = c.DataSources[resourceName]
+	} else {
+		schemaKeys = c.Resources[resourceName]
+	}
+
+	for _, k := range schemaKeys {
+		v, ok := output[k]
+		if !ok {
+			return fmt.Errorf("error getting %s", k)
+		}
+		if err := d.Set(k, v); err != nil {
+			return fmt.Errorf("error setting %s: %s", k, err)
+		}
+	}
+
+	return nil
 }

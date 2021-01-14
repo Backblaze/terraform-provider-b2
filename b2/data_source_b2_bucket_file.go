@@ -52,54 +52,10 @@ func dataSourceB2BucketFile() *schema.Resource {
 	}
 }
 
-func getFileVersionsElem() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"action": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"content_md5": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"content_sha1": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"content_type": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"file_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"file_info": {
-				Type: schema.TypeMap,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Computed: true,
-			},
-			"file_name": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"size": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-			"upload_timestamp": {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-		},
-	}
-}
-
 func dataSourceB2BucketFileRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "bucket_file"
+	const op = DATA_SOURCE_READ
 
 	input := map[string]interface{}{
 		"bucket_id":     d.Get("bucket_id").(string),
@@ -107,15 +63,16 @@ func dataSourceB2BucketFileRead(ctx context.Context, d *schema.ResourceData, met
 		"show_versions": d.Get("show_versions").(bool),
 	}
 
-	output, err := client.apply("bucket_file", DATA_SOURCE_READ, input)
+	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["_sha1"].(string))
 
-	if err := d.Set("file_versions", output["file_versions"]); err != nil {
-		return diag.Errorf("error setting file_versions: %s", err)
+	err = client.populate(name, op, output, d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil

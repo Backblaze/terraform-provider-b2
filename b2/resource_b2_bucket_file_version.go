@@ -100,6 +100,8 @@ func resourceB2BucketFileVersion() *schema.Resource {
 
 func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "bucket_file_version"
+	const op = RESOURCE_CREATE
 
 	input := map[string]interface{}{
 		"bucket_id":    d.Get("bucket_id").(string),
@@ -109,22 +111,16 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 		"file_info":    d.Get("file_info").(map[string]interface{}),
 	}
 
-	output, err := client.apply("bucket_file_version", RESOURCE_CREATE, input)
+	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["file_id"].(string))
 
-	d.Set("file_id", output["file_id"])
-	d.Set("content_md5", output["content_md5"])
-	d.Set("content_sha1", output["content_sha1"])
-	d.Set("content_type", output["content_type"])
-	d.Set("size", output["size"])
-	d.Set("upload_timestamp", output["upload_timestamp"])
-
-	if err := d.Set("file_info", output["file_info"]); err != nil {
-		return diag.Errorf("error setting file_info: %s", err)
+	err = client.populate(name, op, output, d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
@@ -132,24 +128,25 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 
 func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "bucket_file_version"
+	const op = RESOURCE_READ
 
 	input := map[string]interface{}{
 		"file_id": d.Id(),
 	}
 
-	output, err := client.apply("bucket_file_version", RESOURCE_READ, input)
+	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.Set("content_md5", output["content_md5"])
-	d.Set("content_sha1", output["content_sha1"])
-	d.Set("content_type", output["content_type"])
-	d.Set("size", output["size"])
-	d.Set("upload_timestamp", output["upload_timestamp"])
+	output["bucket_id"] = d.Get("bucket_id").(string)
+	output["size"] = d.Get("size").(int)
+	output["source"] = d.Get("source").(string)
 
-	if err := d.Set("file_info", output["file_info"]); err != nil {
-		return diag.Errorf("error setting file_info: %s", err)
+	err = client.populate(name, op, output, d)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
@@ -157,13 +154,15 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 
 func resourceB2BucketFileVersionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
+	const name = "bucket_file_version"
+	const op = RESOURCE_DELETE
 
 	input := map[string]interface{}{
 		"file_id":   d.Id(),
 		"file_name": d.Get("file_name").(string),
 	}
 
-	_, err := client.apply("bucket_file_version", RESOURCE_DELETE, input)
+	_, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
