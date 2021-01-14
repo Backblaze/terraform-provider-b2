@@ -35,6 +35,12 @@ func New(version string, exec string) func() *schema.Provider {
 					Sensitive:   true,
 					DefaultFunc: schema.EnvDefaultFunc("B2_APPLICATION_KEY", nil),
 				},
+				"endpoint": {
+					Description: "B2 endpoint (production or custom URL)",
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("B2_ENDPOINT", "production"),
+				},
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"b2_application_key": dataSourceB2ApplicationKey(),
@@ -76,6 +82,7 @@ func configure(version string, exec string, p *schema.Provider) func(context.Con
 			Version:          version,
 			ApplicationKeyId: d.Get("application_key_id").(string),
 			ApplicationKey:   d.Get("application_key").(string),
+			Endpoint:         d.Get("endpoint").(string),
 			DataSources:      dataSources,
 			Resources:        resources,
 		}

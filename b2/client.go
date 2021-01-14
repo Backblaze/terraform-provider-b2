@@ -34,6 +34,7 @@ type Client struct {
 	Version          string
 	ApplicationKeyId string
 	ApplicationKey   string
+	Endpoint         string
 	DataSources      map[string][]string
 	Resources        map[string][]string
 }
@@ -44,8 +45,9 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 
 	cmd := exec.Command(c.Exec, name, op)
 
-	input["_application_key_id"] = c.ApplicationKeyId
-	input["_application_key"] = c.ApplicationKey
+	input["provider_application_key_id"] = c.ApplicationKeyId
+	input["provider_application_key"] = c.ApplicationKey
+	input["provider_endpoint"] = c.Endpoint
 
 	inputJson, err := json.Marshal(input)
 	if err != nil {

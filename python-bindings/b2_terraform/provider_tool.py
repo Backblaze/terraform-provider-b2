@@ -92,11 +92,15 @@ class B2Provider(Command):
         self.provider_authorize_account(**json.loads(data_in))
         return {}
 
-    def provider_authorize_account(self, *, _application_key_id, _application_key, **kwargs):
-        if not _application_key_id or not _application_key:
+    def provider_authorize_account(
+        self, *, provider_application_key_id, provider_application_key, provider_endpoint, **kwargs
+    ):
+        if not provider_application_key_id or not provider_application_key:
             raise RuntimeError('B2 Application Key and Application Key ID must be provided')
 
-        self.api.authorize_account('production', _application_key_id, _application_key)
+        self.api.authorize_account(
+            provider_endpoint, provider_application_key_id, provider_application_key
+        )
 
 
 @B2Provider.register_subcommand
