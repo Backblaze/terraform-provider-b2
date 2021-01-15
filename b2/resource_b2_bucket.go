@@ -41,16 +41,6 @@ func resourceB2Bucket() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"bucket_id": {
-				Description: "The ID of the bucket.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"account_id": {
-				Description: "Account ID that the bucket belongs to.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
 			"bucket_info": {
 				Description: "The bucket info.",
 				Type:        schema.TypeMap,
@@ -61,19 +51,25 @@ func resourceB2Bucket() *schema.Resource {
 			},
 			"cors_rules": {
 				Description: "CORS rules.",
-				Type:        schema.TypeSet,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Optional: true,
+				Type:        schema.TypeList,
+				Elem:        getResourceCoreRulesElem(),
+				Optional:    true,
 			},
 			"lifecycle_rules": {
 				Description: "Lifecycle rules.",
-				Type:        schema.TypeSet,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Optional: true,
+				Type:        schema.TypeList,
+				Elem:        getResourceLifecycleRulesElem(),
+				Optional:    true,
+			},
+			"bucket_id": {
+				Description: "The ID of the bucket.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"account_id": {
+				Description: "Account ID that the bucket belongs to.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"options": {
 				Description: "List of bucket options.",
@@ -101,8 +97,8 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_name":     d.Get("bucket_name").(string),
 		"bucket_type":     d.Get("bucket_type").(string),
 		"bucket_info":     d.Get("bucket_info").(map[string]interface{}),
-		"cors_rules":      d.Get("cors_rules").(*schema.Set).List(),
-		"lifecycle_rules": d.Get("lifecycle_rules").(*schema.Set).List(),
+		"cors_rules":      d.Get("cors_rules").([]interface{}),
+		"lifecycle_rules": d.Get("lifecycle_rules").([]interface{}),
 	}
 
 	output, err := client.apply(name, op, input)
@@ -152,8 +148,8 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		"account_id":      d.Get("account_id").(string),
 		"bucket_type":     d.Get("bucket_type").(string),
 		"bucket_info":     d.Get("bucket_info").(map[string]interface{}),
-		"cors_rules":      d.Get("cors_rules").(*schema.Set).List(),
-		"lifecycle_rules": d.Get("lifecycle_rules").(*schema.Set).List(),
+		"cors_rules":      d.Get("cors_rules").([]interface{}),
+		"lifecycle_rules": d.Get("lifecycle_rules").([]interface{}),
 	}
 
 	output, err := client.apply(name, op, input)

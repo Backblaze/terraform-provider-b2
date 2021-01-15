@@ -1,5 +1,6 @@
 b2sdk>=1.1.4,<1.2.0
 phx-class-registry==3.0.5
+pyhumps==1.6.1
 
 # Dev dependencies
 pyinstaller

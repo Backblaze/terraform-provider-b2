@@ -29,7 +29,7 @@ var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary
 	pkgerInput string = "/python-bindings/dist/py-terraform-provider-b2"
-	version string = "dev"
+	version    string = "dev"
 )
 
 func extractPybindings(sourcePath string) (string, error) {
@@ -64,7 +64,7 @@ func extractPybindings(sourcePath string) (string, error) {
 	destinationFile.Close()
 	os.Chmod(destinationPath, 0770)
 
-	log.Printf("[TRACE] Extracted pybindings: %s\n", destinationFile)
+	log.Printf("[TRACE] Extracted pybindings: %s\n", destinationPath)
 	return destinationPath, nil
 }
 

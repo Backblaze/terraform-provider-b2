@@ -27,13 +27,6 @@ func resourceB2ApplicationKey() *schema.Resource {
 		DeleteContext: resourceB2ApplicationKeyDelete,
 
 		Schema: map[string]*schema.Schema{
-			"key_name": {
-				Description:  "The name of the key.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.NoZeroValues,
-			},
 			"capabilities": {
 				Description: "A list of capabilities.",
 				Type:        schema.TypeSet,
@@ -42,6 +35,26 @@ func resourceB2ApplicationKey() *schema.Resource {
 				},
 				Required: true,
 				ForceNew: true,
+			},
+			"key_name": {
+				Description:  "The name of the key.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.NoZeroValues,
+			},
+			"bucket_id": {
+				Description: "The ID of the bucket.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+			},
+			"name_prefix": {
+				Description:  "A prefix to restrict access to files",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				RequiredWith: []string{"bucket_id"},
 			},
 			"application_key": {
 				Description: "The key.",
@@ -53,18 +66,6 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Description: "The ID of the key.",
 				Type:        schema.TypeString,
 				Computed:    true,
-			},
-			"bucket_id": {
-				Description: "The ID of the bucket.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-			},
-			"name_prefix": {
-				Description: "A prefix to restrict access to files",
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
 			},
 			"options": {
 				Description: "List of application key options.",

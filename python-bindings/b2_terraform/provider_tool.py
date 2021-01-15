@@ -14,16 +14,11 @@ import os
 import sys
 
 from class_registry import ClassRegistry
+from humps import camelize, decamelize
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
-
-
-def mixed_case_to_underscores(s):
-    return s[0].lower() + ''.join(
-        c if c.islower() or c.isdigit() else '_' + c.lower() for c in s[1:]
-    )
 
 
 def change_keys(obj, converter):
@@ -40,7 +35,7 @@ class Command:
 
     @classmethod
     def name(cls):
-        return mixed_case_to_underscores(cls.__name__)
+        return decamelize(cls.__name__)
 
     @classmethod
     def register_subcommand(cls, command_class):
@@ -78,7 +73,7 @@ class Command:
         result = handler(**json.loads(data_in))
         result['_sha1'] = hashlib.sha1(data_in.encode()).hexdigest()
         data_out = json.dumps(
-            change_keys(result, converter=mixed_case_to_underscores),
+            change_keys(result, converter=decamelize),
             cls=B2ProviderJsonEncoder,
             sort_keys=True,
         )
@@ -155,7 +150,9 @@ class ApplicationKey(Command):
 class Bucket(Command):
     def data_source_read(self, *, bucket_name, **kwargs):
         bucket = self.api.get_bucket_by_name(bucket_name)
-        return bucket.as_dict()
+        result = bucket.as_dict()
+        self._postprocess(result['corsRules'], result['lifecycleRules'])
+        return result
 
     def resource_create(
         self,
@@ -167,6 +164,7 @@ class Bucket(Command):
         lifecycle_rules=None,
         **kwargs,
     ):
+        self._preprocess(cors_rules, lifecycle_rules)
         bucket = self.api.create_bucket(
             bucket_name,
             bucket_type,
@@ -174,15 +172,22 @@ class Bucket(Command):
             cors_rules=cors_rules,
             lifecycle_rules=lifecycle_rules,
         )
-        return bucket.as_dict()
+        result = bucket.as_dict()
+        self._postprocess(result['corsRules'], result['lifecycleRules'])
+
+        return result
 
     def resource_read(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
-        return bucket.as_dict()
+        result = bucket.as_dict()
+        self._postprocess(result['corsRules'], result['lifecycleRules'])
+
+        return result
 
     def resource_update(
         self, bucket_id, account_id, bucket_type, bucket_info, cors_rules, lifecycle_rules, **kwargs
     ):
+        self._preprocess(cors_rules, lifecycle_rules)
         self.api.session.update_bucket(
             account_id,
             bucket_id,
@@ -192,13 +197,40 @@ class Bucket(Command):
             lifecycle_rules=lifecycle_rules,
         )
         bucket = self.api.get_bucket_by_id(bucket_id)
-        return bucket.as_dict()
+        result = bucket.as_dict()
+        self._postprocess(result['corsRules'], result['lifecycleRules'])
+
+        return result
 
     def resource_delete(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
         self.api.delete_bucket(bucket)
 
         return {}
+
+    def _preprocess(self, cors_rules, lifecycle_rules):
+        if cors_rules:
+            for index, item in enumerate(cors_rules):
+                cors_rules[index] = change_keys(item, converter=camelize)
+
+        if lifecycle_rules:
+            for index, item in enumerate(lifecycle_rules):
+                lifecycle_rules[index] = change_keys(item, converter=camelize)
+                days_from_hiding_to_deleting = item.get('daysFromHidingToDeleting')
+                if days_from_hiding_to_deleting == 0:
+                    item['daysFromHidingToDeleting'] = None
+                days_from_uploading_to_hiding = item.get('daysFromUploadingToHiding')
+                if days_from_uploading_to_hiding == 0:
+                    item['daysFromUploadingToHiding'] = None
+
+    def _postprocess(self, cors_rules, lifecycle_rules):
+        if cors_rules:
+            for index, item in enumerate(cors_rules):
+                cors_rules[index] = change_keys(item, converter=decamelize)
+
+        if lifecycle_rules:
+            for index, item in enumerate(lifecycle_rules):
+                lifecycle_rules[index] = change_keys(item, converter=decamelize)
 
 
 @B2Provider.register_subcommand
@@ -249,7 +281,7 @@ class BucketFile(Command):
             'fileName': file_name,
             'showVersions': show_versions,
             'fileVersions': [
-                change_keys(file_version_info.as_dict(), converter=mixed_case_to_underscores)
+                change_keys(file_version_info.as_dict(), converter=decamelize)
                 for file_version_info, _ in generator
                 if file_version_info.file_name == file_name
             ],
@@ -271,7 +303,7 @@ class BucketFiles(Command):
             'showVersions': show_versions,
             'recursive': recursive,
             'fileVersions': [
-                change_keys(file_version_info.as_dict(), converter=mixed_case_to_underscores)
+                change_keys(file_version_info.as_dict(), converter=decamelize)
                 for file_version_info, _ in generator
             ],
         }

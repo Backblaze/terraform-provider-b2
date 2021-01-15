@@ -48,16 +48,6 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"content_md5": {
-				Description: "MD5 sum of the content.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"content_sha1": {
-				Description: "SHA1 hash of the content.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
 			"content_type": {
 				Description: "Content type. If not set, it will be set based on the file extension.",
 				Type:        schema.TypeString,
@@ -70,11 +60,6 @@ func resourceB2BucketFileVersion() *schema.Resource {
 					return false
 				},
 			},
-			"file_id": {
-				Description: "The file ID.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
 			"file_info": {
 				Description: "Additional file info.",
 				Type:        schema.TypeMap,
@@ -83,6 +68,25 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				},
 				Optional: true,
 				ForceNew: true,
+			},
+			"action": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"content_md5": {
+				Description: "MD5 sum of the content.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"content_sha1": {
+				Description: "SHA1 hash of the content.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"file_id": {
+				Description: "The file ID.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"size": {
 				Description: "File size.",

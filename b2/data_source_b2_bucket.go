@@ -56,19 +56,15 @@ func dataSourceB2Bucket() *schema.Resource {
 			},
 			"cors_rules": {
 				Description: "CORS rules.",
-				Type:        schema.TypeSet,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Computed: true,
+				Type:        schema.TypeList,
+				Elem:        getDataSourceCoreRulesElem(),
+				Computed:    true,
 			},
 			"lifecycle_rules": {
 				Description: "Lifecycle rules.",
-				Type:        schema.TypeSet,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Computed: true,
+				Type:        schema.TypeList,
+				Elem:        getDataSourceLifecycleRulesElem(),
+				Computed:    true,
 			},
 			"options": {
 				Description: "List of bucket options.",

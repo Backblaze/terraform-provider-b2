@@ -45,7 +45,7 @@ func dataSourceB2BucketFile() *schema.Resource {
 			"file_versions": {
 				Description: "File versions.",
 				Type:        schema.TypeList,
-				Elem:        getFileVersionsElem(),
+				Elem:        getDataSourceFileVersionsElem(),
 				Computed:    true,
 			},
 		},
