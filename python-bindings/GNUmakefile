@@ -1,5 +1,3 @@
-SRC=$(shell find b2_terraform -name "*.py")
-BINARY=dist/py-terraform-provider-b2
 SPEC=py-terraform-provider-b2.spec
 
 default: build

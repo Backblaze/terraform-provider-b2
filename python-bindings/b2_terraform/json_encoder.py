@@ -1,6 +1,6 @@
 ######################################################################
 #
-# File: python-bindings/tf_provider_b2/json_encoder.py
+# File: python-bindings/b2_terraform/json_encoder.py
 #
 # Copyright 2021 Backblaze Inc. All Rights Reserved.
 #

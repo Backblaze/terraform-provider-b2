@@ -1,6 +1,6 @@
 ######################################################################
 #
-# File: python-bindings/tf_provider_b2/api.py
+# File: python-bindings/b2_terraform/api.py
 #
 # Copyright 2021 Backblaze Inc. All Rights Reserved.
 #
@@ -29,7 +29,7 @@ class B2ApiWrapper(B2Api):
         raise NonExistentBucket(bucket_id)
 
     def list_buckets(self, bucket_name=None, bucket_id=None):
-        # INFO: added bucket_id argument. Remove it when SDK support it.
+        # INFO: added bucket_id argument. Remove it when SDK supports it.
 
         # Give a useful warning if the current application key does not
         # allow access to the named bucket.

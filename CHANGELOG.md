@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Implementation of PoC
+* Added `b2_bucket` data source
+* Added `b2_bucket_file` data source
+* Added `b2_bucket_files` data source
+* Added `b2_application_key` resource
+* Added `b2_bucket` resource
+* Added `b2_bucket_file_version` resource
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/deadbeef...HEAD
+### Changed
+* Extended `b2` provider
+* Extended `b2_application_key` data source
+* Improved python bindings
+
+## [0.1.0] - 2020-11-30
+
+### Added
+* Implementation of PoC (simple `b2_application_key` data source)
+
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Backblaze/terraform-provider-b2/compare/240851d...v0.1.0
