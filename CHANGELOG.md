@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2021-01-22
+
 ### Added
 * Added `b2_bucket` data source
 * Added `b2_bucket_file` data source
@@ -24,5 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Backblaze/terraform-provider-b2/compare/240851d...v0.1.0
