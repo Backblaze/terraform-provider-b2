@@ -74,6 +74,6 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist
+          args: release --rm-dist -p 1
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
