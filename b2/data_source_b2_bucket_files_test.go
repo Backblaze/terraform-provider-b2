@@ -179,7 +179,7 @@ func TestAccDataSourceB2BucketFiles_multipleFilesWithVersions(t *testing.T) {
 	})
 }
 
-func testAccDataSourceB2BucketFilesConfig_noFiles(bucketName string,  tempFile string) string {
+func testAccDataSourceB2BucketFilesConfig_noFiles(bucketName string, tempFile string) string {
 	return fmt.Sprintf(`
 resource "b2_bucket" "test" {
   bucket_name = "%s"

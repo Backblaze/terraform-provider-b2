@@ -35,21 +35,21 @@ func New(version string, exec string) func() *schema.Provider {
 		p := &schema.Provider{
 			Schema: map[string]*schema.Schema{
 				"application_key_id": {
-					Description: "B2 Application Key ID",
+					Description: "B2 Application Key ID (B2_APPLICATION_KEY_ID env)",
 					Type:        schema.TypeString,
 					Optional:    true,
 					Sensitive:   true,
 					DefaultFunc: schema.EnvDefaultFunc("B2_APPLICATION_KEY_ID", nil),
 				},
 				"application_key": {
-					Description: "B2 Application Key",
+					Description: "B2 Application Key (B2_APPLICATION_KEY env)",
 					Type:        schema.TypeString,
 					Optional:    true,
 					Sensitive:   true,
 					DefaultFunc: schema.EnvDefaultFunc("B2_APPLICATION_KEY", nil),
 				},
 				"endpoint": {
-					Description: "B2 endpoint (production or custom URL)",
+					Description: "B2 endpoint - production or custom URL (B2_ENDPOINT env)",
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("B2_ENDPOINT", "production"),

@@ -1,0 +1,16 @@
+---
+page_title: "B2 Provider"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+# B2 Provider
+
+Terraform provider for [Backblaze B2](https://www.backblaze.com/b2/).
+
+The provider is written in go, but it uses official [B2 python SDK](https://github.com/Backblaze/b2-sdk-python) embedded into the binary.
+
+## Example Usage
+{{tffile "examples/provider/provider.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}
