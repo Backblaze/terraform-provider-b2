@@ -29,9 +29,31 @@ B2 bucket data source.
 - **bucket_id** (String) The ID of the bucket.
 - **bucket_info** (Map of String) The bucket info.
 - **bucket_type** (String) The bucket type.
-- **cors_rules** (Set of String) CORS rules.
-- **lifecycle_rules** (Set of String) Lifecycle rules.
+- **cors_rules** (List of Object) CORS rules. (see [below for nested schema](#nestedatt--cors_rules))
+- **lifecycle_rules** (List of Object) Lifecycle rules. (see [below for nested schema](#nestedatt--lifecycle_rules))
 - **options** (Set of String) List of bucket options.
 - **revision** (Number) Bucket revision.
+
+<a id="nestedatt--cors_rules"></a>
+### Nested Schema for `cors_rules`
+
+Read-only:
+
+- **allowed_headers** (List of String)
+- **allowed_operations** (List of String)
+- **allowed_origins** (List of String)
+- **cors_rule_name** (String)
+- **expose_headers** (List of String)
+- **max_age_seconds** (Number)
+
+
+<a id="nestedatt--lifecycle_rules"></a>
+### Nested Schema for `lifecycle_rules`
+
+Read-only:
+
+- **days_from_hiding_to_deleting** (Number)
+- **days_from_uploading_to_hiding** (Number)
+- **file_name_prefix** (String)
 
 

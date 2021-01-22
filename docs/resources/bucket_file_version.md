@@ -29,6 +29,7 @@ B2 bucket file version resource.
 
 ### Read-only
 
+- **action** (String)
 - **content_md5** (String) MD5 sum of the content.
 - **content_sha1** (String) SHA1 hash of the content.
 - **file_id** (String) The file ID.
