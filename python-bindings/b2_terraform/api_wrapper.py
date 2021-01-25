@@ -1,6 +1,6 @@
 ######################################################################
 #
-# File: python-bindings/b2_terraform/api.py
+# File: python-bindings/b2_terraform/api_wrapper.py
 #
 # Copyright 2021 Backblaze Inc. All Rights Reserved.
 #

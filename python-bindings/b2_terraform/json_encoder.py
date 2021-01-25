@@ -14,13 +14,9 @@ import json
 class B2ProviderJsonEncoder(json.JSONEncoder):
     """
     Makes it possible to serialize sets to json.
-
-    >>> json.dumps(set([1,2,3,'a','b','c']), cls=json_encoder.B2CliJsonEncoder)
-    '[1, 2, 3, "c", "b", "a"]'
-    >>>
     """
 
     def default(self, obj):
         if isinstance(obj, set):
             return list(obj)
-        return super(B2CliJsonEncoder, self).default(obj)
+        return super(B2ProviderJsonEncoder, self).default(obj)

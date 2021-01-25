@@ -3,5 +3,6 @@ phx-class-registry==3.0.5
 pyhumps==1.6.1
 
 # Dev dependencies
-pyinstaller
-black
+black~=20.8b1
+flake8~=3.8.4
+pyinstaller~=4.1

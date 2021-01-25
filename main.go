@@ -56,13 +56,27 @@ func extractPybindings(sourcePath string) (string, error) {
 			if err != io.EOF {
 				return destinationPath, err
 			}
-			destinationFile.Seek(0, 0)
+
+			_, err = destinationFile.Seek(0, 0)
+			if err != nil {
+				return destinationPath, err
+			}
+
 			break
 		}
-		destinationFile.Write(buf)
+
+		_, err = destinationFile.Write(buf)
+		if err != nil {
+			return destinationPath, err
+		}
 	}
+
 	destinationFile.Close()
-	os.Chmod(destinationPath, 0770)
+
+	err = os.Chmod(destinationPath, 0770)
+	if err != nil {
+		return destinationPath, err
+	}
 
 	log.Printf("[TRACE] Extracted pybindings: %s\n", destinationPath)
 	return destinationPath, nil

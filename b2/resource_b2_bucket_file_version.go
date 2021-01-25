@@ -54,10 +54,7 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					if new == "" {
-						return true // The API sets default value
-					}
-					return false
+					return new == "" // The API sets default value
 				},
 			},
 			"file_info": {

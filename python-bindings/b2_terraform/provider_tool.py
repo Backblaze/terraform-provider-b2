@@ -1,6 +1,6 @@
 ######################################################################
 #
-# File: python-bindings/b2_terraform/__main__.py
+# File: python-bindings/b2_terraform/provider_tool.py
 #
 # Copyright 2021 Backblaze Inc. All Rights Reserved.
 #

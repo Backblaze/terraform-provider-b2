@@ -7,40 +7,52 @@ OS_ARCH=${GOOS}_${GOARCH}
 
 default: build
 
-.PHONY: _pybindings deps format testacc clean build install docs
+.PHONY: _pybindings deps deps-check format lint testacc clean build install docs
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
-	$(MAKE) -C python-bindings $(MAKECMDGOALS)
+	@$(MAKE) -C python-bindings $(MAKECMDGOALS)
 else
 	$(info Skipping python bindings (NOPYBINDINGS is defined))
 endif
 
-
 deps: _pybindings
-	go mod download
-	go get github.com/markbates/pkger/cmd/pkger
+	@go mod download
+	@go get github.com/markbates/pkger/cmd/pkger
+	@cd tools && go mod download
+	@cd tools && go get github.com/golangci/golangci-lint/cmd/golangci-lint
+	@cd tools && go get github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+
+deps-check:
+	@go mod tidy
+	@git diff --exit-code -- go.mod go.sum || \
+		(echo; echo "Unexpected difference in go.mod/go.sum files. Run 'go mod tidy' command or revert any go.mod/go.sum changes and commit."; exit 1)
 
 format: _pybindings
-	go fmt ./...
-	terraform fmt -recursive ./examples/
+	@go fmt ./...
+	@terraform fmt -recursive ./examples/
+
+lint: _pybindings
+	@python scripts/check-gofmt.py '**/*.go' pkged.go
+	@golangci-lint run ./...
+	@python scripts/check-headers.py '**/*.go' pkged.go
 
 testacc: _pybindings
-	chmod +rx python-bindings/dist/py-terraform-provider-b2
+	@chmod +rx python-bindings/dist/py-terraform-provider-b2
 	TF_ACC=1 go test ./${NAME} -v -count 1 -parallel 4 -timeout 120m $(TESTARGS)
 
 clean: _pybindings
-	rm -rf pkged.go ${BINARY}
+	@rm -rf pkged.go ${BINARY}
 
 build: _pybindings
-	pkger -include /python-bindings/dist/py-terraform-provider-b2
+	@pkger -include /python-bindings/dist/py-terraform-provider-b2
 	go build -tags netgo -o ${BINARY}
 
 install: build
-	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+	@mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
 docs:
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	@tfplugindocs
 
 all: deps testacc build

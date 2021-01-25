@@ -13,7 +13,33 @@ env:
   GO_DEFAULT_VERSION: 1.15
 
 jobs:
+  lint:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+      - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
+        uses: actions/setup-go@v2.1.3
+        with:
+          go-version: ${{ env.GO_DEFAULT_VERSION }}
+      - name: Install dependencies
+        run: |
+          make deps
+      - name: Run dependency checker
+        run: |
+          make deps-check
+      - name: Run linters
+        run: |
+          make lint
+      - name: Validate changelog
+        uses: zattoo/changelog@v1
+        with:
+          token: ${{ github.token }}
   build:
+    needs: lint
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
