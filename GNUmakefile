@@ -7,7 +7,7 @@ OS_ARCH=${GOOS}_${GOARCH}
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint testacc clean build install docs
+.PHONY: _pybindings deps deps-check format lint testacc clean build install docs docs-lint
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -54,5 +54,8 @@ install: build
 
 docs:
 	@tfplugindocs
+
+docs-lint:
+	@tfplugindocs validate
 
 all: deps testacc build

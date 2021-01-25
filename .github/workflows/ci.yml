@@ -34,6 +34,9 @@ jobs:
       - name: Run linters
         run: |
           make lint
+      - name: Run docs linters
+        run: |
+          make docs-lint
       - name: Validate changelog
         uses: zattoo/changelog@v1
         with:
