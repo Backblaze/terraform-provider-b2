@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,7 +32,7 @@ const (
 
 type Client struct {
 	Exec             string
-	Version          string
+	UserAgentAppend  string
 	ApplicationKeyId string
 	ApplicationKey   string
 	Endpoint         string
@@ -44,6 +45,8 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 	log.Printf("[TRACE] Input for pybindings: %+v\n", input)
 
 	cmd := exec.Command(c.Exec, name, op)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("B2_USER_AGENT_APPEND_ENV_VAR=%s", c.UserAgentAppend))
 
 	input["provider_application_key_id"] = c.ApplicationKeyId
 	input["provider_application_key"] = c.ApplicationKey

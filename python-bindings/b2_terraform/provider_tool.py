@@ -72,6 +72,7 @@ class Command:
         handler = getattr(self, args.OP)
         result = handler(**json.loads(data_in))
         result['_sha1'] = hashlib.sha1(data_in.encode()).hexdigest()
+        result['_ua'] = self.api.user_agent
         data_out = json.dumps(
             change_keys(result, converter=decamelize),
             cls=B2ProviderJsonEncoder,

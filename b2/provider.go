@@ -13,6 +13,7 @@ package b2
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -90,15 +91,18 @@ func configure(version string, exec string, p *schema.Provider) func(context.Con
 			}
 		}
 
+		userAgent := p.UserAgent("Terraform-B2-Provider", version)
 		client := &Client{
 			Exec:             exec,
-			Version:          version,
+			UserAgentAppend:  userAgent,
 			ApplicationKeyId: d.Get("application_key_id").(string),
 			ApplicationKey:   d.Get("application_key").(string),
 			Endpoint:         d.Get("endpoint").(string),
 			DataSources:      dataSources,
 			Resources:        resources,
 		}
+
+		log.Printf("[DEBUG] User Agent append: %s\n", userAgent)
 
 		return client, nil
 	}
