@@ -17,7 +17,7 @@ from b2sdk.v1.exception import NonExistentBucket
 class B2ApiWrapper(B2Api):
     def __init__(self):
         account_info = InMemoryAccountInfo()
-        raw_api = B2RawApi(B2Http(user_agent_append=os.environ.get('B2_USER_AGENT_APPEND_ENV_VAR')))
+        raw_api = B2RawApi(B2Http(user_agent_append=os.environ.get('B2_USER_AGENT_APPEND')))
 
         super().__init__(account_info=account_info, raw_api=raw_api)
 

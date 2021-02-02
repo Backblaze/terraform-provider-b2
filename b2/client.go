@@ -46,7 +46,7 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 
 	cmd := exec.Command(c.Exec, name, op)
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, fmt.Sprintf("B2_USER_AGENT_APPEND_ENV_VAR=%s", c.UserAgentAppend))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("B2_USER_AGENT_APPEND=%s", c.UserAgentAppend))
 
 	input["provider_application_key_id"] = c.ApplicationKeyId
 	input["provider_application_key"] = c.ApplicationKey
