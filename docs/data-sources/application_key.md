@@ -6,7 +6,7 @@ description: |-
   B2 application key data source.
 ---
 
-# Data Source `b2_application_key`
+# b2_application_key (Data Source)
 
 B2 application key data source.
 
@@ -24,7 +24,7 @@ B2 application key data source.
 - **id** (String) The ID of this resource.
 - **name_prefix** (String) A prefix to restrict access to files
 
-### Read-only
+### Read-Only
 
 - **application_key_id** (String) The ID of the key.
 - **bucket_id** (String) The ID of the bucket.

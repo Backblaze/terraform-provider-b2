@@ -216,13 +216,13 @@ class Bucket(Command):
 
         if lifecycle_rules:
             for index, item in enumerate(lifecycle_rules):
-                lifecycle_rules[index] = change_keys(item, converter=camelize)
-                days_from_hiding_to_deleting = item.get('daysFromHidingToDeleting')
+                days_from_hiding_to_deleting = item.get('days_from_hiding_to_deleting')
                 if days_from_hiding_to_deleting == 0:
-                    item['daysFromHidingToDeleting'] = None
-                days_from_uploading_to_hiding = item.get('daysFromUploadingToHiding')
+                    item['days_from_hiding_to_deleting'] = None
+                days_from_uploading_to_hiding = item.get('days_from_uploading_to_hiding')
                 if days_from_uploading_to_hiding == 0:
-                    item['daysFromUploadingToHiding'] = None
+                    item['days_from_uploading_to_hiding'] = None
+                lifecycle_rules[index] = change_keys(item, converter=camelize)
 
     def _postprocess(self, cors_rules, lifecycle_rules):
         if cors_rules:

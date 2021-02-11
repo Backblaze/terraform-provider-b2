@@ -37,14 +37,17 @@ func TestProvider(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	_, present := os.LookupEnv("B2_APPLICATION_KEY_ID")
+	_, present := os.LookupEnv("B2_TEST_APPLICATION_KEY_ID")
 	if !present {
-		t.Fatal("B2_APPLICATION_KEY_ID is not set")
+		t.Fatal("B2_TEST_APPLICATION_KEY_ID is not set")
 	}
-	_, present = os.LookupEnv("B2_APPLICATION_KEY")
+	_ = os.Setenv("B2_APPLICATION_KEY_ID", os.Getenv("B2_TEST_APPLICATION_KEY_ID"))
+
+	_, present = os.LookupEnv("B2_TEST_APPLICATION_KEY")
 	if !present {
-		t.Fatal("B2_APPLICATION_KEY is not set")
+		t.Fatal("B2_TEST_APPLICATION_KEY is not set")
 	}
+	_ = os.Setenv("B2_APPLICATION_KEY", os.Getenv("B2_TEST_APPLICATION_KEY"))
 }
 
 // Utility functions

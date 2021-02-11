@@ -6,7 +6,7 @@ description: |-
   B2 bucket resource.
 ---
 
-# Resource `b2_bucket`
+# b2_bucket (Resource)
 
 B2 bucket resource.
 
@@ -27,7 +27,7 @@ B2 bucket resource.
 - **id** (String) The ID of this resource.
 - **lifecycle_rules** (Block List) Lifecycle rules. (see [below for nested schema](#nestedblock--lifecycle_rules))
 
-### Read-only
+### Read-Only
 
 - **account_id** (String) Account ID that the bucket belongs to.
 - **bucket_id** (String) The ID of the bucket.

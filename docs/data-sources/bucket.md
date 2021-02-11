@@ -6,7 +6,7 @@ description: |-
   B2 bucket data source.
 ---
 
-# Data Source `b2_bucket`
+# b2_bucket (Data Source)
 
 B2 bucket data source.
 
@@ -23,7 +23,7 @@ B2 bucket data source.
 
 - **id** (String) The ID of this resource.
 
-### Read-only
+### Read-Only
 
 - **account_id** (String) Account ID that the bucket belongs to.
 - **bucket_id** (String) The ID of the bucket.
@@ -37,7 +37,7 @@ B2 bucket data source.
 <a id="nestedatt--cors_rules"></a>
 ### Nested Schema for `cors_rules`
 
-Read-only:
+Read-Only:
 
 - **allowed_headers** (List of String)
 - **allowed_operations** (List of String)
@@ -50,7 +50,7 @@ Read-only:
 <a id="nestedatt--lifecycle_rules"></a>
 ### Nested Schema for `lifecycle_rules`
 
-Read-only:
+Read-Only:
 
 - **days_from_hiding_to_deleting** (Number)
 - **days_from_uploading_to_hiding** (Number)

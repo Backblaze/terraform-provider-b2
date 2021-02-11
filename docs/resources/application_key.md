@@ -6,7 +6,7 @@ description: |-
   B2 application key resource.
 ---
 
-# Resource `b2_application_key`
+# b2_application_key (Resource)
 
 B2 application key resource.
 
@@ -26,7 +26,7 @@ B2 application key resource.
 - **id** (String) The ID of this resource.
 - **name_prefix** (String) A prefix to restrict access to files
 
-### Read-only
+### Read-Only
 
 - **application_key** (String, Sensitive) The key.
 - **application_key_id** (String) The ID of the key.

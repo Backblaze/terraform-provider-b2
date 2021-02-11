@@ -6,7 +6,7 @@ description: |-
   B2 bucket file data source.
 ---
 
-# Data Source `b2_bucket_file`
+# b2_bucket_file (Data Source)
 
 B2 bucket file data source.
 
@@ -25,14 +25,14 @@ B2 bucket file data source.
 - **id** (String) The ID of this resource.
 - **show_versions** (Boolean) Show all file versions.
 
-### Read-only
+### Read-Only
 
 - **file_versions** (List of Object) File versions. (see [below for nested schema](#nestedatt--file_versions))
 
 <a id="nestedatt--file_versions"></a>
 ### Nested Schema for `file_versions`
 
-Read-only:
+Read-Only:
 
 - **action** (String)
 - **content_md5** (String)

@@ -19,13 +19,16 @@ endif
 deps: _pybindings
 	@go mod download
 	@go get github.com/markbates/pkger/cmd/pkger
+	@go mod tidy
 	@cd tools && go mod download
 	@cd tools && go get github.com/golangci/golangci-lint/cmd/golangci-lint
 	@cd tools && go get github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	@cd tools && go mod tidy
 
 deps-check:
 	@go mod tidy
-	@git diff --exit-code -- go.mod go.sum || \
+	@cd tools && go mod tidy
+	@git diff --exit-code -- go.mod go.sum tools/go.mod tools/go.sum || \
 		(echo; echo "Unexpected difference in go.mod/go.sum files. Run 'go mod tidy' command or revert any go.mod/go.sum changes and commit."; exit 1)
 
 format: _pybindings

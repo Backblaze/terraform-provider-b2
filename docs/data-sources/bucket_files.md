@@ -6,7 +6,7 @@ description: |-
   B2 bucket files data source.
 ---
 
-# Data Source `b2_bucket_files`
+# b2_bucket_files (Data Source)
 
 B2 bucket files data source.
 
@@ -26,14 +26,14 @@ B2 bucket files data source.
 - **recursive** (Boolean) Recursive mode.
 - **show_versions** (Boolean) Show all file versions.
 
-### Read-only
+### Read-Only
 
 - **file_versions** (List of Object) File versions in the folder. (see [below for nested schema](#nestedatt--file_versions))
 
 <a id="nestedatt--file_versions"></a>
 ### Nested Schema for `file_versions`
 
-Read-only:
+Read-Only:
 
 - **action** (String)
 - **content_md5** (String)

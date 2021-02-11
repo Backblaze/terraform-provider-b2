@@ -6,7 +6,7 @@ description: |-
   B2 bucket file version resource.
 ---
 
-# Resource `b2_bucket_file_version`
+# b2_bucket_file_version (Resource)
 
 B2 bucket file version resource.
 
@@ -27,7 +27,7 @@ B2 bucket file version resource.
 - **file_info** (Map of String) Additional file info.
 - **id** (String) The ID of this resource.
 
-### Read-only
+### Read-Only
 
 - **action** (String)
 - **content_md5** (String) MD5 sum of the content.
