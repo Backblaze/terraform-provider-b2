@@ -8,8 +8,8 @@
   - Add proper link to the new release (at the bottom of the file). Use GitHub [compare feature](https://docs.github.com/en/free-pro-team@latest/github/committing-changes-to-your-project/comparing-commits#comparing-tags) between two tags.
   - Update "Unreleased" link (at the bottom of the file).
 - Run tests:
-  - `export B2_APPLICATION_KEY=your_app_key`
-  - `export B2_APPLICATION_KEY_ID=your_app_key_id`
+  - `export B2_TEST_APPLICATION_KEY=your_app_key`
+  - `export B2_TEST_APPLICATION_KEY_ID=your_app_key_id`
   - `make testacc`
 - Update docs:
   - `make docs`

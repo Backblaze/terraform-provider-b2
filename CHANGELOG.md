@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2021-02-11
+
+### Changed
+* Upgrade b2sdk version
+
+### Fixed
+* Append Terraform versions to the User-Agent
+* Fix the defaults for lifecycle rules #4
+
 ## [0.2.0] - 2021-01-22
 
 ### Added
@@ -26,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Backblaze/terraform-provider-b2/compare/240851d...v0.1.0

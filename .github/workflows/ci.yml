@@ -76,8 +76,8 @@ jobs:
   test:
     needs: build
     env:
-      B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
-      B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
       NOPYBINDINGS: 1  # do not build python buildings
     runs-on: ${{ matrix.os }}
     strategy:
@@ -88,8 +88,8 @@ jobs:
           - macos-10.15
         terraform:
           - 0.13.6
-          - 0.14.4
-          - 0.15.0-alpha20210107
+          - 0.14.6
+          - 0.15.0-alpha20210210
     steps:
       - uses: actions/checkout@v2
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
