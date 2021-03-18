@@ -36,6 +36,7 @@ func TestAccDataSourceB2AccountInfo_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),
 					resource.TestMatchResourceAttr(dataSourceName, "download_url", regexp.MustCompile("https://f00[0-9].backblazeb2.com")),
+					resource.TestMatchResourceAttr(dataSourceName, "s3_api_url", regexp.MustCompile("https://s3.(us-west|eu-central)-00[0-9].backblazeb2.com")),
 				),
 			},
 		},

@@ -51,6 +51,11 @@ func dataSourceB2AccountInfo() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"s3_api_url": {
+				Description: "The base URL to use for S3-compatible API calls.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }

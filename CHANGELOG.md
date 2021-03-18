@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Show S3-compatible API URL in `b2_account_info` data source
+
 ### Fixed
 * Upgrade b2sdk version - fix for server response change regarding SSE
 
