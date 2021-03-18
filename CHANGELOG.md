@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * Better handling sensitive data in Terraform logs
+* Upgrade b2sdk version `>=1.4.0,<2.0.0`
 
 ## [0.2.1] - 2021-02-11
 

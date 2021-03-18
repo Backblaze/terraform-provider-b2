@@ -35,31 +35,3 @@ class B2ApiWrapper(B2Api):
 
         # There is no such bucket.
         raise NonExistentBucket(bucket_id)
-
-    def list_buckets(self, bucket_name=None, bucket_id=None):
-        # INFO: added bucket_id argument.
-        # TODO: Remove it when SDK supports it.
-
-        # Give a useful warning if the current application key does not
-        # allow access to the named bucket.
-        self.check_bucket_restrictions(bucket_name)
-
-        account_id = self.account_info.get_account_id()
-        self.check_bucket_restrictions(bucket_name)
-
-        response = self.session.list_buckets(
-            account_id, bucket_name=bucket_name, bucket_id=bucket_id
-        )
-        buckets = self.BUCKET_FACTORY_CLASS.from_api_response(self, response)
-
-        if bucket_name is not None:
-            # If a bucket_name is specified we don't clear the cache because the other buckets could still
-            # be valid. So we save the one bucket returned from the list_buckets call.
-            for bucket in buckets:
-                self.cache.save_bucket(bucket)
-        else:
-            # Otherwise we want to clear the cache and save the buckets returned from list_buckets
-            # since we just got a new list of all the buckets for this account.
-            self.cache.set_bucket_name_cache(buckets)
-
-        return buckets
