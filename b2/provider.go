@@ -78,28 +78,40 @@ func New(version string, exec string) func() *schema.Provider {
 func configure(version string, exec string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		dataSources := map[string][]string{}
+		sensitiveDataSources := map[string]map[string]bool{}
 		for k, v := range p.DataSourcesMap {
-			for kk := range v.Schema {
+			sensitiveDataSources[k] = make(map[string]bool)
+			for kk, vv := range v.Schema {
 				dataSources[k] = append(dataSources[k], kk)
+				if vv.Sensitive {
+					sensitiveDataSources[k][kk] = true
+				}
 			}
 		}
 
 		resources := map[string][]string{}
+		sensitiveResources := map[string]map[string]bool{}
 		for k, v := range p.ResourcesMap {
-			for kk := range v.Schema {
+			sensitiveResources[k] = make(map[string]bool)
+			for kk, vv := range v.Schema {
 				resources[k] = append(resources[k], kk)
+				if vv.Sensitive {
+					sensitiveResources[k][kk] = true
+				}
 			}
 		}
 
 		userAgent := p.UserAgent("Terraform-B2-Provider", version)
 		client := &Client{
-			Exec:             exec,
-			UserAgentAppend:  userAgent,
-			ApplicationKeyId: d.Get("application_key_id").(string),
-			ApplicationKey:   d.Get("application_key").(string),
-			Endpoint:         d.Get("endpoint").(string),
-			DataSources:      dataSources,
-			Resources:        resources,
+			Exec:                 exec,
+			UserAgentAppend:      userAgent,
+			ApplicationKeyId:     d.Get("application_key_id").(string),
+			ApplicationKey:       d.Get("application_key").(string),
+			Endpoint:             d.Get("endpoint").(string),
+			DataSources:          dataSources,
+			Resources:            resources,
+			SensitiveDataSources: sensitiveDataSources,
+			SensitiveResources:   sensitiveResources,
 		}
 
 		log.Printf("[DEBUG] User Agent append: %s\n", userAgent)

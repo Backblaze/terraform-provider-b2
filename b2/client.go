@@ -31,13 +31,15 @@ const (
 )
 
 type Client struct {
-	Exec             string
-	UserAgentAppend  string
-	ApplicationKeyId string
-	ApplicationKey   string
-	Endpoint         string
-	DataSources      map[string][]string
-	Resources        map[string][]string
+	Exec                 string
+	UserAgentAppend      string
+	ApplicationKeyId     string
+	ApplicationKey       string
+	Endpoint             string
+	DataSources          map[string][]string
+	Resources            map[string][]string
+	SensitiveDataSources map[string]map[string]bool
+	SensitiveResources   map[string]map[string]bool
 }
 
 func (c Client) apply(name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
@@ -79,28 +81,38 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 		return nil, err
 	}
 
+	resourceName := "b2_" + name
+	var sensitiveSchemaMap map[string]bool
+	if op == DATA_SOURCE_READ {
+		sensitiveSchemaMap = c.SensitiveDataSources[resourceName]
+	} else {
+		sensitiveSchemaMap = c.SensitiveResources[resourceName]
+	}
+
 	// Do not log application_key
 	safeOutput := map[string]interface{}{}
 	for k, v := range output {
-		if k != "application_key" {
+		if sensitiveSchemaMap[k] {
+			safeOutput[k] = "***"
+		} else {
 			safeOutput[k] = v
 		}
 	}
-	log.Printf("[TRACE] Output from pybindings (without application key): %+v\n", safeOutput)
+	log.Printf("[TRACE] Safe output from pybindings: %+v\n", safeOutput)
 
 	return output, nil
 }
 
 func (c Client) populate(name string, op string, output map[string]interface{}, d *schema.ResourceData) error {
 	resourceName := "b2_" + name
-	var schemaKeys []string
+	var schemaList []string
 	if op == DATA_SOURCE_READ {
-		schemaKeys = c.DataSources[resourceName]
+		schemaList = c.DataSources[resourceName]
 	} else {
-		schemaKeys = c.Resources[resourceName]
+		schemaList = c.Resources[resourceName]
 	}
 
-	for _, k := range schemaKeys {
+	for _, k := range schemaList {
 		v, ok := output[k]
 		if !ok {
 			return fmt.Errorf("error getting %s", k)
