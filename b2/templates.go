@@ -61,7 +61,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 	}
 }
 
-func getDataSourceCoreRulesElem() *schema.Resource {
+func getDataSourceCorsRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"cors_rule_name": {
@@ -123,7 +123,36 @@ func getDataSourceLifecycleRulesElem() *schema.Resource {
 	}
 }
 
-func getResourceCoreRulesElem() *schema.Resource {
+func getDataSourceAllowedElem() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"bucket_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"bucket_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"capabilities": {
+				Type: schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
+			},
+			"name_prefix": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+		},
+	}
+}
+
+func getResourceCorsRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"cors_rule_name": {

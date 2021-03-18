@@ -22,7 +22,7 @@ from b2_terraform.json_encoder import B2ProviderJsonEncoder
 
 
 def change_keys(obj, converter):
-    return {converter(k): v for k, v in obj.items()}
+    return {converter(k).replace('__', '_'): v for k, v in obj.items()}
 
 
 class Command:
@@ -307,6 +307,19 @@ class BucketFiles(Command):
                 change_keys(file_version_info.as_dict(), converter=decamelize)
                 for file_version_info, _ in generator
             ],
+        }
+
+
+@B2Provider.register_subcommand
+class AccountInfo(Command):
+    def data_source_read(self, **kwargs):
+        account_info = self.api.account_info
+        return {
+            'accountId': account_info.get_account_id(),
+            'allowed': [change_keys(account_info.get_allowed(), converter=decamelize)],
+            'accountAuthToken': account_info.get_account_auth_token(),
+            'apiUrl': account_info.get_api_url(),
+            'downloadUrl': account_info.get_download_url(),
         }
 
 

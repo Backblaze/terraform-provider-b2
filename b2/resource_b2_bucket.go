@@ -52,7 +52,7 @@ func resourceB2Bucket() *schema.Resource {
 			"cors_rules": {
 				Description: "CORS rules.",
 				Type:        schema.TypeList,
-				Elem:        getResourceCoreRulesElem(),
+				Elem:        getResourceCorsRulesElem(),
 				Optional:    true,
 			},
 			"lifecycle_rules": {

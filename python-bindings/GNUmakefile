@@ -28,4 +28,6 @@ build:
 
 install: build
 
+docs: build
+
 all: deps build
