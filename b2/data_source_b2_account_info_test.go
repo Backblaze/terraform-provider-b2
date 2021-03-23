@@ -31,7 +31,7 @@ func TestAccDataSourceB2AccountInfo_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(dataSourceName, "account_auth_token", regexp.MustCompile("^[-=_a-zA-Z0-9]{77}$")),
 					resource.TestMatchResourceAttr(dataSourceName, "api_url", regexp.MustCompile("https://api00[0-9].backblazeb2.com")),
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.#", "1"),
-					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.capabilities.#", "12"),
+					resource.TestMatchResourceAttr(dataSourceName, "allowed.0.capabilities.#", regexp.MustCompile("[1-9][0-9]*")),
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_name", ""),
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),
