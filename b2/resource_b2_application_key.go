@@ -28,7 +28,7 @@ func resourceB2ApplicationKey() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"capabilities": {
-				Description: "A list of capabilities.",
+				Description: "A set of strings, each one naming a capability the key has.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -44,13 +44,13 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_id": {
-				Description: "The ID of the bucket.",
+				Description: "When present, restricts access to one bucket.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
 			},
 			"name_prefix": {
-				Description:  "A prefix to restrict access to files",
+				Description:  "When present, restricts access to files whose names start with the prefix.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
@@ -63,7 +63,7 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Sensitive:   true,
 			},
 			"application_key_id": {
-				Description: "The ID of the key.",
+				Description: "The ID of the newly created key.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},

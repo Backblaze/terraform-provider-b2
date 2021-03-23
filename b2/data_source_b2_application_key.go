@@ -37,12 +37,12 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Computed:    true,
 			},
 			"bucket_id": {
-				Description: "The ID of the bucket.",
+				Description: "When present, restricts access to one bucket.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"capabilities": {
-				Description: "A list of capabilities.",
+				Description: "A set of strings, each one naming a capability the key has.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -50,13 +50,13 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Computed: true,
 			},
 			"name_prefix": {
-				Description: "A prefix to restrict access to files",
+				Description: "When present, restricts access to files whose names start with the prefix.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 			},
 			"options": {
-				Description: "List of application key options.",
+				Description: "A list of application key options.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,

@@ -58,7 +58,7 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				},
 			},
 			"file_info": {
-				Description: "Additional file info.",
+				Description: "The custom information that is uploaded with the file.",
 				Type:        schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -67,8 +67,9 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				ForceNew: true,
 			},
 			"action": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "One of 'start', 'upload', 'hide', 'folder', or other values added in the future.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"content_md5": {
 				Description: "MD5 sum of the content.",
@@ -81,17 +82,17 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				Computed:    true,
 			},
 			"file_id": {
-				Description: "The file ID.",
+				Description: "The unique identifier for this version of this file.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"size": {
-				Description: "File size.",
+				Description: "The file size.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 			"upload_timestamp": {
-				Description: "Upload timestamp.",
+				Description: "This is a UTC time when this file was uploaded.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},

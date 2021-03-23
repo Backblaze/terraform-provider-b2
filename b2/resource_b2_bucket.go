@@ -36,13 +36,13 @@ func resourceB2Bucket() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_type": {
-				Description:  "The bucket type.",
+				Description:  "The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_info": {
-				Description: "The bucket info.",
+				Description: "User-defined information to be stored with the bucket.",
 				Type:        schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -50,13 +50,13 @@ func resourceB2Bucket() *schema.Resource {
 				Optional: true,
 			},
 			"cors_rules": {
-				Description: "CORS rules.",
+				Description: "The initial list of CORS rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getResourceCorsRulesElem(),
 				Optional:    true,
 			},
 			"lifecycle_rules": {
-				Description: "Lifecycle rules.",
+				Description: "The initial list of lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getResourceLifecycleRulesElem(),
 				Optional:    true,

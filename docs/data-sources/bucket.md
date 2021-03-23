@@ -27,10 +27,10 @@ B2 bucket data source.
 
 - **account_id** (String) Account ID that the bucket belongs to.
 - **bucket_id** (String) The ID of the bucket.
-- **bucket_info** (Map of String) The bucket info.
-- **bucket_type** (String) The bucket type.
-- **cors_rules** (List of Object) CORS rules. (see [below for nested schema](#nestedatt--cors_rules))
-- **lifecycle_rules** (List of Object) Lifecycle rules. (see [below for nested schema](#nestedatt--lifecycle_rules))
+- **bucket_info** (Map of String) User-defined information to be stored with the bucket.
+- **bucket_type** (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
+- **cors_rules** (List of Object) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedatt--cors_rules))
+- **lifecycle_rules** (List of Object) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedatt--lifecycle_rules))
 - **options** (Set of String) List of bucket options.
 - **revision** (Number) Bucket revision.
 

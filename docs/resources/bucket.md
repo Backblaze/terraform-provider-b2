@@ -18,14 +18,14 @@ B2 bucket resource.
 ### Required
 
 - **bucket_name** (String) The name of the bucket.
-- **bucket_type** (String) The bucket type.
+- **bucket_type** (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
 
 ### Optional
 
-- **bucket_info** (Map of String) The bucket info.
-- **cors_rules** (Block List) CORS rules. (see [below for nested schema](#nestedblock--cors_rules))
+- **bucket_info** (Map of String) User-defined information to be stored with the bucket.
+- **cors_rules** (Block List) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
 - **id** (String) The ID of this resource.
-- **lifecycle_rules** (Block List) Lifecycle rules. (see [below for nested schema](#nestedblock--lifecycle_rules))
+- **lifecycle_rules** (Block List) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedblock--lifecycle_rules))
 
 ### Read-Only
 
@@ -39,15 +39,15 @@ B2 bucket resource.
 
 Required:
 
-- **allowed_operations** (List of String)
-- **allowed_origins** (List of String)
-- **cors_rule_name** (String)
-- **max_age_seconds** (Number)
+- **allowed_operations** (List of String) A list specifying which operations the rule allows.
+- **allowed_origins** (List of String) A non-empty list specifying which origins the rule covers.
+- **cors_rule_name** (String) A name for humans to recognize the rule in a user interface.
+- **max_age_seconds** (Number) This specifies the maximum number of seconds that a browser may cache the response to a preflight request.
 
 Optional:
 
-- **allowed_headers** (List of String)
-- **expose_headers** (List of String)
+- **allowed_headers** (List of String) If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.
+- **expose_headers** (List of String) If present, this is a list of headers that may be exposed to an application inside the client.
 
 
 <a id="nestedblock--lifecycle_rules"></a>
@@ -55,11 +55,11 @@ Optional:
 
 Required:
 
-- **file_name_prefix** (String)
+- **file_name_prefix** (String) It specifies which files in the bucket it applies to.
 
 Optional:
 
-- **days_from_hiding_to_deleting** (Number)
-- **days_from_uploading_to_hiding** (Number)
+- **days_from_hiding_to_deleting** (Number) It says how long to keep file versions that are not the current version.
+- **days_from_uploading_to_hiding** (Number) It causes files to be hidden automatically after the given number of days.
 
 

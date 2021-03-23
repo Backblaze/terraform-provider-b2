@@ -42,7 +42,7 @@ func dataSourceB2Bucket() *schema.Resource {
 				Computed:    true,
 			},
 			"bucket_info": {
-				Description: "The bucket info.",
+				Description: "User-defined information to be stored with the bucket.",
 				Type:        schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -50,18 +50,18 @@ func dataSourceB2Bucket() *schema.Resource {
 				Computed: true,
 			},
 			"bucket_type": {
-				Description: "The bucket type.",
+				Description: "The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"cors_rules": {
-				Description: "CORS rules.",
+				Description: "The initial list of CORS rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getDataSourceCorsRulesElem(),
 				Computed:    true,
 			},
 			"lifecycle_rules": {
-				Description: "Lifecycle rules.",
+				Description: "The initial list of lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getDataSourceLifecycleRulesElem(),
 				Computed:    true,

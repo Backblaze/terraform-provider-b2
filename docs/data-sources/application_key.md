@@ -22,13 +22,13 @@ B2 application key data source.
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **name_prefix** (String) A prefix to restrict access to files
+- **name_prefix** (String) When present, restricts access to files whose names start with the prefix.
 
 ### Read-Only
 
 - **application_key_id** (String) The ID of the key.
-- **bucket_id** (String) The ID of the bucket.
-- **capabilities** (Set of String) A list of capabilities.
-- **options** (Set of String) List of application key options.
+- **bucket_id** (String) When present, restricts access to one bucket.
+- **capabilities** (Set of String) A set of strings, each one naming a capability the key has.
+- **options** (Set of String) A list of application key options.
 
 

@@ -19,43 +19,52 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"action": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "One of 'start', 'upload', 'hide', 'folder', or other values added in the future.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"content_md5": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "MD5 sum of the content.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"content_sha1": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "SHA1 hash of the content.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"content_type": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "Content type. If not set, it will be set based on the file extension.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"file_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The unique identifier for this version of this file.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"file_info": {
-				Type: schema.TypeMap,
+				Description: "The custom information that is uploaded with the file.",
+				Type:        schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Computed: true,
 			},
 			"file_name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The name of the B2 file.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"size": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "The file size.",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 			"upload_timestamp": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "This is a UTC time when this file was uploaded.",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 		},
 	}
@@ -65,36 +74,42 @@ func getDataSourceCorsRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"cors_rule_name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "A name for humans to recognize the rule in a user interface.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"allowed_origins": {
-				Type: schema.TypeList,
+				Description: "A non-empty list specifying which origins the rule covers. ",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Computed: true,
 			},
 			"allowed_operations": {
-				Type: schema.TypeList,
+				Description: "A list specifying which operations the rule allows.",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Computed: true,
 			},
 			"max_age_seconds": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "This specifies the maximum number of seconds that a browser may cache the response to a preflight request.",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 			"allowed_headers": {
-				Type: schema.TypeList,
+				Description: "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Computed: true,
 			},
 			"expose_headers": {
-				Type: schema.TypeList,
+				Description: "If present, this is a list of headers that may be exposed to an application inside the client.",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -108,16 +123,19 @@ func getDataSourceLifecycleRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"file_name_prefix": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "It specifies which files in the bucket it applies to.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"days_from_hiding_to_deleting": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "It says how long to keep file versions that are not the current version.",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 			"days_from_uploading_to_hiding": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Description: "It causes files to be hidden automatically after the given number of days.",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 		},
 	}
@@ -127,26 +145,30 @@ func getDataSourceAllowedElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"bucket_id": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "When present, restricts access to one bucket.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"bucket_name": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "When 'bucket_id' is set, and it is a valid bucket that has not been deleted, this field is set to the name of the bucket.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"capabilities": {
-				Type: schema.TypeSet,
+				Description: "A list of strings, each one naming a capability the key has.",
+				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Computed: true,
 			},
 			"name_prefix": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "When present, access is restricted to files whose names start with the prefix.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
@@ -156,37 +178,43 @@ func getResourceCorsRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"cors_rule_name": {
+				Description:  "A name for humans to recognize the rule in a user interface.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"allowed_origins": {
-				Type: schema.TypeList,
+				Description: "A non-empty list specifying which origins the rule covers. ",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Required: true,
 			},
 			"allowed_operations": {
-				Type: schema.TypeList,
+				Description: "A list specifying which operations the rule allows.",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Required: true,
 			},
 			"max_age_seconds": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Description: "This specifies the maximum number of seconds that a browser may cache the response to a preflight request.",
+				Type:        schema.TypeInt,
+				Required:    true,
 			},
 			"allowed_headers": {
-				Type: schema.TypeList,
+				Description: "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Optional: true,
 			},
 			"expose_headers": {
-				Type: schema.TypeList,
+				Description: "If present, this is a list of headers that may be exposed to an application inside the client.",
+				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -200,16 +228,19 @@ func getResourceLifecycleRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"file_name_prefix": {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "It specifies which files in the bucket it applies to.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"days_from_hiding_to_deleting": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Description: "It says how long to keep file versions that are not the current version.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 			"days_from_uploading_to_hiding": {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Description: "It causes files to be hidden automatically after the given number of days.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 		},
 	}

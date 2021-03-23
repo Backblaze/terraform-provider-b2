@@ -24,16 +24,16 @@ B2 bucket file version resource.
 ### Optional
 
 - **content_type** (String) Content type. If not set, it will be set based on the file extension.
-- **file_info** (Map of String) Additional file info.
+- **file_info** (Map of String) The custom information that is uploaded with the file.
 - **id** (String) The ID of this resource.
 
 ### Read-Only
 
-- **action** (String)
+- **action** (String) One of 'start', 'upload', 'hide', 'folder', or other values added in the future.
 - **content_md5** (String) MD5 sum of the content.
 - **content_sha1** (String) SHA1 hash of the content.
-- **file_id** (String) The file ID.
-- **size** (Number) File size.
-- **upload_timestamp** (Number) Upload timestamp.
+- **file_id** (String) The unique identifier for this version of this file.
+- **size** (Number) The file size.
+- **upload_timestamp** (Number) This is a UTC time when this file was uploaded.
 
 
