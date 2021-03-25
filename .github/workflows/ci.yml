@@ -76,8 +76,8 @@ jobs:
   test:
     needs: build
     env:
-      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
-      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
+      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_TEST_APPLICATION_KEY_ID }}
       NOPYBINDINGS: 1  # do not build python buildings
     runs-on: ${{ matrix.os }}
     strategy:
