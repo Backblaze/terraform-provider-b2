@@ -39,6 +39,7 @@ func TestAccDataSourceB2Bucket_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(dataSourceName, "bucket_type", "allPublic"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_type", resourceName, "bucket_type"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "cors_rules", resourceName, "cors_rules"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "default_server_side_encryption", resourceName, "default_server_side_encryption"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "lifecycle_rules", resourceName, "lifecycle_rules"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "options", resourceName, "options"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "revision", resourceName, "revision"),
@@ -83,6 +84,10 @@ func TestAccDataSourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttr(dataSourceName, "cors_rules.0.allowed_headers.0", "range"),
 					resource.TestCheckResourceAttr(dataSourceName, "cors_rules.0.max_age_seconds", "3600"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "cors_rules", resourceName, "cors_rules"),
+					resource.TestCheckResourceAttr(dataSourceName, "default_server_side_encryption.#", "1"),
+					resource.TestCheckResourceAttr(dataSourceName, "default_server_side_encryption.0.mode", "SSE-B2"),
+					resource.TestCheckResourceAttr(dataSourceName, "default_server_side_encryption.0.algorithm", "AES256"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "default_server_side_encryption", resourceName, "default_server_side_encryption"),
 					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.#", "1"),
 					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.file_name_prefix", ""),
 					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "2"),
@@ -133,6 +138,10 @@ resource "b2_bucket" "test" {
     expose_headers = ["x-bz-content-sha1"]
     allowed_headers = ["range"]
     max_age_seconds = 3600
+  }
+  default_server_side_encryption {
+    mode = "SSE-B2"
+    algorithm = "AES256"
   }
   lifecycle_rules {
     file_name_prefix = ""

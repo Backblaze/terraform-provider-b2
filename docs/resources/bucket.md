@@ -24,6 +24,7 @@ B2 bucket resource.
 
 - **bucket_info** (Map of String) User-defined information to be stored with the bucket.
 - **cors_rules** (Block List) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
+- **default_server_side_encryption** (Block List, Max: 1) The default server-side encryption settings for this bucket. (see [below for nested schema](#nestedblock--default_server_side_encryption))
 - **id** (String) The ID of this resource.
 - **lifecycle_rules** (Block List) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedblock--lifecycle_rules))
 
@@ -48,6 +49,15 @@ Optional:
 
 - **allowed_headers** (List of String) If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.
 - **expose_headers** (List of String) If present, this is a list of headers that may be exposed to an application inside the client.
+
+
+<a id="nestedblock--default_server_side_encryption"></a>
+### Nested Schema for `default_server_side_encryption`
+
+Optional:
+
+- **algorithm** (String) Server-side encryption algorithm.
+- **mode** (String) Server-side encryption mode. Defaults to `none`.
 
 
 <a id="nestedblock--lifecycle_rules"></a>

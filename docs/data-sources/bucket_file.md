@@ -41,7 +41,16 @@ Read-Only:
 - **file_id** (String)
 - **file_info** (Map of String)
 - **file_name** (String)
+- **server_side_encryption** (List of Object) (see [below for nested schema](#nestedobjatt--file_versions--server_side_encryption))
 - **size** (Number)
 - **upload_timestamp** (Number)
+
+<a id="nestedobjatt--file_versions--server_side_encryption"></a>
+### Nested Schema for `file_versions.server_side_encryption`
+
+Read-Only:
+
+- **algorithm** (String)
+- **mode** (String)
 
 

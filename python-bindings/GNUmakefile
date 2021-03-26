@@ -8,7 +8,7 @@ default: build
 .PHONY: deps format lint testacc clean build
 
 deps:
-	@pip install -r requirements.txt
+	@pip install -r requirements-dev.txt
 
 format:
 	@black -Sl 100 ${DIR}
@@ -30,4 +30,4 @@ install: build
 
 docs: build
 
-all: deps build
+all: deps lint build

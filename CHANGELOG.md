@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Added `b2_account_info` data source
+* Add support for SSE-B2 server-side encryption mode
 
 ### Changed
 * Better handling sensitive data in Terraform logs

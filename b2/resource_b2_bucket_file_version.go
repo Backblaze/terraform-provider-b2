@@ -66,6 +66,21 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"server_side_encryption": {
+				Description: "Server-side encryption settings.",
+				Type:        schema.TypeList,
+				Elem:        getResourceServerSideEncryption(),
+				Optional:    true,
+				ForceNew:    true,
+				MaxItems:    1,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// The API sets default value
+					if k == "server_side_encryption.#" {
+						return old == "1" && new == "0"
+					}
+					return old == "none" && new == ""
+				},
+			},
 			"action": {
 				Description: "One of 'start', 'upload', 'hide', 'folder', or other values added in the future.",
 				Type:        schema.TypeString,
@@ -106,11 +121,12 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 	const op = RESOURCE_CREATE
 
 	input := map[string]interface{}{
-		"bucket_id":    d.Get("bucket_id").(string),
-		"file_name":    d.Get("file_name").(string),
-		"source":       d.Get("source").(string),
-		"content_type": d.Get("content_type").(string),
-		"file_info":    d.Get("file_info").(map[string]interface{}),
+		"bucket_id":              d.Get("bucket_id").(string),
+		"file_name":              d.Get("file_name").(string),
+		"source":                 d.Get("source").(string),
+		"content_type":           d.Get("content_type").(string),
+		"file_info":              d.Get("file_info").(map[string]interface{}),
+		"server_side_encryption": d.Get("server_side_encryption").([]interface{}),
 	}
 
 	output, err := client.apply(name, op, input)

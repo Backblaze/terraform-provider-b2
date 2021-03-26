@@ -15,6 +15,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+func getDataSourceServerSideEncryption() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description: "Server-side encryption mode.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"algorithm": {
+				Description: "Server-side encryption algorithm.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+}
+
 func getDataSourceFileVersionsElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -59,6 +77,12 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 			"size": {
 				Description: "The file size.",
 				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"server_side_encryption": {
+				Description: "Server-side encryption settings.",
+				Type:        schema.TypeList,
+				Elem:        getDataSourceServerSideEncryption(),
 				Computed:    true,
 			},
 			"upload_timestamp": {
@@ -119,6 +143,24 @@ func getDataSourceCorsRulesElem() *schema.Resource {
 	}
 }
 
+func getDataSourceDefaultServerSideEncryption() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description: "Server-side encryption mode.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"algorithm": {
+				Description: "Server-side encryption algorithm.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+}
+
 func getDataSourceLifecycleRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -174,6 +216,23 @@ func getDataSourceAllowedElem() *schema.Resource {
 	}
 }
 
+func getResourceServerSideEncryption() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description: "Server-side encryption mode.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"algorithm": {
+				Description: "Server-side encryption algorithm.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+}
+
 func getResourceCorsRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -219,6 +278,24 @@ func getResourceCorsRulesElem() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
+			},
+		},
+	}
+}
+
+func getResourceDefaultServerSideEncryption() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description: "Server-side encryption mode.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "none",
+			},
+			"algorithm": {
+				Description: "Server-side encryption algorithm.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}

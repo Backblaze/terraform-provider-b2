@@ -69,6 +69,7 @@ func TestAccDataSourceB2BucketFile_singleFile(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_id", resourceName, "file_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_info", resourceName, "file_info"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_name", resourceName, "file_name"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.server_side_encryption", resourceName, "server_side_encryption"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.size", resourceName, "size"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.upload_timestamp", resourceName, "upload_timestamp"),
 					resource.TestCheckResourceAttr(dataSourceName, "show_versions", "false"),
@@ -104,6 +105,7 @@ func TestAccDataSourceB2BucketFile_multipleFilesWithoutVersions(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_id", resourceName, "file_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_info", resourceName, "file_info"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_name", resourceName, "file_name"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.server_side_encryption", resourceName, "server_side_encryption"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.size", resourceName, "size"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.upload_timestamp", resourceName, "upload_timestamp"),
 					resource.TestCheckResourceAttr(dataSourceName, "show_versions", "false"),
@@ -140,6 +142,7 @@ func TestAccDataSourceB2BucketFile_multipleFilesWithVersions(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_id", resource2Name, "file_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_info", resource2Name, "file_info"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.file_name", resource2Name, "file_name"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.server_side_encryption", resource2Name, "server_side_encryption"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.size", resource2Name, "size"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.upload_timestamp", resource2Name, "upload_timestamp"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.1.action", resource1Name, "action"),
@@ -150,6 +153,7 @@ func TestAccDataSourceB2BucketFile_multipleFilesWithVersions(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.1.file_id", resource1Name, "file_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.1.file_info", resource1Name, "file_info"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.1.file_name", resource1Name, "file_name"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.0.server_side_encryption", resource1Name, "server_side_encryption"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.1.size", resource1Name, "size"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_versions.1.upload_timestamp", resource1Name, "upload_timestamp"),
 					resource.TestCheckResourceAttr(dataSourceName, "show_versions", "true"),
@@ -223,8 +227,12 @@ resource "b2_bucket_file_version" "test3" {
   bucket_id = b2_bucket_file_version.test2.bucket_id
   file_name = "temp2.txt"
   source = b2_bucket_file_version.test2.source
+  server_side_encryption {
+    mode = "SSE-B2"
+    algorithm = "AES256"
+  }
 
-   depends_on = [
+  depends_on = [
     b2_bucket_file_version.test2,
   ]
 }

@@ -32,11 +32,61 @@ func TestAccResourceB2Bucket_basic(t *testing.T) {
 				Config: testAccResourceB2BucketConfig_basic(bucketName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(resourceName, "account_id", regexp.MustCompile("^[a-zA-Z0-9]{12}$")),
+					resource.TestMatchResourceAttr(resourceName, "bucket_id", regexp.MustCompile("^[a-zA-Z0-9]{24}$")),
 					resource.TestCheckResourceAttr(resourceName, "bucket_info.%", "0"),
 					resource.TestCheckResourceAttr(resourceName, "bucket_name", bucketName),
 					resource.TestCheckResourceAttr(resourceName, "bucket_type", "allPublic"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "none"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", ""),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
+					resource.TestCheckResourceAttr(resourceName, "revision", "2"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceB2Bucket_all(t *testing.T) {
+	resourceName := "b2_bucket.test"
+
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceB2BucketConfig_all(bucketName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(resourceName, "account_id", regexp.MustCompile("^[a-zA-Z0-9]{12}$")),
+					resource.TestMatchResourceAttr(resourceName, "bucket_id", regexp.MustCompile("^[a-zA-Z0-9]{24}$")),
+					resource.TestCheckResourceAttr(resourceName, "bucket_info.%", "1"),
+					resource.TestCheckResourceAttr(resourceName, "bucket_info.description", "the bucket"),
+					resource.TestCheckResourceAttr(resourceName, "bucket_name", bucketName),
+					resource.TestCheckResourceAttr(resourceName, "bucket_type", "allPrivate"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.cors_rule_name", "downloadFromAnyOrigin"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_origins.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_origins.0", "https"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.0", "b2_download_file_by_id"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.1", "b2_download_file_by_name"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.expose_headers.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.expose_headers.0", "x-bz-content-sha1"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.0", "range"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.max_age_seconds", "3600"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "SSE-B2"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", "AES256"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.file_name_prefix", "c/"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "2"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
 					resource.TestCheckResourceAttr(resourceName, "revision", "2"),
@@ -79,7 +129,7 @@ func TestAccResourceB2Bucket_lifecycleRulesDefaults(t *testing.T) {
 	})
 }
 
-func TestAccResourceB2Bucket_updateAll(t *testing.T) {
+func TestAccResourceB2Bucket_update(t *testing.T) {
 	resourceName := "b2_bucket.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
@@ -112,13 +162,34 @@ func TestAccResourceB2Bucket_updateAll(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.0", "range"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.max_age_seconds", "3600"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "SSE-B2"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", "AES256"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.file_name_prefix", ""),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.file_name_prefix", "c/"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "2"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
 					resource.TestCheckResourceAttr(resourceName, "revision", "3"),
+				),
+			},
+			{
+				Config: testAccResourceB2BucketConfig_basic(bucketName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(resourceName, "account_id", regexp.MustCompile("^[a-zA-Z0-9]{12}$")),
+					resource.TestMatchResourceAttr(resourceName, "bucket_id", regexp.MustCompile("^[a-zA-Z0-9]{24}$")),
+					resource.TestCheckResourceAttr(resourceName, "bucket_info.%", "0"),
+					resource.TestCheckResourceAttr(resourceName, "bucket_name", bucketName),
+					resource.TestCheckResourceAttr(resourceName, "bucket_type", "allPublic"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "none"),
+					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", ""),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
+					resource.TestCheckResourceAttr(resourceName, "revision", "4"),
 				),
 			},
 		},
@@ -173,8 +244,12 @@ resource "b2_bucket" "test" {
     allowed_headers = ["range"]
     max_age_seconds = 3600
   }
+  default_server_side_encryption {
+    mode = "SSE-B2"
+    algorithm = "AES256"
+  }
   lifecycle_rules {
-    file_name_prefix = ""
+    file_name_prefix = "c/"
     days_from_hiding_to_deleting = 2
     days_from_uploading_to_hiding = 1
   }

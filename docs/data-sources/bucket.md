@@ -30,6 +30,7 @@ B2 bucket data source.
 - **bucket_info** (Map of String) User-defined information to be stored with the bucket.
 - **bucket_type** (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
 - **cors_rules** (List of Object) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedatt--cors_rules))
+- **default_server_side_encryption** (List of Object) The default server-side encryption settings of this bucket. (see [below for nested schema](#nestedatt--default_server_side_encryption))
 - **lifecycle_rules** (List of Object) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedatt--lifecycle_rules))
 - **options** (Set of String) List of bucket options.
 - **revision** (Number) Bucket revision.
@@ -45,6 +46,15 @@ Read-Only:
 - **cors_rule_name** (String)
 - **expose_headers** (List of String)
 - **max_age_seconds** (Number)
+
+
+<a id="nestedatt--default_server_side_encryption"></a>
+### Nested Schema for `default_server_side_encryption`
+
+Read-Only:
+
+- **algorithm** (String)
+- **mode** (String)
 
 
 <a id="nestedatt--lifecycle_rules"></a>

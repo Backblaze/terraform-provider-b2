@@ -15,6 +15,7 @@ import sys
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
+from b2sdk.v1 import EncryptionAlgorithm, EncryptionMode, EncryptionSetting
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
@@ -23,6 +24,10 @@ from b2_terraform.json_encoder import B2ProviderJsonEncoder
 
 def change_keys(obj, converter):
     return {converter(k).replace('__', '_'): v for k, v in obj.items()}
+
+
+def apply_or_none(func, value):
+    return None if value is None else func(value)
 
 
 class Command:
@@ -151,57 +156,59 @@ class ApplicationKey(Command):
 class Bucket(Command):
     def data_source_read(self, *, bucket_name, **kwargs):
         bucket = self.api.get_bucket_by_name(bucket_name)
-        result = bucket.as_dict()
-        self._postprocess(result['corsRules'], result['lifecycleRules'])
-        return result
+        return self._postprocess(**bucket.as_dict())
 
     def resource_create(
         self,
         *,
         bucket_name,
         bucket_type,
-        bucket_info=None,
-        cors_rules=None,
-        lifecycle_rules=None,
+        bucket_info,
+        cors_rules,
+        default_server_side_encryption,
+        lifecycle_rules,
         **kwargs,
     ):
-        self._preprocess(cors_rules, lifecycle_rules)
         bucket = self.api.create_bucket(
-            bucket_name,
-            bucket_type,
-            bucket_info=bucket_info,
-            cors_rules=cors_rules,
-            lifecycle_rules=lifecycle_rules,
+            **self._preprocess(
+                name=bucket_name,
+                bucket_type=bucket_type,
+                bucket_info=bucket_info,
+                cors_rules=cors_rules,
+                default_server_side_encryption=default_server_side_encryption,
+                lifecycle_rules=lifecycle_rules,
+            )
         )
-        result = bucket.as_dict()
-        self._postprocess(result['corsRules'], result['lifecycleRules'])
-
-        return result
+        return self._postprocess(**bucket.as_dict())
 
     def resource_read(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
-        result = bucket.as_dict()
-        self._postprocess(result['corsRules'], result['lifecycleRules'])
-
-        return result
+        return self._postprocess(**bucket.as_dict())
 
     def resource_update(
-        self, bucket_id, account_id, bucket_type, bucket_info, cors_rules, lifecycle_rules, **kwargs
+        self,
+        bucket_id,
+        account_id,
+        bucket_type,
+        bucket_info,
+        cors_rules,
+        default_server_side_encryption,
+        lifecycle_rules,
+        **kwargs,
     ):
-        self._preprocess(cors_rules, lifecycle_rules)
         self.api.session.update_bucket(
-            account_id,
-            bucket_id,
-            bucket_type=bucket_type,
-            bucket_info=bucket_info,
-            cors_rules=cors_rules,
-            lifecycle_rules=lifecycle_rules,
+            **self._preprocess(
+                account_id=account_id,
+                bucket_id=bucket_id,
+                bucket_type=bucket_type,
+                bucket_info=bucket_info,
+                cors_rules=cors_rules,
+                default_server_side_encryption=default_server_side_encryption,
+                lifecycle_rules=lifecycle_rules,
+            )
         )
         bucket = self.api.get_bucket_by_id(bucket_id)
-        result = bucket.as_dict()
-        self._postprocess(result['corsRules'], result['lifecycleRules'])
-
-        return result
+        return self._postprocess(**bucket.as_dict())
 
     def resource_delete(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
@@ -209,11 +216,26 @@ class Bucket(Command):
 
         return {}
 
-    def _preprocess(self, cors_rules, lifecycle_rules):
+    def _preprocess(self, **kwargs):
+        cors_rules = kwargs.pop('cors_rules')
         if cors_rules:
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=camelize)
 
+        default_server_side_encryption = kwargs.pop('default_server_side_encryption')
+        if default_server_side_encryption:
+            mode = apply_or_none(EncryptionMode, default_server_side_encryption[0]['mode'] or None)
+            if mode:
+                algorithm = apply_or_none(
+                    EncryptionAlgorithm, default_server_side_encryption[0]['algorithm'] or None
+                )
+                default_server_side_encryption = EncryptionSetting(mode=mode, algorithm=algorithm)
+            else:
+                default_server_side_encryption = None
+        else:
+            default_server_side_encryption = None
+
+        lifecycle_rules = kwargs.pop('lifecycle_rules')
         if lifecycle_rules:
             for index, item in enumerate(lifecycle_rules):
                 days_from_hiding_to_deleting = item.get('days_from_hiding_to_deleting')
@@ -224,14 +246,42 @@ class Bucket(Command):
                     item['days_from_uploading_to_hiding'] = None
                 lifecycle_rules[index] = change_keys(item, converter=camelize)
 
-    def _postprocess(self, cors_rules, lifecycle_rules):
+        return {
+            'cors_rules': cors_rules,
+            'default_server_side_encryption': default_server_side_encryption,
+            'lifecycle_rules': lifecycle_rules,
+            **kwargs,
+        }
+
+    def _postprocess(self, **kwargs):
+        cors_rules = kwargs.pop('corsRules')
         if cors_rules:
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=decamelize)
+        else:
+            cors_rules = []
 
+        default_server_side_encryption = kwargs.pop('defaultServerSideEncryption')
+        if default_server_side_encryption:
+            default_server_side_encryption = [
+                change_keys(default_server_side_encryption, converter=decamelize)
+            ]
+        else:
+            default_server_side_encryption = []
+
+        lifecycle_rules = kwargs.pop('lifecycleRules')
         if lifecycle_rules:
             for index, item in enumerate(lifecycle_rules):
                 lifecycle_rules[index] = change_keys(item, converter=decamelize)
+        else:
+            lifecycle_rules = []
+
+        return {
+            'corsRules': cors_rules,
+            'defaultServerSideEncryption': default_server_side_encryption,
+            'lifecycleRules': lifecycle_rules,
+            **kwargs,
+        }
 
 
 @B2Provider.register_subcommand
@@ -244,27 +294,62 @@ class BucketFileVersion(Command):
         source,
         content_type,
         file_info,
+        server_side_encryption,
         **kwargs,
     ):
         bucket = self.api.get_bucket_by_id(bucket_id)
         file_info = bucket.upload_local_file(
-            local_file=source,
-            file_name=file_name,
-            content_type=content_type or None,
-            file_infos=file_info,
+            **self._preprocess(
+                local_file=source,
+                file_name=file_name,
+                content_type=content_type,
+                file_infos=file_info,
+                server_side_encryption=server_side_encryption,
+            ),
         )
-        result = file_info.as_dict()
-        result['bucketId'] = bucket_id
-        result['source'] = source
-        return result
+        return self._postprocess(bucketId=bucket_id, source=source, **file_info.as_dict())
 
     def resource_read(self, *, file_id, **kwargs):
-        return self.api.get_file_info(file_id)
+        return self._postprocess(**self.api.get_file_info(file_id))
 
     def resource_delete(self, *, file_id, file_name, **kwargs):
         self.api.delete_file_version(file_id, file_name)
 
         return {}
+
+    def _preprocess(self, **kwargs):
+        content_type = kwargs.pop('content_type') or None
+
+        server_side_encryption = kwargs.pop('server_side_encryption')
+        if server_side_encryption:
+            mode = apply_or_none(EncryptionMode, server_side_encryption[0]['mode'] or None)
+            if mode:
+                algorithm = apply_or_none(
+                    EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or None
+                )
+                server_side_encryption = EncryptionSetting(mode=mode, algorithm=algorithm)
+            else:
+                server_side_encryption = None
+        else:
+            server_side_encryption = None
+
+        return {
+            'content_type': content_type,
+            'encryption': server_side_encryption,
+            **kwargs,
+        }
+
+    def _postprocess(self, **kwargs):
+        server_side_encryption = kwargs.pop('serverSideEncryption', None)
+        if server_side_encryption:
+            server_side_encryption = [change_keys(server_side_encryption, converter=decamelize)]
+        else:
+            server_side_encryption = []
+
+        return {
+            'serverSideEncryption': server_side_encryption,
+            **kwargs,
+        }
 
 
 @B2Provider.register_subcommand
@@ -277,15 +362,35 @@ class BucketFile(Command):
             show_versions=show_versions,
             recursive=False,
         )
+        return self._postprocess(
+            bucketId=bucket_id, fileName=file_name, showVersions=show_versions, generator=generator
+        )
+
+    def _postprocess(self, *, generator, **kwargs):
+        def postprocess_file_version(**kwargs):
+            server_side_encryption = kwargs.pop('serverSideEncryption', None)
+            if server_side_encryption:
+                server_side_encryption = [change_keys(server_side_encryption, converter=decamelize)]
+            else:
+                server_side_encryption = []
+
+            return {
+                'serverSideEncryption': server_side_encryption,
+                **kwargs,
+            }
+
+        file_name = kwargs['fileName']
+        file_versions = [
+            change_keys(
+                postprocess_file_version(**file_version_info.as_dict()), converter=decamelize
+            )
+            for file_version_info, _ in generator
+            if file_version_info.file_name == file_name
+        ]
+
         return {
-            'bucketId': bucket_id,
-            'fileName': file_name,
-            'showVersions': show_versions,
-            'fileVersions': [
-                change_keys(file_version_info.as_dict(), converter=decamelize)
-                for file_version_info, _ in generator
-                if file_version_info.file_name == file_name
-            ],
+            'fileVersions': file_versions,
+            **kwargs,
         }
 
 
@@ -298,15 +403,37 @@ class BucketFiles(Command):
             show_versions=show_versions,
             recursive=recursive,
         )
+        return self._postprocess(
+            bucketId=bucket_id,
+            folderName=folder_name,
+            showVersions=show_versions,
+            recursive=recursive,
+            generator=generator,
+        )
+
+    def _postprocess(self, *, generator, **kwargs):
+        def postprocess_file_version(**kwargs):
+            server_side_encryption = kwargs.pop('serverSideEncryption', None)
+            if server_side_encryption:
+                server_side_encryption = [change_keys(server_side_encryption, converter=decamelize)]
+            else:
+                server_side_encryption = []
+
+            return {
+                'serverSideEncryption': server_side_encryption,
+                **kwargs,
+            }
+
+        file_versions = [
+            change_keys(
+                postprocess_file_version(**file_version_info.as_dict()), converter=decamelize
+            )
+            for file_version_info, _ in generator
+        ]
+
         return {
-            'bucketId': bucket_id,
-            'folderName': folder_name,
-            'showVersions': show_versions,
-            'recursive': recursive,
-            'fileVersions': [
-                change_keys(file_version_info.as_dict(), converter=decamelize)
-                for file_version_info, _ in generator
-            ],
+            'fileVersions': file_versions,
+            **kwargs,
         }
 
 

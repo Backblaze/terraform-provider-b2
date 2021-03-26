@@ -26,6 +26,7 @@ B2 bucket file version resource.
 - **content_type** (String) Content type. If not set, it will be set based on the file extension.
 - **file_info** (Map of String) The custom information that is uploaded with the file.
 - **id** (String) The ID of this resource.
+- **server_side_encryption** (Block List, Max: 1) Server-side encryption settings. (see [below for nested schema](#nestedblock--server_side_encryption))
 
 ### Read-Only
 
@@ -35,5 +36,16 @@ B2 bucket file version resource.
 - **file_id** (String) The unique identifier for this version of this file.
 - **size** (Number) The file size.
 - **upload_timestamp** (Number) This is a UTC time when this file was uploaded.
+
+<a id="nestedblock--server_side_encryption"></a>
+### Nested Schema for `server_side_encryption`
+
+Required:
+
+- **mode** (String) Server-side encryption mode.
+
+Optional:
+
+- **algorithm** (String) Server-side encryption algorithm.
 
 

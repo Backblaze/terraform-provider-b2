@@ -55,6 +55,20 @@ func resourceB2Bucket() *schema.Resource {
 				Elem:        getResourceCorsRulesElem(),
 				Optional:    true,
 			},
+			"default_server_side_encryption": {
+				Description: "The default server-side encryption settings for this bucket.",
+				Type:        schema.TypeList,
+				Elem:        getResourceDefaultServerSideEncryption(),
+				Optional:    true,
+				MaxItems:    1,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// The API sets default value
+					if k == "default_server_side_encryption.#" {
+						return old == "1" && new == "0"
+					}
+					return old == "none" && new == ""
+				},
+			},
 			"lifecycle_rules": {
 				Description: "The initial list of lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
@@ -94,11 +108,12 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 	const op = RESOURCE_CREATE
 
 	input := map[string]interface{}{
-		"bucket_name":     d.Get("bucket_name").(string),
-		"bucket_type":     d.Get("bucket_type").(string),
-		"bucket_info":     d.Get("bucket_info").(map[string]interface{}),
-		"cors_rules":      d.Get("cors_rules").([]interface{}),
-		"lifecycle_rules": d.Get("lifecycle_rules").([]interface{}),
+		"bucket_name":                    d.Get("bucket_name").(string),
+		"bucket_type":                    d.Get("bucket_type").(string),
+		"bucket_info":                    d.Get("bucket_info").(map[string]interface{}),
+		"cors_rules":                     d.Get("cors_rules").([]interface{}),
+		"default_server_side_encryption": d.Get("default_server_side_encryption").([]interface{}),
+		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}
 
 	output, err := client.apply(name, op, input)
@@ -144,12 +159,13 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	const op = RESOURCE_UPDATE
 
 	input := map[string]interface{}{
-		"bucket_id":       d.Id(),
-		"account_id":      d.Get("account_id").(string),
-		"bucket_type":     d.Get("bucket_type").(string),
-		"bucket_info":     d.Get("bucket_info").(map[string]interface{}),
-		"cors_rules":      d.Get("cors_rules").([]interface{}),
-		"lifecycle_rules": d.Get("lifecycle_rules").([]interface{}),
+		"bucket_id":                      d.Id(),
+		"account_id":                     d.Get("account_id").(string),
+		"bucket_type":                    d.Get("bucket_type").(string),
+		"bucket_info":                    d.Get("bucket_info").(map[string]interface{}),
+		"cors_rules":                     d.Get("cors_rules").([]interface{}),
+		"default_server_side_encryption": d.Get("default_server_side_encryption").([]interface{}),
+		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}
 
 	output, err := client.apply(name, op, input)

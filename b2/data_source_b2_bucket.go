@@ -60,6 +60,12 @@ func dataSourceB2Bucket() *schema.Resource {
 				Elem:        getDataSourceCorsRulesElem(),
 				Computed:    true,
 			},
+			"default_server_side_encryption": {
+				Description: "The default server-side encryption settings of this bucket.",
+				Type:        schema.TypeList,
+				Elem:        getDataSourceDefaultServerSideEncryption(),
+				Computed:    true,
+			},
 			"lifecycle_rules": {
 				Description: "The initial list of lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
