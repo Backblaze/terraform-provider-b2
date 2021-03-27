@@ -38,6 +38,7 @@ jobs:
         run: |
           make docs-lint
       - name: Validate changelog
+        if: ${{ ! startsWith(github.ref, 'refs/heads/dependabot/') }}
         uses: zattoo/changelog@v1
         with:
           token: ${{ github.token }}

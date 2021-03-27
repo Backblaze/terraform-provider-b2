@@ -25,6 +25,9 @@ clean:
 
 build:
 	@pyinstaller --log-level WARN --onefile ${SPEC}
+ifneq ($(origin CI), undefined)
+	@echo "::set-output name=version::$(subst refs/tags/v,,${GITHUB_REF})"
+endif
 
 install: build
 

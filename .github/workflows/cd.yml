@@ -12,6 +12,8 @@ env:
 jobs:
   build-pybindings:
     runs-on: ${{ matrix.os }}
+    outputs:
+      version: ${{ steps.build.outputs.version }}
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +29,7 @@ jobs:
         run: |
           make deps
       - name: Build python bindings
+        id: build
         working-directory: python-bindings
         run: |
           make build
@@ -64,16 +67,29 @@ jobs:
         run: |
           mv py-terraform-provider-b2-Linux/py-terraform-provider-b2 py-terraform-provider-b2-linux
           mv py-terraform-provider-b2-macOS/py-terraform-provider-b2 py-terraform-provider-b2-darwin
+      - name: Read the Changelog
+        id: read-changelog
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          version: ${{ needs.build-pybindings.outputs.version }}
       - name: Import GPG key
         id: import_gpg
         uses: paultyng/ghaction-import-gpg@v2.1.0
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           PASSPHRASE: ${{ secrets.PASSPHRASE }}
-      - name: Release
+      - name: Create GitHub release
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
           args: release --rm-dist -p 1
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+      - name: Update GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ needs.build-pybindings.outputs.version }}
+          tag_name: ${{ github.ref }}
+          body: ${{ steps.read-changelog.outputs.changes }}
+          draft: false
+          prerelease: false
