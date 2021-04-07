@@ -44,6 +44,7 @@ pkged.go
 # Python bindings
 *.pyc
 *.egg-info
+.python-version
 build/
 dist/
 venv/
