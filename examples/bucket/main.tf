@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 0.13"
   required_providers {
     b2 = {
-      source  = "Backblaze/b2"
+      source = "Backblaze/b2"
     }
   }
 }
@@ -35,7 +35,7 @@ resource "b2_bucket_file_version" "example3" {
   file_name = "dir/example.txt"
   source    = b2_bucket_file_version.example2.source
   server_side_encryption {
-    mode = "SSE-B2"
+    mode      = "SSE-B2"
     algorithm = "AES256"
   }
 }

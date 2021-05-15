@@ -165,6 +165,7 @@ class Bucket(Command):
         bucket_type,
         bucket_info,
         cors_rules,
+        file_lock_configuration,
         default_server_side_encryption,
         lifecycle_rules,
         **kwargs,
@@ -175,6 +176,7 @@ class Bucket(Command):
                 bucket_type=bucket_type,
                 bucket_info=bucket_info,
                 cors_rules=cors_rules,
+                # file_lock_configuration=file_lock_configuration,
                 default_server_side_encryption=default_server_side_encryption,
                 lifecycle_rules=lifecycle_rules,
             )
@@ -192,6 +194,7 @@ class Bucket(Command):
         bucket_type,
         bucket_info,
         cors_rules,
+        file_lock_configuration,
         default_server_side_encryption,
         lifecycle_rules,
         **kwargs,
@@ -203,6 +206,7 @@ class Bucket(Command):
                 bucket_type=bucket_type,
                 bucket_info=bucket_info,
                 cors_rules=cors_rules,
+                file_lock_configuration=file_lock_configuration,
                 default_server_side_encryption=default_server_side_encryption,
                 lifecycle_rules=lifecycle_rules,
             )
@@ -221,6 +225,8 @@ class Bucket(Command):
         if cors_rules:
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=camelize)
+
+        # TODO: filelock
 
         default_server_side_encryption = kwargs.pop('default_server_side_encryption')
         if default_server_side_encryption:
@@ -260,6 +266,8 @@ class Bucket(Command):
                 cors_rules[index] = change_keys(item, converter=decamelize)
         else:
             cors_rules = []
+
+        # TODO: filelock
 
         default_server_side_encryption = kwargs.pop('defaultServerSideEncryption')
         if default_server_side_encryption:

@@ -37,6 +37,9 @@ func TestAccResourceB2Bucket_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "bucket_name", bucketName),
 					resource.TestCheckResourceAttr(resourceName, "bucket_type", "allPublic"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.is_file_lock_enabled", "false"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.mode", "none"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "none"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", ""),
@@ -80,6 +83,11 @@ func TestAccResourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.0", "range"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.max_age_seconds", "3600"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.is_file_lock_enabled", "true"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.default_retention.mode", "governance"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.default_retention.period.duration", "7"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.default_retention.period.unit", "days"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "SSE-B2"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", "AES256"),
@@ -247,6 +255,16 @@ resource "b2_bucket" "test" {
   default_server_side_encryption {
     mode = "SSE-B2"
     algorithm = "AES256"
+  }
+  file_lock_configuration {
+	is_file_lock_enabled = true
+	default_retention = {
+      mode = "governance"
+      period = {
+  	    duration = 7
+  	    unit = "days"
+  	  }
+    }
   }
   lifecycle_rules {
     file_name_prefix = "c/"
