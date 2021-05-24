@@ -15,7 +15,7 @@ import sys
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
-from b2sdk.v1 import EncryptionAlgorithm, EncryptionMode, EncryptionSetting
+from b2sdk.v1 import EncryptionAlgorithm, EncryptionMode, EncryptionSetting, BucketRetentionSetting
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
@@ -168,20 +168,32 @@ class Bucket(Command):
         file_lock_configuration,
         default_server_side_encryption,
         lifecycle_rules,
-        **kwargs,
     ):
-        bucket = self.api.create_bucket(
-            **self._preprocess(
-                name=bucket_name,
-                bucket_type=bucket_type,
-                bucket_info=bucket_info,
-                cors_rules=cors_rules,
-                # file_lock_configuration=file_lock_configuration,
-                default_server_side_encryption=default_server_side_encryption,
-                lifecycle_rules=lifecycle_rules,
-            )
+        params = self._preprocess(
+            name=bucket_name,
+            bucket_type=bucket_type,
+            bucket_info=bucket_info,
+            cors_rules=cors_rules,
+            file_lock_configuration=file_lock_configuration,
+            default_server_side_encryption=default_server_side_encryption,
+            lifecycle_rules=lifecycle_rules,
         )
-        return self._postprocess(**bucket.as_dict())
+        # default retention can only be set with update_bucket, not create_bucket :(
+        default_retention = params.pop('default_retention', None)
+        bucket = self.api.session.create_bucket(**params).as_dict()
+        if default_retention is not None:
+            return self.resource_update(
+                bucket_id=bucket['bucketId'],
+                account_id=bucket['accountId'],
+                bucket_type=None,
+                bucket_info=None,
+                cors_rules=None,
+                file_lock_configuration=file_lock_configuration,
+                default_server_side_encryption=None,
+                lifecycle_rules=None,
+            )
+
+        return self._postprocess(**bucket)
 
     def resource_read(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
@@ -197,20 +209,19 @@ class Bucket(Command):
         file_lock_configuration,
         default_server_side_encryption,
         lifecycle_rules,
-        **kwargs,
     ):
-        self.api.session.update_bucket(
-            **self._preprocess(
-                account_id=account_id,
-                bucket_id=bucket_id,
-                bucket_type=bucket_type,
-                bucket_info=bucket_info,
-                cors_rules=cors_rules,
-                file_lock_configuration=file_lock_configuration,
-                default_server_side_encryption=default_server_side_encryption,
-                lifecycle_rules=lifecycle_rules,
-            )
+        params = self._preprocess(
+            account_id=account_id,
+            bucket_id=bucket_id,
+            bucket_type=bucket_type,
+            bucket_info=bucket_info,
+            cors_rules=cors_rules,
+            file_lock_configuration=file_lock_configuration,
+            default_server_side_encryption=default_server_side_encryption,
+            lifecycle_rules=lifecycle_rules,
         )
+        params.pop('is_file_lock_enabled', None)  # this can only be set during bucket creation
+        self.api.session.update_bucket(**params)
         bucket = self.api.get_bucket_by_id(bucket_id)
         return self._postprocess(**bucket.as_dict())
 
@@ -226,7 +237,14 @@ class Bucket(Command):
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=camelize)
 
-        # TODO: filelock
+        file_lock_configuration = kwargs.pop('file_lock_configuration')
+        if file_lock_configuration:
+            if 'is_file_lock_enabled' in file_lock_configuration:
+                kwargs['is_file_lock_enabled'] = file_lock_configuration['is_file_lock_enabled']
+            if 'default_retention' in file_lock_configuration:
+                kwargs['default_retention'] = BucketRetentionSetting.from_bucket_retention_dict(
+                    file_lock_configuration['BucketRetentionSetting']
+                )
 
         default_server_side_encryption = kwargs.pop('default_server_side_encryption')
         if default_server_side_encryption:
