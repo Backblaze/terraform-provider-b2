@@ -42,7 +42,7 @@ lint: _pybindings
 
 testacc: _pybindings
 	@chmod +rx python-bindings/dist/py-terraform-provider-b2
-	TF_ACC=1 go test ./${NAME} -v -count 1 -parallel 4 -timeout 120m $(TESTARGS)
+	TF_ACC=1 go test ./${NAME} -v -count 1 -parallel 4 -v -timeout 120m $(TESTARGS)
 
 clean: _pybindings
 	@rm -rf dist pkged.go ${BINARY}

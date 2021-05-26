@@ -12,13 +12,13 @@ provider "b2" {
 }
 
 resource "b2_bucket" "example" {
-  bucket_name = "test-b2-lock-0000000000000000000"
+  bucket_name = "test-b2-lock-0000000004310000020"
   bucket_type = "allPublic"
-  file_lock_configuration = {
+  file_lock_configuration {
     is_file_lock_enabled = true
-    default_retention = {
+    default_retention {
       mode = "governance"
-      period = {
+      period {
         duration = 7
         unit     = "days"
       }

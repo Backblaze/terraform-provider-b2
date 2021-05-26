@@ -346,7 +346,7 @@ func getResourceFileLockConfiguration() *schema.Resource {
 			},
 			"default_retention": {
 				Description: "Default retention settings for files uploaded to this bucket",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
 				Elem: &schema.Resource{
@@ -354,21 +354,25 @@ func getResourceFileLockConfiguration() *schema.Resource {
 						"mode": {
 							Description:  "Default retention mode (compliance|governance|none).",
 							Type:         schema.TypeString,
+							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"compliance", "governance", "none"}, false),
 						},
 						"period": {
 							Description: "How long for to make files immutable",
-							Type:        schema.TypeSet,
+							Type:        schema.TypeList,
 							MaxItems:    1,
+							Optional:    true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"duration": {
 										Description: "Duration",
 										Type:        schema.TypeInt,
+										Required:    true,
 									},
 									"unit": {
 										Description:  "Unit for duration (days|years)",
 										Type:         schema.TypeString,
+										Required:     true,
 										ValidateFunc: validation.StringInSlice([]string{"days", "years"}, false),
 									},
 								},

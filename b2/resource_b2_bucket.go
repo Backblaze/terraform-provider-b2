@@ -60,7 +60,6 @@ func resourceB2Bucket() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        getResourceFileLockConfiguration(),
 				Optional:    true,
-				MaxItems:    1,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					// The API sets default value
 					if k == "file_lock_configuration.#" {

@@ -252,19 +252,19 @@ resource "b2_bucket" "test" {
     allowed_headers = ["range"]
     max_age_seconds = 3600
   }
+  file_lock_configuration {
+	is_file_lock_enabled = true
+	default_retention {
+	  mode = "governance"
+	  period {
+		duration = 7
+		unit = "days"
+	  }
+	}
+  }
   default_server_side_encryption {
     mode = "SSE-B2"
     algorithm = "AES256"
-  }
-  file_lock_configuration {
-	is_file_lock_enabled = true
-	default_retention = {
-      mode = "governance"
-      period = {
-  	    duration = 7
-  	    unit = "days"
-  	  }
-    }
   }
   lifecycle_rules {
     file_name_prefix = "c/"
@@ -274,3 +274,4 @@ resource "b2_bucket" "test" {
 }
 `, bucketName)
 }
+

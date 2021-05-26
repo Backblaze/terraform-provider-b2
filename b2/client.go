@@ -43,8 +43,8 @@ type Client struct {
 }
 
 func (c Client) apply(name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
-	log.Printf("[TRACE] Executing pybindings for '%s' and '%s' operation\n", name, op)
-	log.Printf("[TRACE] Input for pybindings: %+v\n", input)
+	log.Printf("[DEBUG] Executing pybindings for '%s' and '%s' operation\n", name, op)
+	log.Printf("[DEBUG] Input for pybindings: %+v\n", input)
 
 	cmd := exec.Command(c.Exec, name, op)
 	cmd.Env = os.Environ()
@@ -64,13 +64,17 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 
 	outputJson, err := cmd.Output()
 
+	log.Printf("[TRACE] Output from pybindings: %+v\n", string(outputJson))
+
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if exitErr.Stderr != nil && len(exitErr.Stderr) > 0 {
+				log.Printf("[ERROR] Error in pybindings: %+v\n", string(exitErr.Stderr))
 				return nil, fmt.Errorf(string(exitErr.Stderr))
 			}
 			return nil, fmt.Errorf("failed to execute")
 		} else {
+			log.Println(err)
 			return nil, err
 		}
 	}
@@ -98,7 +102,7 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 			safeOutput[k] = v
 		}
 	}
-	log.Printf("[TRACE] Safe output from pybindings: %+v\n", safeOutput)
+	log.Printf("[DEBUG] Safe output from pybindings: %+v\n", safeOutput)
 
 	return output, nil
 }
