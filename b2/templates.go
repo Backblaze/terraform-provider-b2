@@ -194,26 +194,27 @@ func getDataSourceFileLockConfiguration() *schema.Resource {
 			},
 			"default_retention": {
 				Description: "Default retention settings for files uploaded to this bucket",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
+				MaxItems: 	 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"mode": {
 							Description: "Default retention mode (compliance|governance|none).",
 							Type:        schema.TypeString,
-							Optional:    true,
 							Computed:    true,
 						},
 						"period": {
 							Description: "How long for to make files immutable",
-							Type:        schema.TypeSet,
+							Type:        schema.TypeList,
 							Optional:    true,
 							Computed:    true,
+							MaxItems: 	 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"duration": {
-										Description: "Unit for duration (days|years)",
+										Description: "Duration",
 										Type:        schema.TypeInt,
 										Optional:    true,
 										Computed:    true,
@@ -349,6 +350,13 @@ func getResourceFileLockConfiguration() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// The API sets default value
+					if k == "default_retention.#" {
+						return old == "1" && new == "0"
+					}
+					return old == "none" && new == ""
+				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"mode": {

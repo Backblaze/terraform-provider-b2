@@ -12,6 +12,7 @@ import json
 import hashlib
 import os
 import sys
+import traceback
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
@@ -26,15 +27,7 @@ def change_keys(obj, converter):
     return {converter(k).replace('__', '_'): v for k, v in obj.items()}
 
 
-class EverythingDict:
-    def __getitem__(self, item):
-        return self
-
-    def __contains__(self, item):
-        return True
-
-
-def convert_json_to_go(obj: dict, keys_to_keep: dict = EverythingDict()):
+def convert_json_to_go(obj: dict, keys_to_keep: dict):
     """
     Do following changes:
     * keys should be converted from camelCase to underscore_case
@@ -44,17 +37,24 @@ def convert_json_to_go(obj: dict, keys_to_keep: dict = EverythingDict()):
 
     keys_to_keep == True means keep all keys
     """
+    if hasattr(obj, 'as_dict'):
+        obj = obj.as_dict()
+
     result = {}
+
     for key, value in obj.items():
         key = decamelize(key).replace('__', '_')
         if key not in keys_to_keep:
             continue
         if hasattr(value, 'as_dict'):
             value = value.as_dict()
-        if isinstance(value, dict):
-            value = [convert_json_to_go(value, keys_to_keep[key])] if value else []
-        elif isinstance(value, list) and len(value) > 0:
-            value = [convert_json_to_go(x, keys_to_keep[key]) for x in value]
+        nested = isinstance(keys_to_keep[key], dict)
+        if nested:
+            if isinstance(value, dict):
+                value = [convert_json_to_go(value, keys_to_keep[key])] if value else []
+            elif isinstance(value, list) and len(value) > 0:
+                assert isinstance(keys_to_keep[key], dict)
+                value = [convert_json_to_go(x, keys_to_keep[key]) for x in value]
         result[key] = value
     return result
 
@@ -203,7 +203,6 @@ class Bucket(Command):
             lifecycle_rules,
             **kwargs,
     ):
-        print(f'{file_lock_configuration=}', file=sys.stderr)
         params = self._preprocess(
             name=bucket_name,
             bucket_type=bucket_type,
@@ -216,12 +215,11 @@ class Bucket(Command):
         # default retention can only be set with update_bucket, not create_bucket :(
         default_retention = params.pop('default_retention', None)
         bucket = self.api.create_bucket(**params).as_dict()
-        print(f'{bucket=}', file=sys.stderr)
         if default_retention is not None:
             return self.resource_update(
                 bucket_id=bucket['bucketId'],
                 account_id=bucket['accountId'],
-                bucket_type=None,
+                bucket_type=bucket['bucketType'],
                 bucket_info=None,
                 cors_rules=None,
                 file_lock_configuration=file_lock_configuration,
@@ -269,18 +267,16 @@ class Bucket(Command):
         return {}
 
     def _preprocess(self, **kwargs):
-        print(f'preprocess {kwargs=}', file=sys.stderr)
         cors_rules = kwargs.pop('cors_rules')
         if cors_rules:
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=camelize)
 
         for file_lock_configuration in (kwargs.pop('file_lock_configuration', ())):
-            print(f"{file_lock_configuration=}", file=sys.stderr)
             if 'is_file_lock_enabled' in file_lock_configuration:
                 kwargs['is_file_lock_enabled'] = file_lock_configuration['is_file_lock_enabled']
             for default_retention in file_lock_configuration.get('default_retention', ()):
-                if default_retention.get('period'):
+                if default_retention.get('period') and isinstance(default_retention.get('period'), list):
                     default_retention['period'] = default_retention['period'][0]
                 kwargs['default_retention'] = BucketRetentionSetting.from_bucket_retention_dict(default_retention)
 
@@ -314,50 +310,16 @@ class Bucket(Command):
             'lifecycle_rules': lifecycle_rules,
             **kwargs,
         }
-        print(f'preprocess {result=}', file=sys.stderr)
         return result
 
     def _postprocess(self, **kwargs):
-        print(f'postprocess {kwargs=}', file=sys.stderr)
-        cors_rules = kwargs.pop('corsRules')
-        if cors_rules:
-            for index, item in enumerate(cors_rules):
-                cors_rules[index] = change_keys(item, converter=decamelize)
-        else:
-            cors_rules = []
-
-        default_server_side_encryption = kwargs.pop('defaultServerSideEncryption')
-        if default_server_side_encryption:
-            default_server_side_encryption = [
-                change_keys(default_server_side_encryption, converter=decamelize)
-            ]
-        else:
-            default_server_side_encryption = []
-
-        lifecycle_rules = kwargs.pop('lifecycleRules')
-        if lifecycle_rules:
-            for index, item in enumerate(lifecycle_rules):
-                lifecycle_rules[index] = change_keys(item, converter=decamelize)
-        else:
-            lifecycle_rules = []
-        bucket_info = kwargs.pop('bucketInfo', {})
-
-        kwargs = convert_json_to_go(kwargs)
-        file_lock_configuration = {}
-        for key in ('is_file_lock_enabled', 'default_retention'):
+        file_lock_configuration = kwargs['fileLockConfiguration'] = {}
+        for key in ('isFileLockEnabled', 'defaultRetention'):
             value = kwargs.pop(key, None)
-            if value is not None:
+            if value is not None and value != {'mode': None}:
                 file_lock_configuration[key] = value
 
-        result = {
-            'corsRules': cors_rules,
-            'defaultServerSideEncryption': default_server_side_encryption,
-            'lifecycleRules': lifecycle_rules,
-            'bucket_info': bucket_info,
-            'file_lock_configuration': [file_lock_configuration],
-            **kwargs,
-        }
-        print(f'postprocess {result=}', file=sys.stderr)
+        result = convert_json_to_go(kwargs, BUCKET_KEYS)
         return result
 
 
@@ -419,17 +381,23 @@ class BucketFileVersion(Command):
     def _postprocess(self, **kwargs):
         return convert_json_to_go(kwargs, FILE_VERSION_KEYS)
 
+SERVER_SIDE_ENCRYPTION = {
+    "mode": True,
+    "algorithm": True,
+}
 
 FILE_VERSION_KEYS = {
     "action": True,
     "content_md5": True,
     "content_sha1": True,
     "content_type": True,
+    "bucket_id": True,
     "file_id": True,
     "file_info": True,
     "file_name": True,
     "size": True,
-    "server_side_encryption": True,
+    "source": True,
+    "server_side_encryption": SERVER_SIDE_ENCRYPTION,
     "upload_timestamp": True,
 }
 
@@ -446,6 +414,40 @@ FILES_KEYS = {
     "show_versions": True,
     "recursive": True,
     "file_versions": FILE_VERSION_KEYS
+}
+
+BUCKET_KEYS = {
+    "bucket_id": True,
+    "bucket_name": True,
+    "bucket_type": True,
+    "bucket_info": True,
+    "cors_rules": {
+        "cors_rule_name": True,
+        "allowed_origins": True,
+        "allowed_operations": True,
+        "max_age_seconds": True,
+        "allowed_headers": True,
+        "expose_headers": True,
+    },
+    "file_lock_configuration": {
+        "is_file_lock_enabled": True,
+        "default_retention": {
+            "mode": True,
+            "period": {
+                "duration": True,
+                "unit": True,
+            },
+        },
+    },
+    "default_server_side_encryption": SERVER_SIDE_ENCRYPTION,
+    "lifecycle_rules": {
+        "file_name_prefix": True,
+        "days_from_hiding_to_deleting": True,
+        "days_from_uploading_to_hiding": True,
+    },
+    "account_id": True,
+    "options": True,
+    "revision": True,
 }
 
 
@@ -523,8 +525,8 @@ class ProviderTool:
             command = command_class(self)
             data_out = command.run(args, data_in)
             print(data_out, end='')
-        except Exception as exc:
-            print(exc, file=sys.stderr)
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
             return 1
 
         return 0
