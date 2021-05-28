@@ -270,4 +270,3 @@ resource "b2_bucket" "test" {
 }
 `, bucketName)
 }
-

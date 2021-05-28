@@ -127,7 +127,7 @@ class B2Provider(Command):
         return {}
 
     def provider_authorize_account(
-            self, *, provider_application_key_id, provider_application_key, provider_endpoint, **kwargs
+        self, *, provider_application_key_id, provider_application_key, provider_endpoint, **kwargs
     ):
         if not provider_application_key_id or not provider_application_key:
             raise RuntimeError('B2 Application Key and Application Key ID must be provided')
@@ -192,16 +192,16 @@ class Bucket(Command):
         return self._postprocess(**bucket.as_dict())
 
     def resource_create(
-            self,
-            *,
-            bucket_name,
-            bucket_type,
-            bucket_info,
-            cors_rules,
-            file_lock_configuration,
-            default_server_side_encryption,
-            lifecycle_rules,
-            **kwargs,
+        self,
+        *,
+        bucket_name,
+        bucket_type,
+        bucket_info,
+        cors_rules,
+        file_lock_configuration,
+        default_server_side_encryption,
+        lifecycle_rules,
+        **kwargs,
     ):
         params = self._preprocess(
             name=bucket_name,
@@ -234,16 +234,16 @@ class Bucket(Command):
         return self._postprocess(**bucket.as_dict())
 
     def resource_update(
-            self,
-            bucket_id,
-            account_id,
-            bucket_type,
-            bucket_info,
-            cors_rules,
-            file_lock_configuration,
-            default_server_side_encryption,
-            lifecycle_rules,
-            **kwargs,
+        self,
+        bucket_id,
+        account_id,
+        bucket_type,
+        bucket_info,
+        cors_rules,
+        file_lock_configuration,
+        default_server_side_encryption,
+        lifecycle_rules,
+        **kwargs,
     ):
         params = self._preprocess(
             account_id=account_id,
@@ -272,13 +272,17 @@ class Bucket(Command):
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=camelize)
 
-        for file_lock_configuration in (kwargs.pop('file_lock_configuration', ())):
+        for file_lock_configuration in kwargs.pop('file_lock_configuration', ()):
             if 'is_file_lock_enabled' in file_lock_configuration:
                 kwargs['is_file_lock_enabled'] = file_lock_configuration['is_file_lock_enabled']
             for default_retention in file_lock_configuration.get('default_retention', ()):
-                if default_retention.get('period') and isinstance(default_retention.get('period'), list):
+                if default_retention.get('period') and isinstance(
+                    default_retention.get('period'), list
+                ):
                     default_retention['period'] = default_retention['period'][0]
-                kwargs['default_retention'] = BucketRetentionSetting.from_bucket_retention_dict(default_retention)
+                kwargs['default_retention'] = BucketRetentionSetting.from_bucket_retention_dict(
+                    default_retention
+                )
 
         default_server_side_encryption = kwargs.pop('default_server_side_encryption')
         if default_server_side_encryption:
@@ -326,15 +330,15 @@ class Bucket(Command):
 @B2Provider.register_subcommand
 class BucketFileVersion(Command):
     def resource_create(
-            self,
-            *,
-            bucket_id,
-            file_name,
-            source,
-            content_type,
-            file_info,
-            server_side_encryption,
-            **kwargs,
+        self,
+        *,
+        bucket_id,
+        file_name,
+        source,
+        content_type,
+        file_info,
+        server_side_encryption,
+        **kwargs,
     ):
         bucket = self.api.get_bucket_by_id(bucket_id)
         file_info = bucket.upload_local_file(
@@ -381,6 +385,7 @@ class BucketFileVersion(Command):
     def _postprocess(self, **kwargs):
         return convert_json_to_go(kwargs, FILE_VERSION_KEYS)
 
+
 SERVER_SIDE_ENCRYPTION = {
     "mode": True,
     "algorithm": True,
@@ -405,7 +410,7 @@ FILE_KEYS = {
     "bucket_id": True,
     "file_name": True,
     "show_versions": True,
-    "file_versions": FILE_VERSION_KEYS
+    "file_versions": FILE_VERSION_KEYS,
 }
 
 FILES_KEYS = {
@@ -413,7 +418,7 @@ FILES_KEYS = {
     "folder_name": True,
     "show_versions": True,
     "recursive": True,
-    "file_versions": FILE_VERSION_KEYS
+    "file_versions": FILE_VERSION_KEYS,
 }
 
 BUCKET_KEYS = {
