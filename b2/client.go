@@ -43,8 +43,8 @@ type Client struct {
 }
 
 func (c Client) apply(name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
-	log.Printf("[DEBUG] Executing pybindings for '%s' and '%s' operation\n", name, op)
-	log.Printf("[DEBUG] Input for pybindings: %+v\n", input)
+	log.Printf("[TRACE] Executing pybindings for '%s' and '%s' operation\n", name, op)
+	log.Printf("[TRACE] Input for pybindings: %+v\n", input)
 
 	cmd := exec.Command(c.Exec, name, op)
 	cmd.Env = os.Environ()
