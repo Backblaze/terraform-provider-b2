@@ -12,7 +12,7 @@ provider "b2" {
 }
 
 resource "b2_bucket" "example" {
-  bucket_name = "test-b2-lock-0000000004310000020"
+  bucket_name = "test-b2-lock"
   bucket_type = "allPublic"
   file_lock_configuration {
     is_file_lock_enabled = true
