@@ -25,6 +25,7 @@ B2 bucket resource.
 - **bucket_info** (Map of String) User-defined information to be stored with the bucket.
 - **cors_rules** (Block List) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
 - **default_server_side_encryption** (Block List, Max: 1) The default server-side encryption settings for this bucket. (see [below for nested schema](#nestedblock--default_server_side_encryption))
+- **file_lock_configuration** (Block List) File lock enabled flag, and default retention settings. (see [below for nested schema](#nestedblock--file_lock_configuration))
 - **id** (String) The ID of this resource.
 - **lifecycle_rules** (Block List) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedblock--lifecycle_rules))
 
@@ -58,6 +59,36 @@ Optional:
 
 - **algorithm** (String) Server-side encryption algorithm.
 - **mode** (String) Server-side encryption mode. Defaults to `none`.
+
+
+<a id="nestedblock--file_lock_configuration"></a>
+### Nested Schema for `file_lock_configuration`
+
+Optional:
+
+- **default_retention** (Block List, Max: 1) Default retention settings for files uploaded to this bucket (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention))
+- **is_file_lock_enabled** (Boolean) If present, the boolean value specifies whether bucket is File Lock-enabled. Defaults to `false`.
+
+<a id="nestedblock--file_lock_configuration--default_retention"></a>
+### Nested Schema for `file_lock_configuration.default_retention`
+
+Required:
+
+- **mode** (String) Default retention mode (compliance|governance|none).
+
+Optional:
+
+- **period** (Block List, Max: 1) How long for to make files immutable (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
+
+<a id="nestedblock--file_lock_configuration--default_retention--period"></a>
+### Nested Schema for `file_lock_configuration.default_retention.period`
+
+Required:
+
+- **duration** (Number) Duration
+- **unit** (String) Unit for duration (days|years)
+
+
 
 
 <a id="nestedblock--lifecycle_rules"></a>

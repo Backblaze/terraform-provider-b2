@@ -26,6 +26,7 @@ B2 account info data source.
 - **allowed** (List of Object) An object containing the capabilities of this auth token, and any restrictions on using it. (see [below for nested schema](#nestedatt--allowed))
 - **api_url** (String) The base URL to use for all API calls except for uploading and downloading files.
 - **download_url** (String) The base URL to use for downloading files.
+- **s3_api_url** (String) The base URL to use for S3-compatible API calls.
 
 <a id="nestedatt--allowed"></a>
 ### Nested Schema for `allowed`
