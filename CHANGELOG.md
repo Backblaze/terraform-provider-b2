@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* support isFileLockEnabled for buckets
-* support defaultRetention for buckets
+* Support isFileLockEnabled for buckets
+* Support defaultRetention for buckets
 
 ### Fixed
-* fix acceptance tests breaking when new response fields are added to the API 
+* Fix acceptance tests breaking when new response fields are added to the API 
 
 ### Changed
 * Upgraded b2sdk version to 1.8.0
