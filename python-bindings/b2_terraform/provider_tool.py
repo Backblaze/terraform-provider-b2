@@ -37,8 +37,6 @@ def convert_json_to_go(obj: dict, keys_to_keep: dict):
     * dictionaries should be wrapped in lists (so {...} -> [{...}]), unless dict is empty, in which case that list
       should have no elements
     * dictionary values should be converted recursively
-
-    keys_to_keep == True means keep all keys
     """
     if hasattr(obj, 'as_dict'):
         obj = obj.as_dict()
