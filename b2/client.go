@@ -100,7 +100,7 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 			safeOutput[k] = v
 		}
 	}
-	log.Printf("[DEBUG] Safe output from pybindings: %+v\n", safeOutput)
+	log.Printf("[TRACE] Safe output from pybindings: %+v\n", safeOutput)
 
 	return output, nil
 }
