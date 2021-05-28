@@ -30,7 +30,9 @@ def change_keys(obj, converter):
 
 def convert_json_to_go(obj: dict, keys_to_keep: dict):
     """
-    Do following changes:
+    Convert dict representation to follow Terraform Go SDK rules.
+
+    Does following changes:
     * keys should be converted from camelCase to underscore_case
     * dictionaries should be wrapped in lists (so {...} -> [{...}]), unless dict is empty, in which case that list
       should have no elements
