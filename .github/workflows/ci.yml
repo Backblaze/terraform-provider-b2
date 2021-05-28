@@ -88,9 +88,9 @@ jobs:
           - ubuntu-16.04
           - macos-10.15
         terraform:
-          - 0.13.6
-          - 0.14.8
-          - 0.15.1
+          - 0.13.7
+          - 0.14.11
+          - 0.15.4
     steps:
       - uses: actions/checkout@v2
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
