@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-10.15]
+        os: [ubuntu-16.04, macos-10.15]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
