@@ -8,6 +8,7 @@
 #
 ######################################################################
 
+import base64
 import json
 import hashlib
 import os
@@ -16,7 +17,7 @@ import traceback
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
-from b2sdk.v1 import BucketRetentionSetting, EncryptionAlgorithm, EncryptionMode, EncryptionSetting
+from b2sdk.v1 import BucketRetentionSetting, EncryptionAlgorithm, EncryptionKey, EncryptionMode, EncryptionSetting
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
@@ -287,12 +288,14 @@ class Bucket(Command):
 
         default_server_side_encryption = kwargs.pop('default_server_side_encryption')
         if default_server_side_encryption:
-            mode = apply_or_none(EncryptionMode, default_server_side_encryption[0]['mode'] or None)
+            mode = default_server_side_encryption[0]['mode'] or None
             if mode:
-                algorithm = apply_or_none(
-                    EncryptionAlgorithm, default_server_side_encryption[0]['algorithm'] or None
-                )
-                default_server_side_encryption = EncryptionSetting(mode=mode, algorithm=algorithm)
+                if mode != "none":
+                    algorithm = apply_or_none(EncryptionAlgorithm, default_server_side_encryption[0]['algorithm'] or None)
+                else:
+                    algorithm = None
+                default_server_side_encryption = EncryptionSetting(mode=apply_or_none(EncryptionMode, mode),
+                                                                   algorithm=algorithm)
             else:
                 default_server_side_encryption = None
         else:
@@ -366,12 +369,20 @@ class BucketFileVersion(Command):
 
         server_side_encryption = kwargs.pop('server_side_encryption')
         if server_side_encryption:
-            mode = apply_or_none(EncryptionMode, server_side_encryption[0]['mode'] or None)
+            mode = server_side_encryption[0]['mode'] or None
             if mode:
-                algorithm = apply_or_none(
-                    EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or None
-                )
-                server_side_encryption = EncryptionSetting(mode=mode, algorithm=algorithm)
+                customer_key = None
+                if mode != "none":
+                    algorithm = apply_or_none(EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or None)
+                    if mode == "SSE-C":
+                        key = server_side_encryption[0]['customer_key'][0]
+                        # EncryptionKey only accepts raw bytes as keys, not base 64
+                        customer_key = EncryptionKey(secret=base64.b64decode(key['secret_b64'], validate=True),
+                                                     key_id=key.get('key_id'))
+                else:
+                    algorithm = None
+                server_side_encryption = EncryptionSetting(mode=apply_or_none(EncryptionMode, mode),
+                                                           algorithm=algorithm, key=customer_key)
             else:
                 server_side_encryption = None
         else:

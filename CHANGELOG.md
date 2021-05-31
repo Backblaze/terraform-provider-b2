@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+* Support SSE-C encryption mode for files
 * Support isFileLockEnabled for buckets
 * Support defaultRetention for buckets
 

@@ -69,7 +69,7 @@ func resourceB2BucketFileVersion() *schema.Resource {
 			"server_side_encryption": {
 				Description: "Server-side encryption settings.",
 				Type:        schema.TypeList,
-				Elem:        getResourceServerSideEncryption(),
+				Elem:        getResourceFileEncryption(),
 				Optional:    true,
 				ForceNew:    true,
 				MaxItems:    1,

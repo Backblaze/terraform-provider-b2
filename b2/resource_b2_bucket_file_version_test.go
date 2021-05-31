@@ -164,3 +164,30 @@ resource "b2_bucket_file_version" "test" {
 }
 `, bucketName, tempFile)
 }
+
+func testAccResourceB2BucketFileVersionConfig_sse_c(bucketName string, tempFile string) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+  bucket_name = "%s"
+  bucket_type = "allPublic"
+}
+
+resource "b2_bucket_file_version" "test" {
+  bucket_id = b2_bucket.test.id
+  file_name = "temp.bin"
+  source = "%s"
+  content_type = "octet/stream"
+  file_info = {
+    description = "the file"
+  }
+  server_side_encryption {
+    mode = "SSE-C"
+    algorithm = "AES256"
+	key {
+	  secret_b64 = ""
+      key_id = "test_id"
+    }
+  }
+}
+`, bucketName, tempFile)
+}

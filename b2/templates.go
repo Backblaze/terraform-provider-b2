@@ -268,22 +268,67 @@ func getDataSourceAllowedElem() *schema.Resource {
 	}
 }
 
-func getResourceServerSideEncryption() *schema.Resource {
+func getResourceDefaultBucketServerSideEncryption() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"mode": {
 				Description: "Server-side encryption mode.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2"}, false),
 			},
 			"algorithm": {
 				Description: "Server-side encryption algorithm.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Default:     "AES-256",
+				ValidateFunc: validation.StringInSlice([]string{"AES-256"}, false),
 			},
 		},
 	}
 }
+
+func getResourceFileEncryption() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description: "Server-side encryption mode.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2", "SSE-C"}, false),
+			},
+			"algorithm": {
+				Description: "Server-side encryption algorithm.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "AES-256",
+				ValidateFunc: validation.StringInSlice([]string{"AES-256"}, false),
+			},
+			"key":{
+				Description: "Key used in SSE-C mode.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"secret_b64": {
+							Description: "Secret key value, Base 64 encoded",
+							Type:        schema.TypeString,
+							Required:    true,
+							Sensitive:   true,
+						},
+						"key_id": {
+							Description: "Key identifier stored in file info metadata",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 
 func getResourceCorsRulesElem() *schema.Resource {
 	return &schema.Resource{
@@ -393,24 +438,6 @@ func getResourceFileLockConfiguration() *schema.Resource {
 	}
 }
 
-func getResourceDefaultServerSideEncryption() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "none",
-			},
-			"algorithm": {
-				Description: "Server-side encryption algorithm.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
-
 func getResourceLifecycleRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -432,3 +459,4 @@ func getResourceLifecycleRulesElem() *schema.Resource {
 		},
 	}
 }
+
