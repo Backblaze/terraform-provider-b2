@@ -278,11 +278,14 @@ func getResourceDefaultBucketServerSideEncryption() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2"}, false),
 			},
 			"algorithm": {
-				Description: "Server-side encryption algorithm.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "AES-256",
-				ValidateFunc: validation.StringInSlice([]string{"AES-256"}, false),
+				Description:  "Server-side encryption algorithm.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "AES256",
+				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "" || new == ""
+				},
 			},
 		},
 	}
@@ -301,8 +304,11 @@ func getResourceFileEncryption() *schema.Resource {
 				Description: "Server-side encryption algorithm.",
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "AES-256",
-				ValidateFunc: validation.StringInSlice([]string{"AES-256"}, false),
+				Default:     "AES256",
+				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "" || new == ""
+				},
 			},
 			"key":{
 				Description: "Key used in SSE-C mode.",

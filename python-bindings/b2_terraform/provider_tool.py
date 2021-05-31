@@ -291,7 +291,8 @@ class Bucket(Command):
             mode = default_server_side_encryption[0]['mode'] or None
             if mode:
                 if mode != "none":
-                    algorithm = apply_or_none(EncryptionAlgorithm, default_server_side_encryption[0]['algorithm'] or None)
+                    algorithm = apply_or_none(EncryptionAlgorithm, default_server_side_encryption[0]['algorithm']
+                                              or 'AES256')
                 else:
                     algorithm = None
                 default_server_side_encryption = EncryptionSetting(mode=apply_or_none(EncryptionMode, mode),
@@ -373,7 +374,7 @@ class BucketFileVersion(Command):
             if mode:
                 customer_key = None
                 if mode != "none":
-                    algorithm = apply_or_none(EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or None)
+                    algorithm = apply_or_none(EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or 'AES256')
                     if mode == "SSE-C":
                         key = server_side_encryption[0]['customer_key'][0]
                         # EncryptionKey only accepts raw bytes as keys, not base 64
