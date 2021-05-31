@@ -60,6 +60,12 @@ func dataSourceB2Bucket() *schema.Resource {
 				Elem:        getDataSourceCorsRulesElem(),
 				Computed:    true,
 			},
+			"file_lock_configuration": {
+				Description: "The default File Lock retention settings for this bucket.",
+				Type:        schema.TypeList,
+				Elem:        getDataSourceFileLockConfiguration(),
+				Computed:    true,
+			},
 			"default_server_side_encryption": {
 				Description: "The default server-side encryption settings of this bucket.",
 				Type:        schema.TypeList,

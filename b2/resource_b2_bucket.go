@@ -55,6 +55,19 @@ func resourceB2Bucket() *schema.Resource {
 				Elem:        getResourceCorsRulesElem(),
 				Optional:    true,
 			},
+			"file_lock_configuration": {
+				Description: "File lock enabled flag, and default retention settings.",
+				Type:        schema.TypeList,
+				Elem:        getResourceFileLockConfiguration(),
+				Optional:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// The API sets default value
+					if k == "file_lock_configuration.#" {
+						return old == "1" && new == "0"
+					}
+					return old == "none" && new == ""
+				},
+			},
 			"default_server_side_encryption": {
 				Description: "The default server-side encryption settings for this bucket.",
 				Type:        schema.TypeList,
@@ -112,6 +125,7 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_type":                    d.Get("bucket_type").(string),
 		"bucket_info":                    d.Get("bucket_info").(map[string]interface{}),
 		"cors_rules":                     d.Get("cors_rules").([]interface{}),
+		"file_lock_configuration":        d.Get("file_lock_configuration").([]interface{}),
 		"default_server_side_encryption": d.Get("default_server_side_encryption").([]interface{}),
 		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}
@@ -164,6 +178,7 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_type":                    d.Get("bucket_type").(string),
 		"bucket_info":                    d.Get("bucket_info").(map[string]interface{}),
 		"cors_rules":                     d.Get("cors_rules").([]interface{}),
+		"file_lock_configuration":        d.Get("file_lock_configuration").([]interface{}),
 		"default_server_side_encryption": d.Get("default_server_side_encryption").([]interface{}),
 		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}

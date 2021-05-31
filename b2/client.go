@@ -67,10 +67,12 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if exitErr.Stderr != nil && len(exitErr.Stderr) > 0 {
+				log.Printf("[ERROR] Error in pybindings: %+v\n", string(exitErr.Stderr))
 				return nil, fmt.Errorf(string(exitErr.Stderr))
 			}
 			return nil, fmt.Errorf("failed to execute")
 		} else {
+			log.Println(err)
 			return nil, err
 		}
 	}

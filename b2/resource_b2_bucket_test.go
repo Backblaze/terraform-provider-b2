@@ -37,6 +37,8 @@ func TestAccResourceB2Bucket_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "bucket_name", bucketName),
 					resource.TestCheckResourceAttr(resourceName, "bucket_type", "allPublic"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.0.is_file_lock_enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "none"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", ""),
@@ -80,6 +82,11 @@ func TestAccResourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.0", "range"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.max_age_seconds", "3600"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.0.is_file_lock_enabled", "true"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.0.default_retention.0.mode", "governance"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.0.default_retention.0.period.0.duration", "7"),
+					resource.TestCheckResourceAttr(resourceName, "file_lock_configuration.0.default_retention.0.period.0.unit", "days"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.mode", "SSE-B2"),
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", "AES256"),
@@ -89,7 +96,6 @@ func TestAccResourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
-					resource.TestCheckResourceAttr(resourceName, "revision", "2"),
 				),
 			},
 		},
@@ -171,7 +177,6 @@ func TestAccResourceB2Bucket_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
-					resource.TestCheckResourceAttr(resourceName, "revision", "3"),
 				),
 			},
 			{
@@ -189,7 +194,6 @@ func TestAccResourceB2Bucket_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
-					resource.TestCheckResourceAttr(resourceName, "revision", "4"),
 				),
 			},
 		},
@@ -243,6 +247,16 @@ resource "b2_bucket" "test" {
     expose_headers = ["x-bz-content-sha1"]
     allowed_headers = ["range"]
     max_age_seconds = 3600
+  }
+  file_lock_configuration {
+	is_file_lock_enabled = true
+	default_retention {
+	  mode = "governance"
+	  period {
+		duration = 7
+		unit = "days"
+	  }
+	}
   }
   default_server_side_encryption {
     mode = "SSE-B2"

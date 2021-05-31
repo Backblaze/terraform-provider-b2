@@ -52,6 +52,12 @@ export B2_TEST_APPLICATION_KEY_ID=your_app_key_id
 make testacc
 ```
 
+Debugging
+---------
+
+Set TF_LOG_PROVIDER and TF_LOG_PATH env variables to see detailed information from the provider.
+Check https://www.terraform.io/docs/internals/debugging.html for details 
+
 Release History
 -----------------
 

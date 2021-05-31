@@ -183,6 +183,58 @@ func getDataSourceLifecycleRulesElem() *schema.Resource {
 	}
 }
 
+func getDataSourceFileLockConfiguration() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"is_file_lock_enabled": {
+				Description: "If present, the boolean value specifies whether bucket is File Lock-enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"default_retention": {
+				Description: "Default retention settings for files uploaded to this bucket",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"mode": {
+							Description: "Default retention mode (compliance|governance|none).",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"period": {
+							Description: "How long for to make files immutable",
+							Type:        schema.TypeList,
+							Optional:    true,
+							Computed:    true,
+							MaxItems:    1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"duration": {
+										Description: "Duration",
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Computed:    true,
+									},
+									"unit": {
+										Description: "Unit for duration (days|years)",
+										Type:        schema.TypeString,
+										Optional:    true,
+										Computed:    true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func getDataSourceAllowedElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -278,6 +330,64 @@ func getResourceCorsRulesElem() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
+			},
+		},
+	}
+}
+
+func getResourceFileLockConfiguration() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"is_file_lock_enabled": {
+				Description: "If present, the boolean value specifies whether bucket is File Lock-enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ForceNew:    true,
+			},
+			"default_retention": {
+				Description: "Default retention settings for files uploaded to this bucket",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// The API sets default value
+					if k == "default_retention.#" {
+						return old == "1" && new == "0"
+					}
+					return old == "none" && new == ""
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"mode": {
+							Description:  "Default retention mode (compliance|governance|none).",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"compliance", "governance", "none"}, false),
+						},
+						"period": {
+							Description: "How long for to make files immutable",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"duration": {
+										Description: "Duration",
+										Type:        schema.TypeInt,
+										Required:    true,
+									},
+									"unit": {
+										Description:  "Unit for duration (days|years)",
+										Type:         schema.TypeString,
+										Required:     true,
+										ValidateFunc: validation.StringInSlice([]string{"days", "years"}, false),
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}

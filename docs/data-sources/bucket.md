@@ -31,6 +31,7 @@ B2 bucket data source.
 - **bucket_type** (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
 - **cors_rules** (List of Object) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedatt--cors_rules))
 - **default_server_side_encryption** (List of Object) The default server-side encryption settings of this bucket. (see [below for nested schema](#nestedatt--default_server_side_encryption))
+- **file_lock_configuration** (List of Object) The default File Lock retention settings for this bucket. (see [below for nested schema](#nestedatt--file_lock_configuration))
 - **lifecycle_rules** (List of Object) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedatt--lifecycle_rules))
 - **options** (Set of String) List of bucket options.
 - **revision** (Number) Bucket revision.
@@ -55,6 +56,33 @@ Read-Only:
 
 - **algorithm** (String)
 - **mode** (String)
+
+
+<a id="nestedatt--file_lock_configuration"></a>
+### Nested Schema for `file_lock_configuration`
+
+Read-Only:
+
+- **default_retention** (List of Object) (see [below for nested schema](#nestedobjatt--file_lock_configuration--default_retention))
+- **is_file_lock_enabled** (Boolean)
+
+<a id="nestedobjatt--file_lock_configuration--default_retention"></a>
+### Nested Schema for `file_lock_configuration.default_retention`
+
+Read-Only:
+
+- **mode** (String)
+- **period** (List of Object) (see [below for nested schema](#nestedobjatt--file_lock_configuration--default_retention--period))
+
+<a id="nestedobjatt--file_lock_configuration--default_retention--period"></a>
+### Nested Schema for `file_lock_configuration.default_retention.period`
+
+Read-Only:
+
+- **duration** (Number)
+- **unit** (String)
+
+
 
 
 <a id="nestedatt--lifecycle_rules"></a>

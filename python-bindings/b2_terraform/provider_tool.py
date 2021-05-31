@@ -12,18 +12,52 @@ import json
 import hashlib
 import os
 import sys
+import traceback
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
-from b2sdk.v1 import EncryptionAlgorithm, EncryptionMode, EncryptionSetting
+from b2sdk.v1 import BucketRetentionSetting, EncryptionAlgorithm, EncryptionMode, EncryptionSetting
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
+from b2_terraform.terraform_structures import BUCKET_KEYS, FILE_KEYS, FILE_VERSION_KEYS, FILES_KEYS
 
 
 def change_keys(obj, converter):
     return {converter(k).replace('__', '_'): v for k, v in obj.items()}
+
+
+def convert_json_to_go(obj: dict, keys_to_keep: dict):
+    """
+    Convert dict representation to follow Terraform Go SDK rules.
+
+    Does following changes:
+    * keys should be converted from camelCase to underscore_case
+    * dictionaries should be wrapped in lists (so {...} -> [{...}]), unless dict is empty, in which case that list
+      should have no elements
+    * dictionary values should be converted recursively
+    """
+    if hasattr(obj, 'as_dict'):
+        obj = obj.as_dict()
+
+    result = {}
+
+    for key, value in obj.items():
+        key = decamelize(key).replace('__', '_')
+        if key not in keys_to_keep:
+            continue
+        if hasattr(value, 'as_dict'):
+            value = value.as_dict()
+        nested = isinstance(keys_to_keep[key], dict)
+        if nested:
+            if isinstance(value, dict):
+                value = [convert_json_to_go(value, keys_to_keep[key])] if value else []
+            elif isinstance(value, list) and len(value) > 0:
+                assert isinstance(keys_to_keep[key], dict)
+                value = [convert_json_to_go(x, keys_to_keep[key]) for x in value]
+        result[key] = value
+    return result
 
 
 def apply_or_none(func, value):
@@ -165,21 +199,36 @@ class Bucket(Command):
         bucket_type,
         bucket_info,
         cors_rules,
+        file_lock_configuration,
         default_server_side_encryption,
         lifecycle_rules,
         **kwargs,
     ):
-        bucket = self.api.create_bucket(
-            **self._preprocess(
-                name=bucket_name,
-                bucket_type=bucket_type,
-                bucket_info=bucket_info,
-                cors_rules=cors_rules,
-                default_server_side_encryption=default_server_side_encryption,
-                lifecycle_rules=lifecycle_rules,
-            )
+        params = self._preprocess(
+            name=bucket_name,
+            bucket_type=bucket_type,
+            bucket_info=bucket_info,
+            cors_rules=cors_rules,
+            file_lock_configuration=file_lock_configuration,
+            default_server_side_encryption=default_server_side_encryption,
+            lifecycle_rules=lifecycle_rules,
         )
-        return self._postprocess(**bucket.as_dict())
+        # default retention can only be set with update_bucket, not create_bucket :(
+        default_retention = params.pop('default_retention', None)
+        bucket = self.api.create_bucket(**params).as_dict()
+        if default_retention is not None:
+            return self.resource_update(
+                bucket_id=bucket['bucketId'],
+                account_id=bucket['accountId'],
+                bucket_type=bucket['bucketType'],
+                bucket_info=None,
+                cors_rules=None,
+                file_lock_configuration=file_lock_configuration,
+                default_server_side_encryption=None,
+                lifecycle_rules=None,
+            )
+
+        return self._postprocess(**bucket)
 
     def resource_read(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
@@ -192,21 +241,23 @@ class Bucket(Command):
         bucket_type,
         bucket_info,
         cors_rules,
+        file_lock_configuration,
         default_server_side_encryption,
         lifecycle_rules,
         **kwargs,
     ):
-        self.api.session.update_bucket(
-            **self._preprocess(
-                account_id=account_id,
-                bucket_id=bucket_id,
-                bucket_type=bucket_type,
-                bucket_info=bucket_info,
-                cors_rules=cors_rules,
-                default_server_side_encryption=default_server_side_encryption,
-                lifecycle_rules=lifecycle_rules,
-            )
+        params = self._preprocess(
+            account_id=account_id,
+            bucket_id=bucket_id,
+            bucket_type=bucket_type,
+            bucket_info=bucket_info,
+            cors_rules=cors_rules,
+            file_lock_configuration=file_lock_configuration,
+            default_server_side_encryption=default_server_side_encryption,
+            lifecycle_rules=lifecycle_rules,
         )
+        params.pop('is_file_lock_enabled', None)  # this can only be set during bucket creation
+        self.api.session.update_bucket(**params)
         bucket = self.api.get_bucket_by_id(bucket_id)
         return self._postprocess(**bucket.as_dict())
 
@@ -221,6 +272,18 @@ class Bucket(Command):
         if cors_rules:
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=camelize)
+
+        for file_lock_configuration in kwargs.pop('file_lock_configuration', ()):
+            if 'is_file_lock_enabled' in file_lock_configuration:
+                kwargs['is_file_lock_enabled'] = file_lock_configuration['is_file_lock_enabled']
+            for default_retention in file_lock_configuration.get('default_retention', ()):
+                if default_retention.get('period') and isinstance(
+                    default_retention.get('period'), list
+                ):
+                    default_retention['period'] = default_retention['period'][0]
+                kwargs['default_retention'] = BucketRetentionSetting.from_bucket_retention_dict(
+                    default_retention
+                )
 
         default_server_side_encryption = kwargs.pop('default_server_side_encryption')
         if default_server_side_encryption:
@@ -246,42 +309,23 @@ class Bucket(Command):
                     item['days_from_uploading_to_hiding'] = None
                 lifecycle_rules[index] = change_keys(item, converter=camelize)
 
-        return {
+        result = {
             'cors_rules': cors_rules,
             'default_server_side_encryption': default_server_side_encryption,
             'lifecycle_rules': lifecycle_rules,
             **kwargs,
         }
+        return result
 
     def _postprocess(self, **kwargs):
-        cors_rules = kwargs.pop('corsRules')
-        if cors_rules:
-            for index, item in enumerate(cors_rules):
-                cors_rules[index] = change_keys(item, converter=decamelize)
-        else:
-            cors_rules = []
+        file_lock_configuration = kwargs['fileLockConfiguration'] = {}
+        for key in ('isFileLockEnabled', 'defaultRetention'):
+            value = kwargs.pop(key, None)
+            if value is not None and value != {'mode': None}:
+                file_lock_configuration[key] = value
 
-        default_server_side_encryption = kwargs.pop('defaultServerSideEncryption')
-        if default_server_side_encryption:
-            default_server_side_encryption = [
-                change_keys(default_server_side_encryption, converter=decamelize)
-            ]
-        else:
-            default_server_side_encryption = []
-
-        lifecycle_rules = kwargs.pop('lifecycleRules')
-        if lifecycle_rules:
-            for index, item in enumerate(lifecycle_rules):
-                lifecycle_rules[index] = change_keys(item, converter=decamelize)
-        else:
-            lifecycle_rules = []
-
-        return {
-            'corsRules': cors_rules,
-            'defaultServerSideEncryption': default_server_side_encryption,
-            'lifecycleRules': lifecycle_rules,
-            **kwargs,
-        }
+        result = convert_json_to_go(kwargs, BUCKET_KEYS)
+        return result
 
 
 @B2Provider.register_subcommand
@@ -340,16 +384,7 @@ class BucketFileVersion(Command):
         }
 
     def _postprocess(self, **kwargs):
-        server_side_encryption = kwargs.pop('serverSideEncryption', None)
-        if server_side_encryption:
-            server_side_encryption = [change_keys(server_side_encryption, converter=decamelize)]
-        else:
-            server_side_encryption = []
-
-        return {
-            'serverSideEncryption': server_side_encryption,
-            **kwargs,
-        }
+        return convert_json_to_go(kwargs, FILE_VERSION_KEYS)
 
 
 @B2Provider.register_subcommand
@@ -367,31 +402,13 @@ class BucketFile(Command):
         )
 
     def _postprocess(self, *, generator, **kwargs):
-        def postprocess_file_version(**kwargs):
-            server_side_encryption = kwargs.pop('serverSideEncryption', None)
-            if server_side_encryption:
-                server_side_encryption = [change_keys(server_side_encryption, converter=decamelize)]
-            else:
-                server_side_encryption = []
-
-            return {
-                'serverSideEncryption': server_side_encryption,
-                **kwargs,
-            }
-
         file_name = kwargs['fileName']
-        file_versions = [
-            change_keys(
-                postprocess_file_version(**file_version_info.as_dict()), converter=decamelize
-            )
+        kwargs['file_versions'] = [
+            file_version_info
             for file_version_info, _ in generator
             if file_version_info.file_name == file_name
         ]
-
-        return {
-            'fileVersions': file_versions,
-            **kwargs,
-        }
+        return convert_json_to_go(kwargs, FILE_KEYS)
 
 
 @B2Provider.register_subcommand
@@ -412,29 +429,8 @@ class BucketFiles(Command):
         )
 
     def _postprocess(self, *, generator, **kwargs):
-        def postprocess_file_version(**kwargs):
-            server_side_encryption = kwargs.pop('serverSideEncryption', None)
-            if server_side_encryption:
-                server_side_encryption = [change_keys(server_side_encryption, converter=decamelize)]
-            else:
-                server_side_encryption = []
-
-            return {
-                'serverSideEncryption': server_side_encryption,
-                **kwargs,
-            }
-
-        file_versions = [
-            change_keys(
-                postprocess_file_version(**file_version_info.as_dict()), converter=decamelize
-            )
-            for file_version_info, _ in generator
-        ]
-
-        return {
-            'fileVersions': file_versions,
-            **kwargs,
-        }
+        kwargs['file_versions'] = [file_version_info for file_version_info, _ in generator]
+        return convert_json_to_go(kwargs, FILES_KEYS)
 
 
 @B2Provider.register_subcommand
@@ -465,8 +461,8 @@ class ProviderTool:
             command = command_class(self)
             data_out = command.run(args, data_in)
             print(data_out, end='')
-        except Exception as exc:
-            print(exc, file=sys.stderr)
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
             return 1
 
         return 0
