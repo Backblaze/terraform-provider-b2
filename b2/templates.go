@@ -143,24 +143,6 @@ func getDataSourceCorsRulesElem() *schema.Resource {
 	}
 }
 
-func getDataSourceDefaultServerSideEncryption() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"algorithm": {
-				Description: "Server-side encryption algorithm.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-		},
-	}
-}
-
 func getDataSourceLifecycleRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -272,9 +254,9 @@ func getResourceDefaultBucketServerSideEncryption() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "Server-side encryption mode.",
+				Type:         schema.TypeString,
+				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2"}, false),
 			},
 			"algorithm": {
@@ -295,22 +277,22 @@ func getResourceFileEncryption() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "Server-side encryption mode.",
+				Type:         schema.TypeString,
+				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2", "SSE-C"}, false),
 			},
 			"algorithm": {
-				Description: "Server-side encryption algorithm.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "AES256",
+				Description:  "Server-side encryption algorithm.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "AES256",
 				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return old == "" || new == ""
 				},
 			},
-			"key":{
+			"key": {
 				Description: "Key used in SSE-C mode.",
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -334,7 +316,6 @@ func getResourceFileEncryption() *schema.Resource {
 		},
 	}
 }
-
 
 func getResourceCorsRulesElem() *schema.Resource {
 	return &schema.Resource{
@@ -465,4 +446,3 @@ func getResourceLifecycleRulesElem() *schema.Resource {
 		},
 	}
 }
-

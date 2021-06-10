@@ -127,6 +127,42 @@ func TestAccResourceB2BucketFileVersion_forceNew(t *testing.T) {
 	})
 }
 
+func TestAccResourceB2BucketFileVersion_sse_c(t *testing.T) {
+	parentResourceName := "b2_bucket.test"
+	resourceName := "b2_bucket_file_version.test"
+
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+	tempFile := createTempFile(t, "hello")
+	defer os.Remove(tempFile)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceB2BucketFileVersionConfig_sse_c(bucketName, tempFile),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "action", "upload"),
+					resource.TestCheckResourceAttrPair(resourceName, "bucket_id", parentResourceName, "bucket_id"),
+					resource.TestCheckResourceAttr(resourceName, "content_md5", "5d41402abc4b2a76b9719d911017c592"),
+					resource.TestCheckResourceAttr(resourceName, "content_sha1", "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"),
+					resource.TestCheckResourceAttr(resourceName, "content_type", "octet/stream"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.%", "1"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.description", "the file"),
+					resource.TestCheckResourceAttr(resourceName, "file_name", "temp.bin"),
+					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.mode", "SSE-C"),
+					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.algorithm", "AES256"),
+					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.key.0.key_id", "test_id"),
+					resource.TestCheckResourceAttr(resourceName, "source", tempFile),
+					resource.TestCheckResourceAttr(resourceName, "size", "5"),
+					resource.TestMatchResourceAttr(resourceName, "upload_timestamp", regexp.MustCompile("^[0-9]{13}$")),
+				),
+			},
+		},
+	})
+}
+
 func testAccResourceB2BucketFileVersionConfig_basic(bucketName string, tempFile string) string {
 	return fmt.Sprintf(`
 resource "b2_bucket" "test" {
@@ -184,7 +220,7 @@ resource "b2_bucket_file_version" "test" {
     mode = "SSE-C"
     algorithm = "AES256"
 	key {
-	  secret_b64 = ""
+	  secret_b64 = "CL31zAM5wJs8OZ6ORPakyLRYBqLDA8Z+AZ5tEBxqCKw=\n"
       key_id = "test_id"
     }
   }

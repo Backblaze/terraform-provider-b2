@@ -17,7 +17,13 @@ import traceback
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
-from b2sdk.v1 import BucketRetentionSetting, EncryptionAlgorithm, EncryptionKey, EncryptionMode, EncryptionSetting
+from b2sdk.v1 import (
+    BucketRetentionSetting,
+    EncryptionAlgorithm,
+    EncryptionKey,
+    EncryptionMode,
+    EncryptionSetting,
+)
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
@@ -291,12 +297,15 @@ class Bucket(Command):
             mode = default_server_side_encryption[0]['mode'] or None
             if mode:
                 if mode != "none":
-                    algorithm = apply_or_none(EncryptionAlgorithm, default_server_side_encryption[0]['algorithm']
-                                              or 'AES256')
+                    algorithm = apply_or_none(
+                        EncryptionAlgorithm,
+                        default_server_side_encryption[0]['algorithm'] or 'AES256',
+                    )
                 else:
                     algorithm = None
-                default_server_side_encryption = EncryptionSetting(mode=apply_or_none(EncryptionMode, mode),
-                                                                   algorithm=algorithm)
+                default_server_side_encryption = EncryptionSetting(
+                    mode=apply_or_none(EncryptionMode, mode), algorithm=algorithm
+                )
             else:
                 default_server_side_encryption = None
         else:
@@ -374,16 +383,21 @@ class BucketFileVersion(Command):
             if mode:
                 customer_key = None
                 if mode != "none":
-                    algorithm = apply_or_none(EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or 'AES256')
+                    algorithm = apply_or_none(
+                        EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or 'AES256'
+                    )
                     if mode == "SSE-C":
                         key = server_side_encryption[0]['customer_key'][0]
                         # EncryptionKey only accepts raw bytes as keys, not base 64
-                        customer_key = EncryptionKey(secret=base64.b64decode(key['secret_b64'], validate=True),
-                                                     key_id=key.get('key_id'))
+                        customer_key = EncryptionKey(
+                            secret=base64.b64decode(key['secret_b64'], validate=True),
+                            key_id=key.get('key_id'),
+                        )
                 else:
                     algorithm = None
-                server_side_encryption = EncryptionSetting(mode=apply_or_none(EncryptionMode, mode),
-                                                           algorithm=algorithm, key=customer_key)
+                server_side_encryption = EncryptionSetting(
+                    mode=apply_or_none(EncryptionMode, mode), algorithm=algorithm, key=customer_key
+                )
             else:
                 server_side_encryption = None
         else:
