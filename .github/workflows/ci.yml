@@ -91,6 +91,7 @@ jobs:
           - 0.13.7
           - 0.14.11
           - 0.15.4
+          - 1.0.0
     steps:
       - uses: actions/checkout@v2
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
