@@ -387,12 +387,14 @@ class BucketFileVersion(Command):
                         EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or 'AES256'
                     )
                     if mode == "SSE-C":
-                        key = server_side_encryption[0]['customer_key'][0]
+                        key = server_side_encryption[0]['key'][0]
                         # EncryptionKey only accepts raw bytes as keys, not base 64
                         customer_key = EncryptionKey(
                             secret=base64.b64decode(key['secret_b64'], validate=True),
                             key_id=key.get('key_id'),
                         )
+                        if len(customer_key.secret) != 32:
+                            raise Exception(f'Wrong key length ({len(customer_key.secret)})')
                 else:
                     algorithm = None
                 server_side_encryption = EncryptionSetting(

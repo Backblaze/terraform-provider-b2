@@ -21,10 +21,7 @@ BUCKET_SERVER_SIDE_ENCRYPTION = {
 FILE_VERSION_SERVER_SIDE_ENCRYPTION = {
     "mode": True,
     "algorithm": True,
-    "key": {
-        "secret": True,
-        "key_id": True,
-    },
+    # 'key' is not here as API does not return it
 }
 
 FILE_VERSION_KEYS = {

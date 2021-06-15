@@ -147,13 +147,13 @@ func TestAccResourceB2BucketFileVersion_sse_c(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "content_md5", "5d41402abc4b2a76b9719d911017c592"),
 					resource.TestCheckResourceAttr(resourceName, "content_sha1", "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"),
 					resource.TestCheckResourceAttr(resourceName, "content_type", "octet/stream"),
-					resource.TestCheckResourceAttr(resourceName, "file_info.%", "1"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.%", "2"),
 					resource.TestCheckResourceAttr(resourceName, "file_info.description", "the file"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.sse_c_key_id", "test_id"),
 					resource.TestCheckResourceAttr(resourceName, "file_name", "temp.bin"),
 					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.mode", "SSE-C"),
 					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.algorithm", "AES256"),
-					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.key.0.key_id", "test_id"),
 					resource.TestCheckResourceAttr(resourceName, "source", tempFile),
 					resource.TestCheckResourceAttr(resourceName, "size", "5"),
 					resource.TestMatchResourceAttr(resourceName, "upload_timestamp", regexp.MustCompile("^[0-9]{13}$")),
@@ -220,7 +220,7 @@ resource "b2_bucket_file_version" "test" {
     mode = "SSE-C"
     algorithm = "AES256"
 	key {
-	  secret_b64 = "CL31zAM5wJs8OZ6ORPakyLRYBqLDA8Z+AZ5tEBxqCKw=\n"
+	  secret_b64 = "o5ORvrV7hT4O9DdZjCMLqrQdmqWFtd41Ynl32F5voeI="
       key_id = "test_id"
     }
   }

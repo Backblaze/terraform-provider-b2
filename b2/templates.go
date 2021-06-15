@@ -11,6 +11,8 @@
 package b2
 
 import (
+	"encoding/base64"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -260,17 +262,33 @@ func getResourceDefaultBucketServerSideEncryption() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2"}, false),
 			},
 			"algorithm": {
-				Description:  "Server-side encryption algorithm.",
+				Description:  "Server-side encryption algorithm. AES256 is the only one supported.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				Default:      "AES256",
 				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "" || new == ""
-				},
 			},
 		},
 	}
+}
+
+func validateBase64Key(i interface{}, k string) (warnings []string, errors []error) {
+	v, ok := i.(string)
+	if ok {
+		decoded, err := base64.StdEncoding.DecodeString(v)
+		if err == nil {
+			// AES256 (which is the only supported algorithm for now) key should be 256 bits (32 bytes)
+			if len(decoded) != 32 {
+				errors = append(errors, fmt.Errorf("AES256 key should be 32 bytes, got %d bytes instead",
+					len(decoded)))
+			}
+		} else {
+			errors = append(errors, err)
+		}
+	} else {
+		errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+	}
+
+	return warnings, errors
 }
 
 func getResourceFileEncryption() *schema.Resource {
@@ -283,14 +301,10 @@ func getResourceFileEncryption() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2", "SSE-C"}, false),
 			},
 			"algorithm": {
-				Description:  "Server-side encryption algorithm.",
+				Description:  "Server-side encryption algorithm. AES256 is the only one supported.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				Default:      "AES256",
 				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "" || new == ""
-				},
 			},
 			"key": {
 				Description: "Key used in SSE-C mode.",
@@ -300,10 +314,11 @@ func getResourceFileEncryption() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"secret_b64": {
-							Description: "Secret key value, Base 64 encoded",
-							Type:        schema.TypeString,
-							Required:    true,
-							Sensitive:   true,
+							Description:  "Secret key value, in standard Base 64 encoding (RFC 4648)",
+							Type:         schema.TypeString,
+							Optional:     true,
+							Sensitive:    true,
+							ValidateFunc: validateBase64Key,
 						},
 						"key_id": {
 							Description: "Key identifier stored in file info metadata",
@@ -311,6 +326,13 @@ func getResourceFileEncryption() *schema.Resource {
 							Optional:    true,
 						},
 					},
+				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// The API does not return the key, so we need to suppress diff for existing resources
+					if k == "server_side_encryption.0.key.#" && d.Id() != "" {
+						return true
+					}
+					return false
 				},
 			},
 		},

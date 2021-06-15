@@ -59,7 +59,6 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 		// Should never happen
 		return nil, err
 	}
-
 	cmd.Stdin = bytes.NewReader(inputJson)
 
 	outputJson, err := cmd.Output()

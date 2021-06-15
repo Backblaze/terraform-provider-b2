@@ -46,6 +46,15 @@ Required:
 
 Optional:
 
-- **algorithm** (String) Server-side encryption algorithm.
+- **algorithm** (String) Server-side encryption algorithm. AES256 is the only one supported.
+- **key** (Block List, Max: 1) Key used in SSE-C mode. (see [below for nested schema](#nestedblock--server_side_encryption--key))
+
+<a id="nestedblock--server_side_encryption--key"></a>
+### Nested Schema for `server_side_encryption.key`
+
+Optional:
+
+- **key_id** (String) Key identifier stored in file info metadata
+- **secret_b64** (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648)
 
 
