@@ -65,11 +65,15 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				},
 				Optional: true,
 				ForceNew: true,
+				Computed: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return k == "file_info.sse_c_key_id" || old == new
+				},
 			},
 			"server_side_encryption": {
 				Description: "Server-side encryption settings.",
 				Type:        schema.TypeList,
-				Elem:        getResourceServerSideEncryption(),
+				Elem:        getResourceFileEncryption(),
 				Optional:    true,
 				ForceNew:    true,
 				MaxItems:    1,

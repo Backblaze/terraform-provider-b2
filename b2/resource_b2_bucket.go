@@ -71,7 +71,7 @@ func resourceB2Bucket() *schema.Resource {
 			"default_server_side_encryption": {
 				Description: "The default server-side encryption settings for this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getResourceDefaultServerSideEncryption(),
+				Elem:        getResourceDefaultBucketServerSideEncryption(),
 				Optional:    true,
 				MaxItems:    1,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {

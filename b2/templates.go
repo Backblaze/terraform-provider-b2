@@ -143,24 +143,6 @@ func getDataSourceCorsRulesElem() *schema.Resource {
 	}
 }
 
-func getDataSourceDefaultServerSideEncryption() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"algorithm": {
-				Description: "Server-side encryption algorithm.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-		},
-	}
-}
-
 func getDataSourceLifecycleRulesElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -268,18 +250,85 @@ func getDataSourceAllowedElem() *schema.Resource {
 	}
 }
 
-func getResourceServerSideEncryption() *schema.Resource {
+func getDataSourceDefaultBucketServerSideEncryption() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"mode": {
 				Description: "Server-side encryption mode.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Computed:    true,
 			},
 			"algorithm": {
-				Description: "Server-side encryption algorithm.",
+				Description: "Server-side encryption algorithm. AES256 is the only one supported.",
 				Type:        schema.TypeString,
+				Computed:    true,
+			},
+		},
+	}
+}
+
+func getResourceDefaultBucketServerSideEncryption() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description:  "Server-side encryption mode.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2"}, false),
+			},
+			"algorithm": {
+				Description:  "Server-side encryption algorithm. AES256 is the only one supported.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
+			},
+		},
+	}
+}
+
+func getResourceFileEncryption() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description:  "Server-side encryption mode.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2", "SSE-C"}, false),
+			},
+			"algorithm": {
+				Description:  "Server-side encryption algorithm. AES256 is the only one supported.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
+			},
+			"key": {
+				Description: "Key used in SSE-C mode.",
+				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"secret_b64": {
+							Description:  "Secret key value, in standard Base 64 encoding (RFC 4648)",
+							Type:         schema.TypeString,
+							Optional:     true,
+							Sensitive:    true,
+							ValidateFunc: validateBase64Key,
+						},
+						"key_id": {
+							Description: "Key identifier stored in file info metadata",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+					},
+				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// The API does not return the key, so we need to suppress diff for existing resources
+					if k == "server_side_encryption.0.key.#" && d.Id() != "" {
+						return true
+					}
+					return false
+				},
 			},
 		},
 	}
@@ -388,24 +437,6 @@ func getResourceFileLockConfiguration() *schema.Resource {
 						},
 					},
 				},
-			},
-		},
-	}
-}
-
-func getResourceDefaultServerSideEncryption() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "none",
-			},
-			"algorithm": {
-				Description: "Server-side encryption algorithm.",
-				Type:        schema.TypeString,
-				Optional:    true,
 			},
 		},
 	}

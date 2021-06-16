@@ -13,9 +13,15 @@ Store information about which data keys returned by B2 SDK should be passed on t
 Prevents error in terraform provider when API is extended with new fields.
 """
 
-SERVER_SIDE_ENCRYPTION = {
+BUCKET_SERVER_SIDE_ENCRYPTION = {
     "mode": True,
     "algorithm": True,
+}
+
+FILE_VERSION_SERVER_SIDE_ENCRYPTION = {
+    "mode": True,
+    "algorithm": True,
+    # 'key' is not here as API does not return it
 }
 
 FILE_VERSION_KEYS = {
@@ -29,7 +35,7 @@ FILE_VERSION_KEYS = {
     "file_name": True,
     "size": True,
     "source": True,
-    "server_side_encryption": SERVER_SIDE_ENCRYPTION,
+    "server_side_encryption": FILE_VERSION_SERVER_SIDE_ENCRYPTION,
     "upload_timestamp": True,
 }
 
@@ -71,7 +77,7 @@ BUCKET_KEYS = {
             },
         },
     },
-    "default_server_side_encryption": SERVER_SIDE_ENCRYPTION,
+    "default_server_side_encryption": BUCKET_SERVER_SIDE_ENCRYPTION,
     "lifecycle_rules": {
         "file_name_prefix": True,
         "days_from_hiding_to_deleting": True,
