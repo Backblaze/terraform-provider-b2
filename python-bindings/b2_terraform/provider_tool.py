@@ -394,7 +394,7 @@ class BucketFileVersion(Command):
                             key_id=key.get('key_id'),
                         )
                         if len(customer_key.secret) != 32:
-                            raise Exception(f'Wrong key length ({len(customer_key.secret)})')
+                            raise RuntimeError(f'Wrong key length ({len(customer_key.secret)})')
                 else:
                     algorithm = None
                 server_side_encryption = EncryptionSetting(

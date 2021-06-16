@@ -55,13 +55,10 @@ Optional:
 <a id="nestedblock--default_server_side_encryption"></a>
 ### Nested Schema for `default_server_side_encryption`
 
-Required:
-
-- **mode** (String) Server-side encryption mode.
-
 Optional:
 
 - **algorithm** (String) Server-side encryption algorithm. AES256 is the only one supported.
+- **mode** (String) Server-side encryption mode.
 
 
 <a id="nestedblock--file_lock_configuration"></a>

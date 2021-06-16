@@ -69,7 +69,7 @@ func dataSourceB2Bucket() *schema.Resource {
 			"default_server_side_encryption": {
 				Description: "The default server-side encryption settings of this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getResourceDefaultBucketServerSideEncryption(),
+				Elem:        getDataSourceDefaultBucketServerSideEncryption(),
 				Computed:    true,
 			},
 			"lifecycle_rules": {

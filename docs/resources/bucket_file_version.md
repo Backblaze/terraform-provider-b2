@@ -40,14 +40,11 @@ B2 bucket file version resource.
 <a id="nestedblock--server_side_encryption"></a>
 ### Nested Schema for `server_side_encryption`
 
-Required:
-
-- **mode** (String) Server-side encryption mode.
-
 Optional:
 
 - **algorithm** (String) Server-side encryption algorithm. AES256 is the only one supported.
 - **key** (Block List, Max: 1) Key used in SSE-C mode. (see [below for nested schema](#nestedblock--server_side_encryption--key))
+- **mode** (String) Server-side encryption mode.
 
 <a id="nestedblock--server_side_encryption--key"></a>
 ### Nested Schema for `server_side_encryption.key`
