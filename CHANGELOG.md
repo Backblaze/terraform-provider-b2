@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2021-07-06
+
 ### Added
 * Support SSE-C encryption mode for files
 * Initial (experimental) support for Alpine Linux
