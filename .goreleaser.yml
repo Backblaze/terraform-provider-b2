@@ -13,6 +13,7 @@ builds:
     - darwin
   goarch:
     - amd64
+    - arm64
   hooks:
     pre:
       - cp python-bindings/dist/py-terraform-provider-b2-{{ .Os }} python-bindings/dist/py-terraform-provider-b2
