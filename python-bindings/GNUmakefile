@@ -10,9 +10,6 @@ default: build
 
 deps:
 	@pip install -r requirements-dev.txt
-ifeq ($(UNAME_),Linux)
-	@pip install -r requirements-dev-linux.txt
-endif
 
 format:
 	@black -Sl 100 ${DIR}

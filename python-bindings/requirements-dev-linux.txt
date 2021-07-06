@@ -1,3 +1,0 @@
-patchelf-wrapper~=1.2.0
-staticx~=0.12.2
-
