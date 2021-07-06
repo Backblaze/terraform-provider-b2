@@ -10,7 +10,7 @@ on:
 
 env:
   PYTHON_DEFAULT_VERSION: 3.9
-  GO_DEFAULT_VERSION: 1.15
+  GO_DEFAULT_VERSION: 1.16
 
 jobs:
   lint:
