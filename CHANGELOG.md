@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Support SSE-C encryption mode for files
 * Initial (experimental) support for Alpine Linux
+* Support for Apple M1 (arm64) architecture on Mac OS (for main plugin binary, Python bindings will still use Rosetta)
 
 ## [0.5.0] - 2021-05-31
 
