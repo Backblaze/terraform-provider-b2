@@ -2,6 +2,7 @@ NAME=py-terraform-provider-b2
 DIR=b2_terraform
 EGG_INFO=${NAME}.egg-info
 SPEC=${NAME}.spec
+UNAME_=$(shell uname)
 
 default: build
 
@@ -25,6 +26,11 @@ clean:
 
 build:
 	@pyinstaller --log-level WARN --onefile ${SPEC}
+ifeq ($(UNAME_),Linux)
+	@mv dist/py-terraform-provider-b2 dist/py-terraform-provider-b2-linked
+	@staticx dist/py-terraform-provider-b2-linked dist/py-terraform-provider-b2
+	@rm dist/py-terraform-provider-b2-linked
+endif
 ifneq ($(origin CI), undefined)
 	@echo "::set-output name=version::$(subst refs/tags/v,,${GITHUB_REF})"
 endif
