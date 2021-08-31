@@ -24,6 +24,7 @@ from b2sdk.v1 import (
     EncryptionMode,
     EncryptionSetting,
 )
+from b2sdk.exception import BadRequest
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
@@ -270,7 +271,13 @@ class Bucket(Command):
 
     def resource_delete(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
-        self.api.delete_bucket(bucket)
+        try:
+            self.api.delete_bucket(bucket)
+        except BadRequest as e:
+            if e.code == 'bad_bucket_id':  # bucket was already deleted
+                pass
+            else:
+                raise
 
         return {}
 

@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* When deleting bucket that bucket no longer exists, error is silently ignored
+
 ## [0.6.0] - 2021-07-06
 
 ### Added
