@@ -6,8 +6,6 @@ Terraform Provider B2
 
 > :warning: **The provider is still in beta!**
 
-> :warning: **The provider doesn't yet support Alpine Linux, thus won't work with the official Terraform docker images!**
-
 Terraform provider for Backblaze B2.
 
 The provider is written in go, but it uses official [B2 python SDK](https://github.com/Backblaze/b2-sdk-python/) embedded into the binary.
