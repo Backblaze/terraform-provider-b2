@@ -112,7 +112,7 @@ jobs:
       - name: Update GitHub release
         uses: softprops/action-gh-release@v1
         with:
-          name: v${{ needs.build-pybindings.outputs.version }}
+          name: v${{ needs.build-linux-pybindings.outputs.version }}
           body: ${{ steps.read-changelog.outputs.changes }}
           draft: false
           prerelease: false
