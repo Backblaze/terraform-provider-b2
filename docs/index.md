@@ -13,7 +13,7 @@ The provider is written in go, but it uses official [B2 python SDK](https://gith
 ## Example Usage
 ```terraform
 terraform {
-  required_version = ">= 0.13"
+  required_version = ">= 1.0.0"
   required_providers {
     b2 = {
       source = "Backblaze/b2"
