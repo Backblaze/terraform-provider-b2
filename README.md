@@ -2,10 +2,6 @@ Terraform Provider B2
 =====================
 [![Continuous Integration](https://github.com/Backblaze/terraform-provider-b2/workflows/Continuous%20Integration/badge.svg)](https://github.com/Backblaze/terraform-provider-b2/actions?query=workflow%3A%22Continuous+Integration%22)
 
-
-
-> :warning: **The provider is still in beta!**
-
 Terraform provider for Backblaze B2.
 
 The provider is written in go, but it uses official [B2 python SDK](https://github.com/Backblaze/b2-sdk-python/) embedded into the binary.
