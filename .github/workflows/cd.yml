@@ -10,14 +10,38 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build-pybindings:
-    runs-on: ${{ matrix.os }}
+  build-linux-pybindings:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.9  # can not use ${{ env.PYTHON_DEFAULT_VERSION }} here
+      env:
+        DEBIAN_FRONTEND: noninteractive
     outputs:
       version: ${{ steps.build.outputs.version }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-10.15]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        working-directory: python-bindings
+        run: |
+          apt-get -y update
+          apt-get -y install patchelf
+          make deps
+      - name: Build python bindings
+        id: build
+        working-directory: python-bindings
+        run: |
+          make build
+      - name: Upload python bindings
+        uses: actions/upload-artifact@v2
+        with:
+          name: py-terraform-provider-b2-linux
+          path: python-bindings/dist/py-terraform-provider-b2
+          if-no-files-found: error
+          retention-days: 1
+  build-macos-pybindings:
+    runs-on: macos-10.15
+    outputs:
+      version: ${{ steps.build.outputs.version }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
@@ -36,12 +60,12 @@ jobs:
       - name: Upload python bindings
         uses: actions/upload-artifact@v2
         with:
-          name: py-terraform-provider-b2-${{ runner.os }}
+          name: py-terraform-provider-b2-darwin
           path: python-bindings/dist/py-terraform-provider-b2
           if-no-files-found: error
           retention-days: 1
   build-and-deploy:
-    needs: build-pybindings
+    needs: [build-linux-pybindings, build-macos-pybindings]
     env:
       NOPYBINDINGS: 1  # do not build python buildings
     runs-on: ubuntu-latest
@@ -61,17 +85,17 @@ jobs:
       - name: Download python bindings for all OSes
         uses: actions/download-artifact@v2
         with:
-          path: python-bindings/dist/
+          path: python-bindings/dist/artifacts/
       - name: Postprocess python bindings
         working-directory: python-bindings/dist
         run: |
-          mv py-terraform-provider-b2-Linux/py-terraform-provider-b2 py-terraform-provider-b2-linux
-          mv py-terraform-provider-b2-macOS/py-terraform-provider-b2 py-terraform-provider-b2-darwin
+          mv artifacts/py-terraform-provider-b2-linux/py-terraform-provider-b2 py-terraform-provider-b2-linux
+          mv artifacts/py-terraform-provider-b2-darwin/py-terraform-provider-b2 py-terraform-provider-b2-darwin
       - name: Read the Changelog
         id: read-changelog
         uses: mindsers/changelog-reader-action@v2
         with:
-          version: ${{ needs.build-pybindings.outputs.version }}
+          version: ${{ needs.build-linux-pybindings.outputs.version }}
       - name: Import GPG key
         id: import_gpg
         uses: paultyng/ghaction-import-gpg@v2.1.0

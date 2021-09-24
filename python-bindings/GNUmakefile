@@ -25,11 +25,11 @@ clean:
 	@rm -rf build dist ${EGG_INFO}
 
 build:
-	@pyinstaller --log-level WARN --onefile ${SPEC}
+	@pyinstaller --onefile ${SPEC}
 ifeq ($(UNAME_),Linux)
-	@mv dist/py-terraform-provider-b2 dist/py-terraform-provider-b2-linked
-	@staticx dist/py-terraform-provider-b2-linked dist/py-terraform-provider-b2
-	@rm dist/py-terraform-provider-b2-linked
+	@mv -f dist/py-terraform-provider-b2 dist/py-terraform-provider-b2-linked
+	@staticx --strip --loglevel INFO dist/py-terraform-provider-b2-linked dist/py-terraform-provider-b2
+	@rm -f dist/py-terraform-provider-b2-linked
 endif
 ifneq ($(origin CI), undefined)
 	@echo "::set-output name=version::$(subst refs/tags/v,,${GITHUB_REF})"
