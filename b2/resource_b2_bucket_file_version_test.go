@@ -220,7 +220,7 @@ resource "b2_bucket_file_version" "test" {
     mode = "SSE-C"
     algorithm = "AES256"
 	key {
-	  secret_b64 = "o5ORvrV7hT4O9DdZjCMLqrQdmqWFtd41Ynl32F5voeI="
+	  secret_b64 = "notarealkey11111111111111111111111111111111="
       key_id = "test_id"
     }
   }
