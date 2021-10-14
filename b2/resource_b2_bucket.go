@@ -12,6 +12,7 @@ package b2
 
 import (
 	"context"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -157,6 +158,12 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	if len(output) == 0 && !d.IsNewResource() {
+		// deleted bucket
+		log.Printf("[WARN] Bucket (%s) not found, removing from state", d.Id())
+		d.SetId("")
+		return nil
 	}
 
 	err = client.populate(name, op, output, d)

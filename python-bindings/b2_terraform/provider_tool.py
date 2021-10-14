@@ -24,7 +24,7 @@ from b2sdk.v1 import (
     EncryptionMode,
     EncryptionSetting,
 )
-from b2sdk.exception import BadRequest
+from b2sdk.exception import BadRequest, NonExistentBucket
 
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
@@ -239,7 +239,10 @@ class Bucket(Command):
         return self._postprocess(**bucket)
 
     def resource_read(self, *, bucket_id, **kwargs):
-        bucket = self.api.get_bucket_by_id(bucket_id)
+        try:
+            bucket = self.api.get_bucket_by_id(bucket_id)
+        except NonExistentBucket:  # return empty dict if bucket does not exist, handled in resource_b2.bucket.go
+            return {}
         return self._postprocess(**bucket.as_dict())
 
     def resource_update(
