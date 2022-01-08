@@ -18,11 +18,11 @@ endif
 
 deps: _pybindings
 	@go mod download
-	@go get github.com/markbates/pkger/cmd/pkger
+	@go install github.com/markbates/pkger/cmd/pkger
 	@go mod tidy
 	@cd tools && go mod download
-	@cd tools && go get github.com/golangci/golangci-lint/cmd/golangci-lint
-	@cd tools && go get github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	@cd tools && go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 	@cd tools && go mod tidy
 
 deps-check:

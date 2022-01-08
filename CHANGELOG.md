@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* Upgraded go to 1.17.6 and github.com/hashicorp/terraform-plugin-sdk/v2 to v2.10.1
+
 ## [0.7.1] - 2021-10-14
 
 ### Changed
