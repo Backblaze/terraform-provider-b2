@@ -29,7 +29,7 @@ from b2sdk.exception import BadRequest, NonExistentBucket
 from b2_terraform.api_wrapper import B2ApiWrapper
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
-from b2_terraform.terraform_structures import BUCKET_KEYS, FILE_KEYS, FILE_VERSION_KEYS, FILES_KEYS
+from b2_terraform.terraform_structures import BUCKET_KEYS, FILE_KEYS, FILE_SIGNED_URL_KEYS, FILE_VERSION_KEYS, FILES_KEYS
 
 
 def change_keys(obj, converter):
@@ -448,6 +448,22 @@ class BucketFile(Command):
         ]
         return convert_json_to_go(kwargs, FILE_KEYS)
 
+@B2Provider.register_subcommand
+class BucketFileSignedUrl(Command):
+    def data_source_read(self, *, bucket_id, file_name, duration, **kwargs):
+        bucket = self.api.get_bucket_by_id(bucket_id)
+        folder_name = os.path.dirname(file_name)
+        auth_token = bucket.get_download_authorization(
+            file_name_prefix=file_name, valid_duration_in_seconds=duration
+        )
+        base_url = bucket.get_download_url(file_name)
+        signed_url = base_url + '?Authorization=' + auth_token
+        return self._postprocess(
+            bucketId=bucket_id, fileName=file_name, duration=duration, signedUrl=signed_url
+        )
+
+    def _postprocess(self, **kwargs):
+        return convert_json_to_go(kwargs, FILE_SIGNED_URL_KEYS)
 
 @B2Provider.register_subcommand
 class BucketFiles(Command):
