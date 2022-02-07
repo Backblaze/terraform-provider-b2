@@ -1,8 +1,8 @@
 //####################################################################
 //
-// File: b2/data_source_b2_bucket_file_test.go
+// File: b2/data_source_b2_bucket_file_signed_url_test.go
 //
-// Copyright 2021 Backblaze Inc. All Rights Reserved.
+// Copyright 2022 Backblaze Inc. All Rights Reserved.
 //
 // License https://www.backblaze.com/using_b2_code.html
 //
@@ -38,6 +38,7 @@ func TestAccDataSourceB2BucketFileSignedUrl_singleFile(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", parentResourceName, "bucket_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_name", resourceName, "file_name"),
 					resource.TestCheckResourceAttrSet(dataSourceName, "signed_url"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "id", dataSourceName, "signed_url"),
 				),
 			},
 		},
@@ -48,7 +49,7 @@ func testAccDataSourceB2BucketFileSignedUrlConfig_singleFile(bucketName string, 
 	return fmt.Sprintf(`
 resource "b2_bucket" "test" {
   bucket_name = "%s"
-  bucket_type = "allPublic"
+  bucket_type = "allPrivate"
 }
 
 resource "b2_bucket_file_version" "test" {

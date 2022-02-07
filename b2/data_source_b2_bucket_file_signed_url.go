@@ -1,8 +1,8 @@
 //####################################################################
 //
-// File: b2/data_source_b2_bucket_file.go
+// File: b2/data_source_b2_bucket_file_signed_url.go
 //
-// Copyright 2021 Backblaze Inc. All Rights Reserved.
+// Copyright 2022 Backblaze Inc. All Rights Reserved.
 //
 // License https://www.backblaze.com/using_b2_code.html
 //
@@ -67,7 +67,7 @@ func dataSourceB2BucketFileSignedUrlRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["_sha1"].(string))
+	d.SetId(output["signed_url"].(string))
 
 	err = client.populate(name, op, output, d)
 	if err != nil {
