@@ -71,6 +71,12 @@ func TestAccResourceB2ApplicationKey_all(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
 				),
 			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"application_key"},
+			},
 		},
 	})
 }
