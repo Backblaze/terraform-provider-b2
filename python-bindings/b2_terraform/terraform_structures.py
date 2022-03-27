@@ -46,6 +46,13 @@ FILE_KEYS = {
     "file_versions": FILE_VERSION_KEYS,
 }
 
+FILE_SIGNED_URL_KEYS = {
+    "bucket_id": True,
+    "file_name": True,
+    "duration": True,
+    "signed_url": True,
+}
+
 FILES_KEYS = {
     "bucket_id": True,
     "folder_name": True,
