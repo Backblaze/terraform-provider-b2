@@ -35,6 +35,7 @@ B2 bucket file data source.
 Read-Only:
 
 - **action** (String)
+- **bucket_id** (String)
 - **content_md5** (String)
 - **content_sha1** (String)
 - **content_type** (String)

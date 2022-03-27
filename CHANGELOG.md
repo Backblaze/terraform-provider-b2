@@ -6,11 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-03-27
+
+### Added
+
+* Added importer for b2_bucket and b2_application_key resources
+* Added signed URL as data source to allow downloading files from private bucket during provisioning without storing an API key
+
 ### Changed
-* Added Importer for b2_bucket and b2_application_key resource
+
 * Upgraded go to 1.18 and github.com/hashicorp/terraform-plugin-sdk/ to v2.12.0
-* Upgraded b2sdk to 1.14.1
-* Upgraded pyinstaller to 4.10, which should help resolve some issues with running on Apple M1 silicon
+* Upgraded b2sdk to 1.14.1, which allowed using improved API calls for listing files and making Python parts simpler
+* Upgraded PyInstaller to 4.10, which should help resolve some issues with running on Apple M1 silicon
 
 ## [0.7.1] - 2021-10-14
 
@@ -94,8 +101,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.1...HEAD
-[0.7.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.9...v0.7.1
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.1...v0.8.0
+[0.7.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.5.0...v0.6.0

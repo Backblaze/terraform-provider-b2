@@ -11,7 +11,6 @@
 import base64
 import json
 import hashlib
-import os
 import sys
 import traceback
 
@@ -24,12 +23,19 @@ from b2sdk.v1 import (
     EncryptionMode,
     EncryptionSetting,
 )
-from b2sdk.exception import BadRequest, NonExistentBucket
+from b2sdk.exception import BadRequest, BucketIdNotFound
 
-from b2_terraform.api_wrapper import B2ApiWrapper
+from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
-from b2_terraform.terraform_structures import BUCKET_KEYS, FILE_KEYS, FILE_SIGNED_URL_KEYS, FILE_VERSION_KEYS, FILES_KEYS
+from b2_terraform.terraform_structures import (
+    API_KEY_KEYS,
+    BUCKET_KEYS,
+    FILE_KEYS,
+    FILE_SIGNED_URL_KEYS,
+    FILE_VERSION_KEYS,
+    FILES_KEYS,
+)
 
 
 def change_keys(obj, converter):
@@ -46,13 +52,14 @@ def convert_json_to_go(obj: dict, keys_to_keep: dict):
       should have no elements
     * dictionary values should be converted recursively
     """
+    assert keys_to_keep is not None
     if hasattr(obj, 'as_dict'):
         obj = obj.as_dict()
 
     result = {}
 
     for key, value in obj.items():
-        key = decamelize(key).replace('__', '_')
+        key = decamelize(key).replace('__', '_').strip('_')
         if key not in keys_to_keep:
             continue
         if hasattr(value, 'as_dict'):
@@ -65,6 +72,9 @@ def convert_json_to_go(obj: dict, keys_to_keep: dict):
                 assert isinstance(keys_to_keep[key], dict)
                 value = [convert_json_to_go(x, keys_to_keep[key]) for x in value]
         result[key] = value
+    for key, value in keys_to_keep.items():
+        if key not in result and value is not None and not isinstance(value, dict):
+            result[key] = value
     return result
 
 
@@ -75,6 +85,7 @@ def apply_or_none(func, value):
 class Command:
     # The registry for the subcommands, should be reinitialized  in subclass
     subcommands_registry = None
+    tf_keys = None
 
     def __init__(self, provider_tool):
         self.provider_tool = provider_tool
@@ -117,15 +128,19 @@ class Command:
 
     def run(self, args, data_in):
         handler = getattr(self, args.OP)
-        result = handler(**json.loads(data_in))
+        result = handler(**json.loads(data_in)) or {}
         result['_sha1'] = hashlib.sha1(data_in.encode()).hexdigest()
-        result['_ua'] = self.api.user_agent
         data_out = json.dumps(
             change_keys(result, converter=decamelize),
             cls=B2ProviderJsonEncoder,
             sort_keys=True,
         )
         return data_out
+
+    def _postprocess(self, obj=None, **kwargs):
+        if obj is not None:
+            kwargs.update(obj.as_dict())
+        return convert_json_to_go(kwargs, self.tf_keys)
 
 
 class B2Provider(Command):
@@ -148,57 +163,47 @@ class B2Provider(Command):
 
 @B2Provider.register_subcommand
 class ApplicationKey(Command):
+    tf_keys = API_KEY_KEYS
+
     def data_source_read(self, *, key_name, **kwargs):
         next_id = None
-        while True:
-            response = self.api.list_keys(next_id)
-            keys = response['keys']
-
-            for key in keys:
-                if key_name == key['keyName']:
-                    return key
-
-            next_id = response.get('nextApplicationKeyId')
-            if next_id is None:
-                break
+        response = self.api.list_keys(next_id)
+        for key in response:
+            if key_name == key.key_name:
+                return self._postprocess(key)
 
         raise RuntimeError(f'Could not find Application Key for "{key_name}"')
 
     def resource_create(self, *, key_name, capabilities, bucket_id, name_prefix, **kwargs):
-        return self.api.create_key(
+        key = self.api.create_key(
             key_name=key_name,
             capabilities=capabilities,
             bucket_id=bucket_id or None,
             name_prefix=name_prefix or None,
         )
+        return self._postprocess(key)
 
     def resource_read(self, *, application_key_id, **kwargs):
-        next_id = None
-        while True:
-            response = self.api.list_keys(next_id)
-            keys = response['keys']
+        next_id = application_key_id
+        response = self.api.list_keys(next_id)
 
-            for key in keys:
-                if application_key_id == key['applicationKeyId']:
-                    return key
-
-            next_id = response.get('nextApplicationKeyId')
-            if next_id is None:
-                break
+        for key in response:
+            if application_key_id == key.id_:
+                return self._postprocess(key)
 
         raise RuntimeError(f'Could not find Application Key for ID "{application_key_id}"')
 
     def resource_delete(self, *, application_key_id, **kwargs):
-        self.api.delete_key(application_key_id=application_key_id)
-
-        return {}
+        self.api.delete_key_by_id(application_key_id=application_key_id)
 
 
 @B2Provider.register_subcommand
 class Bucket(Command):
+    tf_keys = BUCKET_KEYS
+
     def data_source_read(self, *, bucket_name, **kwargs):
         bucket = self.api.get_bucket_by_name(bucket_name)
-        return self._postprocess(**bucket.as_dict())
+        return self._postprocess(bucket)
 
     def resource_create(
         self,
@@ -221,29 +226,26 @@ class Bucket(Command):
             default_server_side_encryption=default_server_side_encryption,
             lifecycle_rules=lifecycle_rules,
         )
-        # default retention can only be set with update_bucket, not create_bucket :(
+        # default retention (in file_lock_configuration) can only be set with update_bucket, not create_bucket :(
         default_retention = params.pop('default_retention', None)
-        bucket = self.api.create_bucket(**params).as_dict()
+        bucket = self.api.create_bucket(**params)
         if default_retention is not None:
-            return self.resource_update(
-                bucket_id=bucket['bucketId'],
-                account_id=bucket['accountId'],
-                bucket_type=bucket['bucketType'],
-                bucket_info=None,
-                cors_rules=None,
+            params = self._preprocess(
                 file_lock_configuration=file_lock_configuration,
-                default_server_side_encryption=None,
-                lifecycle_rules=None,
+                bucket_type=bucket_type,
+                bucket_info=bucket_info,
             )
+            params.pop('is_file_lock_enabled', None)  # this can only be set during bucket creation
+            bucket = bucket.update(**params)
 
-        return self._postprocess(**bucket)
+        return self._postprocess(bucket)
 
     def resource_read(self, *, bucket_id, **kwargs):
         try:
             bucket = self.api.get_bucket_by_id(bucket_id)
-        except NonExistentBucket:  # return empty dict if bucket does not exist, handled in resource_b2.bucket.go
-            return {}
-        return self._postprocess(**bucket.as_dict())
+        except BucketIdNotFound:  # return empty dict if bucket does not exist, handled in resource_b2.bucket.go
+            return
+        return self._postprocess(bucket)
 
     def resource_update(
         self,
@@ -270,7 +272,7 @@ class Bucket(Command):
         params.pop('is_file_lock_enabled', None)  # this can only be set during bucket creation
         self.api.session.update_bucket(**params)
         bucket = self.api.get_bucket_by_id(bucket_id)
-        return self._postprocess(**bucket.as_dict())
+        return self._postprocess(bucket)
 
     def resource_delete(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
@@ -282,10 +284,8 @@ class Bucket(Command):
             else:
                 raise
 
-        return {}
-
     def _preprocess(self, **kwargs):
-        cors_rules = kwargs.pop('cors_rules')
+        cors_rules = kwargs.pop('cors_rules', None)
         if cors_rules:
             for index, item in enumerate(cors_rules):
                 cors_rules[index] = change_keys(item, converter=camelize)
@@ -302,7 +302,7 @@ class Bucket(Command):
                     default_retention
                 )
 
-        default_server_side_encryption = kwargs.pop('default_server_side_encryption')
+        default_server_side_encryption = kwargs.pop('default_server_side_encryption', None)
         if default_server_side_encryption:
             mode = default_server_side_encryption[0]['mode'] or None
             if mode:
@@ -321,7 +321,7 @@ class Bucket(Command):
         else:
             default_server_side_encryption = None
 
-        lifecycle_rules = kwargs.pop('lifecycle_rules')
+        lifecycle_rules = kwargs.pop('lifecycle_rules', None)
         if lifecycle_rules:
             for index, item in enumerate(lifecycle_rules):
                 days_from_hiding_to_deleting = item.get('days_from_hiding_to_deleting')
@@ -340,19 +340,22 @@ class Bucket(Command):
         }
         return result
 
-    def _postprocess(self, **kwargs):
+    def _postprocess(self, obj, **kwargs):
+        kwargs.update(obj.as_dict())
         file_lock_configuration = kwargs['fileLockConfiguration'] = {}
         for key in ('isFileLockEnabled', 'defaultRetention'):
             value = kwargs.pop(key, None)
             if value is not None and value != {'mode': None}:
                 file_lock_configuration[key] = value
 
-        result = convert_json_to_go(kwargs, BUCKET_KEYS)
+        result = convert_json_to_go(kwargs, self.tf_keys)
         return result
 
 
 @B2Provider.register_subcommand
 class BucketFileVersion(Command):
+    tf_keys = FILE_VERSION_KEYS
+
     def resource_create(
         self,
         *,
@@ -374,15 +377,13 @@ class BucketFileVersion(Command):
                 server_side_encryption=server_side_encryption,
             ),
         )
-        return self._postprocess(bucketId=bucket_id, source=source, **file_info.as_dict())
+        return self._postprocess(file_info, source=source, bucket_id=bucket_id)
 
     def resource_read(self, *, file_id, **kwargs):
-        return self._postprocess(**self.api.get_file_info(file_id))
+        return self._postprocess(self.api.get_file_info(file_id))
 
     def resource_delete(self, *, file_id, file_name, **kwargs):
         self.api.delete_file_version(file_id, file_name)
-
-        return {}
 
     def _preprocess(self, **kwargs):
         content_type = kwargs.pop('content_type') or None
@@ -421,57 +422,59 @@ class BucketFileVersion(Command):
             **kwargs,
         }
 
-    def _postprocess(self, **kwargs):
-        return convert_json_to_go(kwargs, FILE_VERSION_KEYS)
-
 
 @B2Provider.register_subcommand
 class BucketFile(Command):
+    tf_keys = FILE_KEYS
+
     def data_source_read(self, *, bucket_id, file_name, show_versions, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
-        folder_name = os.path.dirname(file_name)
-        generator = bucket.ls(
-            folder_name,
-            show_versions=show_versions,
-            recursive=False,
-        )
+        file_versions = bucket.list_file_versions(file_name)
+        if show_versions:
+            file_versions = list(file_versions)
+        else:
+            try:
+                latest = next(file_versions)
+                file_versions = [latest]
+            except StopIteration:
+                file_versions = []
+
         return self._postprocess(
-            bucketId=bucket_id, fileName=file_name, showVersions=show_versions, generator=generator
+            bucketId=bucket_id,
+            fileName=file_name,
+            showVersions=show_versions,
+            file_versions=file_versions,
         )
 
-    def _postprocess(self, *, generator, **kwargs):
-        file_name = kwargs['fileName']
-        kwargs['file_versions'] = [
-            file_version_info
-            for file_version_info, _ in generator
-            if file_version_info.file_name == file_name
-        ]
-        return convert_json_to_go(kwargs, FILE_KEYS)
 
 @B2Provider.register_subcommand
 class BucketFileSignedUrl(Command):
+    tf_keys = FILE_SIGNED_URL_KEYS
+
     def data_source_read(self, *, bucket_id, file_name, duration, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
-        folder_name = os.path.dirname(file_name)
         auth_token = bucket.get_download_authorization(
             file_name_prefix=file_name, valid_duration_in_seconds=duration
         )
         base_url = bucket.get_download_url(file_name)
         signed_url = base_url + '?Authorization=' + auth_token
         return self._postprocess(
-            bucketId=bucket_id, fileName=file_name, duration=duration, signedUrl=signed_url
+            bucketId=bucket_id,
+            fileName=file_name,
+            duration=duration,
+            signedUrl=signed_url,
         )
 
-    def _postprocess(self, **kwargs):
-        return convert_json_to_go(kwargs, FILE_SIGNED_URL_KEYS)
 
 @B2Provider.register_subcommand
 class BucketFiles(Command):
+    tf_keys = FILES_KEYS
+
     def data_source_read(self, *, bucket_id, folder_name, show_versions, recursive, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
         generator = bucket.ls(
             folder_name,
-            show_versions=show_versions,
+            latest_only=not show_versions,
             recursive=recursive,
         )
         return self._postprocess(
@@ -479,12 +482,8 @@ class BucketFiles(Command):
             folderName=folder_name,
             showVersions=show_versions,
             recursive=recursive,
-            generator=generator,
+            file_versions=[file_version_info for file_version_info, _ in generator],
         )
-
-    def _postprocess(self, *, generator, **kwargs):
-        kwargs['file_versions'] = [file_version_info for file_version_info, _ in generator]
-        return convert_json_to_go(kwargs, FILES_KEYS)
 
 
 @B2Provider.register_subcommand
@@ -523,7 +522,7 @@ class ProviderTool:
 
 
 def main():
-    b2_api = B2ApiWrapper()
+    b2_api = B2Api(account_info=InMemoryAccountInfo())
     provider_tool = ProviderTool(b2_api=b2_api)
     return provider_tool.run_command(sys.argv)
 

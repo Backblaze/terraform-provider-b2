@@ -29,13 +29,13 @@ func dataSourceB2BucketFileSignedUrl() *schema.Resource {
 				Description:  "The ID of the bucket.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.NoZeroValues,
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"file_name": {
 				Description:  "The file name.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.NoZeroValues,
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"duration": {
 				Description: "The duration for which the presigned URL is valid",

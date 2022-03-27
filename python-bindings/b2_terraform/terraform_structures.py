@@ -13,84 +13,94 @@ Store information about which data keys returned by B2 SDK should be passed on t
 Prevents error in terraform provider when API is extended with new fields.
 """
 
+API_KEY_KEYS = {
+    "application_key": None,
+    "application_key_id": None,
+    "bucket_id": "",
+    "capabilities": None,
+    "name_prefix": "",
+    "options": None,
+    "key_name": None,
+}
+
 BUCKET_SERVER_SIDE_ENCRYPTION = {
-    "mode": True,
-    "algorithm": True,
+    "mode": None,
+    "algorithm": None,
 }
 
 FILE_VERSION_SERVER_SIDE_ENCRYPTION = {
-    "mode": True,
-    "algorithm": True,
+    "mode": None,
+    "algorithm": None,
     # 'key' is not here as API does not return it
 }
 
 FILE_VERSION_KEYS = {
-    "action": True,
-    "content_md5": True,
-    "content_sha1": True,
-    "content_type": True,
-    "bucket_id": True,
-    "file_id": True,
-    "file_info": True,
-    "file_name": True,
-    "size": True,
-    "source": True,
+    "action": None,
+    "content_md5": None,
+    "content_sha1": None,
+    "content_type": None,
+    "bucket_id": None,
+    "file_id": None,
+    "file_info": None,
+    "file_name": None,
+    "size": None,
+    "source": None,
     "server_side_encryption": FILE_VERSION_SERVER_SIDE_ENCRYPTION,
-    "upload_timestamp": True,
+    "upload_timestamp": None,
 }
 
 FILE_KEYS = {
-    "bucket_id": True,
-    "file_name": True,
-    "show_versions": True,
+    "bucket_id": None,
+    "file_name": None,
+    "show_versions": None,
     "file_versions": FILE_VERSION_KEYS,
 }
 
 FILE_SIGNED_URL_KEYS = {
-    "bucket_id": True,
-    "file_name": True,
-    "duration": True,
-    "signed_url": True,
+    "bucket_id": None,
+    "file_name": None,
+    "duration": None,
+    "signed_url": None,
 }
 
 FILES_KEYS = {
-    "bucket_id": True,
-    "folder_name": True,
-    "show_versions": True,
-    "recursive": True,
+    "bucket_id": None,
+    "folder_name": None,
+    "show_versions": None,
+    "recursive": None,
     "file_versions": FILE_VERSION_KEYS,
 }
 
 BUCKET_KEYS = {
-    "bucket_id": True,
-    "bucket_name": True,
-    "bucket_type": True,
-    "bucket_info": True,
+    "bucket_id": None,
+    "bucket_name": None,
+    "bucket_type": None,
+    "bucket_info": None,
     "cors_rules": {
-        "cors_rule_name": True,
-        "allowed_origins": True,
-        "allowed_operations": True,
-        "max_age_seconds": True,
-        "allowed_headers": True,
-        "expose_headers": True,
+        "cors_rule_name": None,
+        "allowed_origins": None,
+        "allowed_operations": None,
+        "max_age_seconds": None,
+        "allowed_headers": None,
+        "expose_headers": None,
     },
     "file_lock_configuration": {
-        "is_file_lock_enabled": True,
+        "is_file_lock_enabled": None,
         "default_retention": {
-            "mode": True,
+            "mode": None,
             "period": {
-                "duration": True,
-                "unit": True,
+                "duration": None,
+                "unit": None,
             },
         },
     },
     "default_server_side_encryption": BUCKET_SERVER_SIDE_ENCRYPTION,
     "lifecycle_rules": {
-        "file_name_prefix": True,
-        "days_from_hiding_to_deleting": True,
-        "days_from_uploading_to_hiding": True,
+        "file_name_prefix": None,
+        "days_from_hiding_to_deleting": None,
+        "days_from_uploading_to_hiding": None,
     },
-    "account_id": True,
-    "options": True,
-    "revision": True,
+    "account_id": None,
+    "options": None,
+    "revision": None,
 }

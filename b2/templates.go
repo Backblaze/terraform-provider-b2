@@ -90,6 +90,11 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
+			"bucket_id": {
+				Description: "The ID of the bucket.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }
