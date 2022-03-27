@@ -6,11 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-* Upgraded go to 1.17.6 and github.com/hashicorp/terraform-plugin-sdk/v2 to v2.10.1
-
-
 ### Changed
 * Added Importer for b2_bucket and b2_application_key resource
+* Upgraded go to 1.18 and github.com/hashicorp/terraform-plugin-sdk/ to v2.12.0
 
 ## [0.7.1] - 2021-10-14
 
