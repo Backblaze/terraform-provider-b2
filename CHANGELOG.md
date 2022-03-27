@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Added Importer for b2_bucket and b2_application_key resource
 * Upgraded go to 1.18 and github.com/hashicorp/terraform-plugin-sdk/ to v2.12.0
+* Upgraded b2sdk to 1.14.1
+* Upgraded pyinstaller to 4.10, which should help resolve some issues with running on Apple M1 silicon
 
 ## [0.7.1] - 2021-10-14
 

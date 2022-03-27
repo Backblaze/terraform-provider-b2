@@ -10,7 +10,7 @@ Requirements
 ------------
 
 -	[Terraform](https://www.terraform.io/downloads.html) >= 1.0.0
--	[Go](https://golang.org/doc/install) >= 1.16
+-	[Go](https://golang.org/doc/install) >= 1.18
 -	[Python](https://github.com/pyenv/pyenv) >= 3.9
 
 Dependencies
