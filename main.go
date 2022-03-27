@@ -12,7 +12,6 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"flag"
 	"io"
 	"io/ioutil"
@@ -95,14 +94,6 @@ func main() {
 	}
 	defer os.Remove(pkgerOutput)
 
-	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, pkgerOutput)}
-	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/Backblaze/b2", opts)
-		if err != nil {
-			log.Fatal(err.Error())
-			return
-		}
-	} else {
-		plugin.Serve(opts)
-	}
+	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, pkgerOutput), Debug: debugMode}
+	plugin.Serve(opts)
 }
