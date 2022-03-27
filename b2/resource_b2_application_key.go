@@ -25,6 +25,9 @@ func resourceB2ApplicationKey() *schema.Resource {
 		CreateContext: resourceB2ApplicationKeyCreate,
 		ReadContext:   resourceB2ApplicationKeyRead,
 		DeleteContext: resourceB2ApplicationKeyDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"capabilities": {

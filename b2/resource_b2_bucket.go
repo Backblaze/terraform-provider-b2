@@ -27,6 +27,9 @@ func resourceB2Bucket() *schema.Resource {
 		ReadContext:   resourceB2BucketRead,
 		UpdateContext: resourceB2BucketUpdate,
 		DeleteContext: resourceB2BucketDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {

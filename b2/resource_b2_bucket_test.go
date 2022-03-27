@@ -48,6 +48,11 @@ func TestAccResourceB2Bucket_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "revision", "2"),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
