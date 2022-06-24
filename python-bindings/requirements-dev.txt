@@ -1,6 +1,6 @@
 -r requirements.txt
 
-black~=20.8b1
+black~=22.3.0
 flake8~=3.9.0
 pyinstaller~=4.10
 patchelf-wrapper~=1.2 ; sys_platform == 'linux'
