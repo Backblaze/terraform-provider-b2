@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2022-06-24
+
+### Changed 
+
 * Upgraded github.com/hashicorp/terraform-plugin-sdk/ to v2.17.0 and github.com/hashicorp/go-getter to v1.6.2
  
 ## [0.8.0] - 2022-03-27
@@ -103,7 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.6.1...v0.7.0
