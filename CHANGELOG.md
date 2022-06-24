@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* Upgraded github.com/hashicorp/terraform-plugin-sdk/ to v2.17.0 and github.com/hashicorp/go-getter to v1.6.2
+ 
 ## [0.8.0] - 2022-03-27
 
 ### Added
