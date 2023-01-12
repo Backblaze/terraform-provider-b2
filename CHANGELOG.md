@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Fixed
 * Fixed golangcli-lint breaking on Github
- 
+
 ## [0.8.0] - 2022-03-27
 
 ### Added
