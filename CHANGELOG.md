@@ -6,12 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Upgraded goutils 1.1.0 -> 1.1.1 and aws to 1.33.0
+
 ## [0.8.1] - 2022-06-24
 
 ### Changed 
 
 * Upgraded github.com/hashicorp/terraform-plugin-sdk/ to v2.17.0 and github.com/hashicorp/go-getter to v1.6.2
-* Upgraded tools dependencies
 
 # Fixed
 * Fixed golangcli-lint breaking on Github
