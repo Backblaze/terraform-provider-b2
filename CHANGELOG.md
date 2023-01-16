@@ -6,26 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
 * Upgraded goutils 1.1.0 -> 1.1.1 and aws to 1.33.0
 
 ## [0.8.1] - 2022-06-24
 
-### Changed 
-
+### Changed
 * Upgraded github.com/hashicorp/terraform-plugin-sdk/ to v2.17.0 and github.com/hashicorp/go-getter to v1.6.2
 
-# Fixed
+### Fixed
 * Fixed golangcli-lint breaking on Github
- 
+
 ## [0.8.0] - 2022-03-27
 
 ### Added
-
 * Added importer for b2_bucket and b2_application_key resources
 * Added signed URL as data source to allow downloading files from private bucket during provisioning without storing an API key
 
 ### Changed
-
 * Upgraded go to 1.18 and github.com/hashicorp/terraform-plugin-sdk/ to v2.12.0
 * Upgraded b2sdk to 1.14.1, which allowed using improved API calls for listing files and making Python parts simpler
 * Upgraded PyInstaller to 4.10, which should help resolve some issues with running on Apple M1 silicon
@@ -60,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Support defaultRetention for buckets
 
 ### Fixed
-* Fix acceptance tests breaking when new response fields are added to the API 
+* Fix acceptance tests breaking when new response fields are added to the API
 
 ### Changed
 * Upgraded b2sdk version to 1.8.0
