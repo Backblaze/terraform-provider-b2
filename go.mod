@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/gobuffalo/here v0.6.6 // indirect
-	github.com/hashicorp/hc-install v0.4.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.1
 	github.com/markbates/pkger v0.17.1
 	golang.org/x/net v0.5.0 // indirect
