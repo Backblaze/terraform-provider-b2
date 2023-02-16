@@ -53,7 +53,13 @@ jobs:
           - macos-10.15
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
+        if: matrix.os == 'ubuntu-latest'
+        uses: deadsnakes/action@v2.1.1
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
+        if: matrix.os != 'ubuntu-latest'
         uses: actions/setup-python@v2
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
