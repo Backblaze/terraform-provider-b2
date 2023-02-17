@@ -38,7 +38,8 @@ jobs:
         run: |
           make docs-lint
       - name: Validate changelog
-        if: ${{ ! startsWith(github.ref, 'refs/heads/dependabot/') }}
+        # Library was designed to be used with pull requests only.
+        if: ${{ github.event_name == 'pull_request' && ! startsWith(github.ref, 'refs/heads/dependabot/') }}
         uses: zattoo/changelog@v1
         with:
           token: ${{ github.token }}
