@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2023-02-20
+
+### Infrastructure
+* Upgraded golang.org/x/net 0.5.0 -> 0.7.0
+
 ## [0.8.2] - 2023-02-17
 
 ### Infrastructure
