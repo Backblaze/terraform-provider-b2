@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Infrastructure
 * Upgraded terraform-plugin-docs 0.5.1 -> 0.13.0
+* Upgraded golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd -> 0.7.0
 
 ## [0.8.3] - 2023-02-20
 
