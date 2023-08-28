@@ -12,6 +12,7 @@ package b2
 
 import (
 	"context"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -121,6 +122,12 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 	output, err := client.apply(name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	if _, ok := output["application_key_id"]; !ok && !d.IsNewResource() {
+		// deleted application key
+		log.Printf("[WARN] Application Key (%s) not found, possible resource drift", d.Id())
+		d.SetId("")
+		return nil
 	}
 
 	output["application_key"] = d.Get("application_key").(string)

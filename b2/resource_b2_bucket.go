@@ -162,9 +162,9 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if len(output) == 0 && !d.IsNewResource() {
+	if _, ok := output["bucket_id"]; !ok && !d.IsNewResource() {
 		// deleted bucket
-		log.Printf("[WARN] Bucket (%s) not found, removing from state", d.Id())
+		log.Printf("[WARN] Bucket (%s) not found, possible resource drift", d.Id())
 		d.SetId("")
 		return nil
 	}

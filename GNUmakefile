@@ -3,7 +3,7 @@ NAMESPACE=backblaze
 NAME=b2
 BINARY=terraform-provider-${NAME}
 VERSION=$(shell git describe --tags --abbrev=0 | cut -c2-)
-OS_ARCH=${GOOS}_${GOARCH}
+OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: build
 
