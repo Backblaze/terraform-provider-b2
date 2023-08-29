@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Infrastructure
 * Disable changelog verification for dependabot PRs
+* Upgrade macOS version in CI/CD
 
 ## [0.8.4] - 2023-03-13
 
