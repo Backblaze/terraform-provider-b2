@@ -39,7 +39,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
   build-macos-pybindings:
-    runs-on: macos-10.15
+    runs-on: macos-11
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
