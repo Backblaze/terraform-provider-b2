@@ -26,13 +26,13 @@ clean:
 
 build:
 	@pyinstaller --onefile ${SPEC}
-ifeq ($(UNAME_),Linux)
+ifeq ($(UNAME_), Linux)
 	@mv -f dist/py-terraform-provider-b2 dist/py-terraform-provider-b2-linked
 	@staticx --strip --loglevel INFO dist/py-terraform-provider-b2-linked dist/py-terraform-provider-b2
 	@rm -f dist/py-terraform-provider-b2-linked
 endif
 ifneq ($(origin CI), undefined)
-	@echo "::set-output name=version::$(subst refs/tags/v,,${GITHUB_REF})"
+	@echo "version=$(subst refs/tags/v,,${GITHUB_REF})" > "${GITHUB_OUTPUT}"
 endif
 
 install: build
