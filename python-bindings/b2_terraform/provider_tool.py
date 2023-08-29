@@ -191,7 +191,7 @@ class ApplicationKey(Command):
             if application_key_id == key.id_:
                 return self._postprocess(key)
 
-        raise RuntimeError(f'Could not find Application Key for ID "{application_key_id}"')
+        return None  # no application key has been found
 
     def resource_delete(self, *, application_key_id, **kwargs):
         self.api.delete_key_by_id(application_key_id=application_key_id)
@@ -243,8 +243,8 @@ class Bucket(Command):
     def resource_read(self, *, bucket_id, **kwargs):
         try:
             bucket = self.api.get_bucket_by_id(bucket_id)
-        except BucketIdNotFound:  # return empty dict if bucket does not exist, handled in resource_b2.bucket.go
-            return
+        except BucketIdNotFound:
+            return None  # no bucket has been found
         return self._postprocess(bucket)
 
     def resource_update(

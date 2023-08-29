@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Disable changelog verification for dependabot PRs
 * Upgrade macOS version in CI/CD
 
+### Fixed
+* Reconcile missing Application Key caused by the resource drift
+* Fix reconciliation of missing Bucket caused by the resource drift
+
 ## [0.8.4] - 2023-03-13
 
 ### Infrastructure
