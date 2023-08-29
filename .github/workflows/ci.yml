@@ -95,7 +95,11 @@ jobs:
           - ubuntu-latest
           - macos-11
         terraform:
-          - 1.3.7
+          - 1.5
+          - 1.4
+        exclude:
+          - os: macos-11  # for macOS, the latest terraform is enough for ACC tests
+            terraform: 1.4
     steps:
       - uses: actions/checkout@v2
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
