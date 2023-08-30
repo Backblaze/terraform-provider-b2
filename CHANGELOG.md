@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgrade macOS version in CI/CD
 * Upgrade Terraform version for ACC tests
 * Run ACC tests for all supported Terraform versions
+* Do not use deprecated `::set-output` GitHub Actions command in favor of `GITHUB_OUTPUT` env
 
 ### Fixed
 * Reconcile missing Application Key caused by the resource drift
