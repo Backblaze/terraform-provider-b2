@@ -236,12 +236,14 @@ class Bucket(Command):
                     bucket_type=bucket_type,
                     bucket_info=bucket_info,
                 )
-                params.pop('is_file_lock_enabled', None)  # this can only be set during bucket creation
+                params.pop(
+                    'is_file_lock_enabled', None
+                )  # this can only be set during bucket creation
                 bucket = bucket.update(**params)
             except Exception:
                 self.api.delete_bucket(bucket)
                 raise
-        
+
         return self._postprocess(bucket)
 
     def resource_read(self, *, bucket_id, **kwargs):
@@ -298,7 +300,9 @@ class Bucket(Command):
             lock_enabled = file_lock_configuration.get('is_file_lock_enabled')
             default_retention_set = file_lock_configuration.get('default_retention') is not None
             if default_retention_set and not lock_enabled:
-                raise RuntimeError('default_retention can only be set if is_file_lock_enabled is true')
+                raise RuntimeError(
+                    'default_retention can only be set if is_file_lock_enabled is true'
+                )
             if 'is_file_lock_enabled' in file_lock_configuration:
                 kwargs['is_file_lock_enabled'] = file_lock_configuration['is_file_lock_enabled']
             for default_retention in file_lock_configuration.get('default_retention', ()):
