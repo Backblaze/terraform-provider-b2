@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Upgraded go to 1.20 and github.com/hashicorp/terraform-plugin-sdk to v2.30.0
 
-
 ### Infrastructure
 * Disable changelog verification for dependabot PRs
 * Upgrade macOS version in CI/CD
@@ -20,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Reconcile missing Application Key caused by the resource drift
 * Fix reconciliation of missing Bucket caused by the resource drift
+* Fix bucket cleanup after failed creation
 
 ## [0.8.4] - 2023-03-13
 

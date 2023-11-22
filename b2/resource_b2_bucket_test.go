@@ -205,6 +205,46 @@ func TestAccResourceB2Bucket_update(t *testing.T) {
 	})
 }
 
+func TestAccResourceB2Bucket_defaultRetention(t *testing.T) {
+	resourceName := "b2_bucket.test"
+
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccResourceB2BucketConfig_defaultRetention(bucketName, false),
+				ExpectError: regexp.MustCompile("default_retention"),
+			},
+			{
+				Config: testAccResourceB2BucketConfig_defaultRetention(bucketName, true),
+				Check:  resource.TestCheckResourceAttr(resourceName, "bucket_name", bucketName),
+			},
+		},
+	})
+}
+
+func testAccResourceB2BucketConfig_defaultRetention(bucketName string, fileLockEnabled bool) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+	bucket_name = "%s"
+	bucket_type = "allPublic"
+	file_lock_configuration {
+		is_file_lock_enabled = %t
+		default_retention {
+			mode = "governance"
+			period {
+				duration = 7
+				unit     = "days"
+			}
+		}
+	}
+}
+`, bucketName, fileLockEnabled)
+}
+
 func testAccResourceB2BucketConfig_basic(bucketName string) string {
 	return fmt.Sprintf(`
 resource "b2_bucket" "test" {

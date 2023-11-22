@@ -180,7 +180,7 @@ func getDataSourceFileLockConfiguration() *schema.Resource {
 				Computed:    true,
 			},
 			"default_retention": {
-				Description: "Default retention settings for files uploaded to this bucket",
+				Description: "Default retention settings for files uploaded to this bucket. This can only be set if is_file_lock_enabled is true",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
