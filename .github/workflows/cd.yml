@@ -90,7 +90,7 @@ jobs:
   build-and-deploy:
     needs: [build-pybindings]
     env:
-      NOPYBINDINGS: 1  # do not build python bindingss
+      NOPYBINDINGS: 1  # do not build python bindings
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
