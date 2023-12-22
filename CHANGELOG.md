@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.6] - 2023-12-22
+
+### Fixed
+* Fix arm64 builds
+
 ## [0.8.5] - 2023-11-24
 
 ### Changed
@@ -141,7 +146,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.6...HEAD
+[0.8.5]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.5...v0.8.6
+[0.8.5]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.1...v0.8.2

@@ -16,7 +16,7 @@ builds:
     - arm64
   hooks:
     pre:
-      - cp python-bindings/dist/py-terraform-provider-b2-{{ .Os }} python-bindings/dist/py-terraform-provider-b2
+      - cp python-bindings/dist/py-terraform-provider-b2-{{ .Os }}-{{ .Arch }} python-bindings/dist/py-terraform-provider-b2
       - pkger -include /python-bindings/dist/py-terraform-provider-b2
     post:
       - rm -f python-bindings/dist/py-terraform-provider-b2
