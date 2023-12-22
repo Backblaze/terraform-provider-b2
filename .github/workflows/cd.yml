@@ -10,64 +10,87 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build-linux-pybindings:
-    runs-on: ubuntu-latest
-    container:
-      image: python:3.9  # can not use ${{ env.PYTHON_DEFAULT_VERSION }} here
-      env:
-        DEBIAN_FRONTEND: noninteractive
+  build-pybindings:
+    runs-on: ${{ matrix.conf.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        conf:
+          - { runner: ubuntu-latest, os: linux, arch: amd64 }
+          - { runner: ubuntu-latest, os: linux, arch: arm64 }
+          - { runner: macos-11, os: darwin, arch: amd64 }
+            # macos-13-xlarge instance are Apple silicon instances,
+            # only large and xlarge instances are available as of yet.
+          - { runner: macos-13-large, os: darwin, arch: arm64 }
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
       - uses: actions/checkout@v2
-      - name: Install dependencies
-        working-directory: python-bindings
+      - name: Start a Docker container (linux)
+        if: matrix.conf.os == 'linux' && matrix.conf.arch == 'arm64'
         run: |
-          apt-get -y update
-          apt-get -y install patchelf
-          make deps
-      - name: Build python bindings
-        id: build
-        working-directory: python-bindings
+          docker run --privileged --rm tonistiigi/binfmt:qemu-v8.0.4 --install arm64
+          docker run --detach \
+              --platform linux/arm64 \
+              --volume .:/work \
+              --name builder \
+              arm64v8/python:${{ env.PYTHON_DEFAULT_VERSION }}-bullseye \
+              /bin/bash -c "sleep infinity"
+      - name: Start a Docker container (linux-amd64)
+        if: matrix.conf.os == 'linux' && matrix.conf.arch == 'amd64'
         run: |
-          make build
-      - name: Upload python bindings
-        uses: actions/upload-artifact@v2
-        with:
-          name: py-terraform-provider-b2-linux
-          path: python-bindings/dist/py-terraform-provider-b2
-          if-no-files-found: error
-          retention-days: 1
-  build-macos-pybindings:
-    runs-on: macos-11
-    outputs:
-      version: ${{ steps.build.outputs.version }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
+          docker run --detach \
+              --volume .:/work \
+              --name builder \
+              python:${{ env.PYTHON_DEFAULT_VERSION }}-bullseye \
+              /bin/bash -c "sleep infinity"
+      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (darwin)
+        if: matrix.conf.os == 'darwin'
         uses: actions/setup-python@v2
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
-      - name: Install dependencies
-        working-directory: python-bindings
+      - name: Define command wrapper (linux)
+        if: matrix.conf.os == 'linux'
         run: |
-          make deps
-      - name: Build python bindings
+          # We'll define a 'run' command that will run our commands in the container.
+          echo '#!/bin/bash' > run
+          echo 'command="$*"; docker exec --workdir /work/python-bindings builder /bin/bash -c "$command"' >> run
+          chmod +x run
+          sudo mv run /usr/local/bin/run
+      - name: Define command wrapper (darwin)
+        if: matrix.conf.os == 'darwin'
+        run: |
+          # MacOS wraper just runs commands in python-bindings directory
+          echo '#!/bin/bash' > run
+          echo 'pushd python-bindings; "$@"; popd' >> run
+          chmod +x run
+          sudo mv run /usr/local/bin/run
+      - name: Install system dependencies (linux)
+        if: matrix.conf.os == 'linux'
+        run: |
+          run apt update -y
+          run apt install scons patchelf libnss3-dev -y
+      - name: Install Python dependencies
+        run: |
+          run make deps
+      - name: Build Python bindings
         id: build
-        working-directory: python-bindings
         run: |
-          make build
-      - name: Upload python bindings
+          run make build
+      - if: matrix.conf.os == 'linux'
+        run: |
+          sudo chmod -R a+r python-bindings
+      - name: Upload Python bindings
         uses: actions/upload-artifact@v2
         with:
-          name: py-terraform-provider-b2-darwin
+          name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
           if-no-files-found: error
           retention-days: 1
   build-and-deploy:
-    needs: [build-linux-pybindings, build-macos-pybindings]
+    needs: [build-pybindings]
     env:
-      NOPYBINDINGS: 1  # do not build python buildings
+      NOPYBINDINGS: 1  # do not build python bindingss
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
@@ -89,13 +112,22 @@ jobs:
       - name: Postprocess python bindings
         working-directory: python-bindings/dist
         run: |
-          mv artifacts/py-terraform-provider-b2-linux/py-terraform-provider-b2 py-terraform-provider-b2-linux
-          mv artifacts/py-terraform-provider-b2-darwin/py-terraform-provider-b2 py-terraform-provider-b2-darwin
+          mv artifacts/py-terraform-provider-b2-linux-amd64/py-terraform-provider-b2 py-terraform-provider-b2-linux-amd64
+          mv artifacts/py-terraform-provider-b2-linux-arm64/py-terraform-provider-b2 py-terraform-provider-b2-linux-arm64
+          mv artifacts/py-terraform-provider-b2-darwin-amd64/py-terraform-provider-b2 py-terraform-provider-b2-darwin-amd64
+          mv artifacts/py-terraform-provider-b2-darwin-arm64/py-terraform-provider-b2 py-terraform-provider-b2-darwin-arm64
+      - name: Set release version output
+        id: version
+        run: |
+          tag=${{ github.ref_name }}
+          # Strip the prefix 'v'
+          version=${tag:1}
+          echo "version=$version" >> $GITHUB_OUTPUT
       - name: Read the Changelog
         id: read-changelog
         uses: mindsers/changelog-reader-action@v2
         with:
-          version: ${{ needs.build-linux-pybindings.outputs.version }}
+          version: ${{ steps.version.outputs.version }}
       - name: Import GPG key
         id: import_gpg
         uses: paultyng/ghaction-import-gpg@v2.1.0
@@ -112,7 +144,7 @@ jobs:
       - name: Update GitHub release
         uses: softprops/action-gh-release@v1
         with:
-          name: v${{ needs.build-linux-pybindings.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
           body: ${{ steps.read-changelog.outputs.changes }}
           draft: false
           prerelease: false
