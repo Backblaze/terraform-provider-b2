@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.8] - 2023-12-28
+
+### Changed
+* Upgraded pyinstaller to v6.3.0
+
 ## [0.8.7] - 2023-12-27
 
 ### Changed
@@ -151,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.6...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.8...HEAD
+[0.8.8]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.4...v0.8.5

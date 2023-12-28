@@ -25,7 +25,7 @@ clean:
 	@rm -rf build dist ${EGG_INFO}
 
 build:
-	@pyinstaller --onefile ${SPEC}
+	@pyinstaller ${SPEC}
 ifeq ($(UNAME_), Linux)
 	@mv -f dist/py-terraform-provider-b2 dist/py-terraform-provider-b2-linked
 	@staticx --strip --loglevel INFO dist/py-terraform-provider-b2-linked dist/py-terraform-provider-b2
