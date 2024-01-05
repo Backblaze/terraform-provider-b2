@@ -298,7 +298,7 @@ class Bucket(Command):
 
         for file_lock_configuration in kwargs.pop('file_lock_configuration', ()):
             lock_enabled = file_lock_configuration.get('is_file_lock_enabled')
-            default_retention_set = file_lock_configuration.get('default_retention') is not None
+            default_retention_set = bool(file_lock_configuration.get('default_retention'))
             if default_retention_set and not lock_enabled:
                 raise RuntimeError(
                     'default_retention can only be set if is_file_lock_enabled is true'
