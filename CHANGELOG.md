@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.8.9] - 2024-01-05
 
+### Changed
+* Upgraded github.com/cloudflare/circl from v1.3.3 to v1.3.7
+
 ### Fixed
 * Fixed bucket update when is_file_lock_enabled is not set
 
