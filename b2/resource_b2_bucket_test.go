@@ -152,6 +152,11 @@ func TestAccResourceB2Bucket_update(t *testing.T) {
 			{
 				Config: testAccResourceB2BucketConfig_basic(bucketName),
 			},
+			// We're testing a minimal change here to check if omitted optional
+			// fields do not cause an update to fail.
+			{
+				Config: testAccResourceB2BucketConfig_basicWithFileInfo(bucketName),
+			},
 			{
 				Config: testAccResourceB2BucketConfig_all(bucketName),
 				Check: resource.ComposeTestCheckFunc(
@@ -250,6 +255,18 @@ func testAccResourceB2BucketConfig_basic(bucketName string) string {
 resource "b2_bucket" "test" {
   bucket_name = "%s"
   bucket_type = "allPublic"
+}
+`, bucketName)
+}
+
+func testAccResourceB2BucketConfig_basicWithFileInfo(bucketName string) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+  bucket_name = "%s"
+  bucket_type = "allPublic"
+  bucket_info = {
+	key = "value"
+  }
 }
 `, bucketName)
 }
