@@ -23,7 +23,7 @@ from b2sdk.v1 import (
     EncryptionMode,
     EncryptionSetting,
 )
-from b2sdk.exception import BadRequest, BucketIdNotFound
+from b2sdk.v2.exception import BadRequest, BucketIdNotFound
 
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from b2_terraform.arg_parser import ArgumentParser
