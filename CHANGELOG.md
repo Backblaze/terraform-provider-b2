@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.12] - 2024-06-20
+
+### Infrastructure
+* Fixed goreleaser v2 configuration
+
 ## [0.8.11] - 2024-06-20
 
 ### Infrastructure
@@ -175,7 +180,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.11...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.12...HEAD
+[0.8.11]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.11...v0.8.12
 [0.8.11]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.10...v0.8.11
 [0.8.10]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.8...v0.8.9
