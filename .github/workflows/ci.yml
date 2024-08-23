@@ -51,7 +51,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-11
+          - macos-12
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
@@ -93,12 +93,12 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-11
+          - macos-12
         terraform:
           - '1.5.*'
           - '1.4.*'
         exclude:
-          - os: macos-11  # for macOS, the latest terraform is enough for ACC tests
+          - os: macos-12  # for macOS, the latest terraform is enough for ACC tests
             terraform: '1.4.*'
     steps:
       - uses: actions/checkout@v2

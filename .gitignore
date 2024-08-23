@@ -35,7 +35,8 @@ website/vendor
 # Keep windows files with windows line endings
 *.winfile eol=crlf
 
-# Skip the output from pkger
+# Go
+.go-version
 pkged.go
 
 # Provider binary
@@ -48,4 +49,3 @@ pkged.go
 build/
 dist/
 venv/
-
