@@ -93,12 +93,15 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-12
+          - macos-12  # amd64
+          - macos-14  # arm64
         terraform:
           - '1.5.*'
           - '1.4.*'
         exclude:
           - os: macos-12  # for macOS, the latest terraform is enough for ACC tests
+            terraform: '1.4.*'
+          - os: macos-14  # for macOS, the latest terraform is enough for ACC tests
             terraform: '1.4.*'
     steps:
       - uses: actions/checkout@v2
