@@ -51,7 +51,8 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-12
+          - macos-12  # amd64
+          - macos-14  # arm64
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
@@ -77,7 +78,7 @@ jobs:
       - name: Upload python bindings
         uses: actions/upload-artifact@v2
         with:
-          name: py-terraform-provider-b2-${{ runner.os }}
+          name: py-terraform-provider-b2-${{ runner.os }}-${{ runner.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
           if-no-files-found: error
           retention-days: 1
@@ -93,12 +94,15 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-12
+          - macos-12  # amd64
+          - macos-14  # arm64
         terraform:
           - '1.5.*'
           - '1.4.*'
         exclude:
           - os: macos-12  # for macOS, the latest terraform is enough for ACC tests
+            terraform: '1.4.*'
+          - os: macos-14  # for macOS, the latest terraform is enough for ACC tests
             terraform: '1.4.*'
     steps:
       - uses: actions/checkout@v2
@@ -116,7 +120,7 @@ jobs:
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
         uses: actions/download-artifact@v2
         with:
-          name: py-terraform-provider-b2-${{ runner.os }}
+          name: py-terraform-provider-b2-${{ runner.os }}-${{ runner.arch }}
           path: python-bindings/dist/
       - name: Run acceptance tests
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
