@@ -9,7 +9,7 @@ defaults:
     shell: bash
 
 env:
-  PYTHON_DEFAULT_VERSION: '3.9'
+  PYTHON_DEFAULT_VERSION: '3.12'
   GO_DEFAULT_VERSION: '1.20'
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
