@@ -16,7 +16,7 @@ format:
 
 lint:
 	@black --check -Sl 100 ${DIR}
-	@flake8 --ignore=E501 ${DIR}
+	@flake8 --ignore=E501,W503 ${DIR}
 	@python ../scripts/check-headers.py '**/*.py'
 
 testacc: build
