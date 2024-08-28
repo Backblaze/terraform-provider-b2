@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Fixed `allowed_operations` stability issue
 * Use macos-14 for ARM as macos-13-large is Intel
+* Clarified the purpose of the `endpoint`/`B2_ENDPOINT` configuration value
 
 ## [0.8.12] - 2024-06-20
 

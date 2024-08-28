@@ -50,7 +50,8 @@ func New(version string, exec string) func() *schema.Provider {
 					DefaultFunc: schema.EnvDefaultFunc("B2_APPLICATION_KEY", nil),
 				},
 				"endpoint": {
-					Description: "B2 endpoint - production or custom URL (B2_ENDPOINT env)",
+					Description: "B2 endpoint - the string 'production' or a custom B2 API URL (B2_ENDPOINT env)." +
+						" Defaults to 'production'. You should not need to set this unless you work at Backblaze.",
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("B2_ENDPOINT", "production"),
