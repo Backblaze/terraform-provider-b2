@@ -202,8 +202,9 @@ class Bucket(Command):
     tf_keys = BUCKET_KEYS
 
     def data_source_read(self, *, bucket_name, **kwargs):
+        config_cors_rules = kwargs.get('cors_rules')
         bucket = self.api.get_bucket_by_name(bucket_name)
-        return self._postprocess(bucket)
+        return self._postprocess(bucket, config_cors_rules=config_cors_rules)
 
     def resource_create(
         self,
@@ -244,14 +245,14 @@ class Bucket(Command):
                 self.api.delete_bucket(bucket)
                 raise
 
-        return self._postprocess(bucket)
+        return self._postprocess(bucket, config_cors_rules=cors_rules)
 
     def resource_read(self, *, bucket_id, **kwargs):
         try:
             bucket = self.api.get_bucket_by_id(bucket_id)
         except BucketIdNotFound:
             return None  # no bucket has been found
-        return self._postprocess(bucket)
+        return self._postprocess(bucket, config_cors_rules=kwargs.get('cors_rules'))
 
     def resource_update(
         self,
@@ -278,7 +279,7 @@ class Bucket(Command):
         params.pop('is_file_lock_enabled', None)  # this can only be set during bucket creation
         self.api.session.update_bucket(**params)
         bucket = self.api.get_bucket_by_id(bucket_id)
-        return self._postprocess(bucket)
+        return self._postprocess(bucket, config_cors_rules=cors_rules)
 
     def resource_delete(self, *, bucket_id, **kwargs):
         bucket = self.api.get_bucket_by_id(bucket_id)
@@ -352,7 +353,7 @@ class Bucket(Command):
         }
         return result
 
-    def _postprocess(self, obj, **kwargs):
+    def _postprocess(self, obj, config_cors_rules=None, **kwargs):
         kwargs.update(obj.as_dict())
         file_lock_configuration = kwargs['fileLockConfiguration'] = {}
         for key in ('isFileLockEnabled', 'defaultRetention'):
@@ -361,7 +362,29 @@ class Bucket(Command):
                 file_lock_configuration[key] = value
 
         result = convert_json_to_go(kwargs, self.tf_keys)
+        self._order_allowed_operations(result.get('cors_rules', []), config_cors_rules or [])
         return result
+
+    def _order_allowed_operations(self, cors_rules, config_cors_rules):
+        # B2 does not necessarily return allowed_operations in the same order as they were set.
+        # This can cause unnecessary diffs in the Terraform state.
+        # In order to avoid this, we sort the allowed_operations in the same order as they were set.
+        for cors_rules_item, config_cors_rules_item in zip(cors_rules, config_cors_rules):
+            allowed_operations = cors_rules_item.get('allowed_operations', [])
+            config_allowed_operations = (
+                config_cors_rules_item.get('allowedOperations')
+                or config_cors_rules_item.get('allowed_operations')
+                or []
+            )
+            if allowed_operations:
+
+                def sort_key(allowed_operation):
+                    try:
+                        return config_allowed_operations.index(allowed_operation)
+                    except ValueError:
+                        return -1
+
+                allowed_operations.sort(key=sort_key)
 
 
 @B2Provider.register_subcommand
