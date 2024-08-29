@@ -79,9 +79,12 @@ func TestAccResourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.cors_rule_name", "downloadFromAnyOrigin"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_origins.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_origins.0", "https"),
-					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.#", "5"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.0", "b2_download_file_by_id"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.1", "b2_download_file_by_name"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.2", "s3_put"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.3", "s3_head"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.4", "s3_get"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.expose_headers.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.expose_headers.0", "x-bz-content-sha1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.#", "1"),
@@ -170,9 +173,12 @@ func TestAccResourceB2Bucket_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.cors_rule_name", "downloadFromAnyOrigin"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_origins.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_origins.0", "https"),
-					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.#", "5"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.0", "b2_download_file_by_id"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.1", "b2_download_file_by_name"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.2", "s3_put"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.3", "s3_head"),
+					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_operations.4", "s3_get"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.expose_headers.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.expose_headers.0", "x-bz-content-sha1"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.0.allowed_headers.#", "1"),
@@ -304,7 +310,10 @@ resource "b2_bucket" "test" {
     ]
     allowed_operations = [
       "b2_download_file_by_id",
-      "b2_download_file_by_name"
+      "b2_download_file_by_name",
+	  "s3_put",
+	  "s3_head",
+	  "s3_get",
     ]
     expose_headers = ["x-bz-content-sha1"]
     allowed_headers = ["range"]

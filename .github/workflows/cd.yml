@@ -4,6 +4,10 @@ on:
   push:
     tags: 'v*'  # push events to matching v*, i.e. v1.0, v20.15.10
 
+defaults:
+  run:
+    shell: bash
+
 env:
   PYTHON_DEFAULT_VERSION: '3.9'
   GO_DEFAULT_VERSION: '1.20'
@@ -20,6 +24,7 @@ jobs:
           - { runner: ubuntu-latest, os: linux, arch: arm64 }
           - { runner: macos-12, os: darwin, arch: amd64 }
           - { runner: macos-14, os: darwin, arch: arm64 }
+          - { runner: windows-2019, os: windows, arch: amd64 }
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
@@ -42,8 +47,8 @@ jobs:
               --name builder \
               python:${{ env.PYTHON_DEFAULT_VERSION }}-bullseye \
               /bin/bash -c "sleep infinity"
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (darwin)
-        if: matrix.conf.os == 'darwin'
+      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (darwin, windows)
+        if: matrix.conf.os != 'linux'
         uses: actions/setup-python@v2
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
@@ -58,11 +63,19 @@ jobs:
       - name: Define command wrapper (darwin)
         if: matrix.conf.os == 'darwin'
         run: |
-          # MacOS wraper just runs commands in python-bindings directory
+          # MacOS wrapper just runs commands in python-bindings directory
           echo '#!/bin/bash' > run
           echo 'pushd python-bindings; "$@"; popd' >> run
           chmod +x run
           sudo mv run /usr/local/bin/run
+      - name: Define command wrapper (windows)
+        if: matrix.conf.os == 'windows'
+        run: |
+          # Windows wrapper just runs commands in python-bindings directory
+          echo '#!/bin/bash' > run
+          echo 'pushd python-bindings; "$@"; popd' >> run
+          chmod +x run
+          mv run /usr/bin/run
       - name: Install system dependencies (linux)
         if: matrix.conf.os == 'linux'
         run: |
@@ -114,6 +127,7 @@ jobs:
           mv artifacts/py-terraform-provider-b2-linux-arm64/py-terraform-provider-b2 py-terraform-provider-b2-linux-arm64
           mv artifacts/py-terraform-provider-b2-darwin-amd64/py-terraform-provider-b2 py-terraform-provider-b2-darwin-amd64
           mv artifacts/py-terraform-provider-b2-darwin-arm64/py-terraform-provider-b2 py-terraform-provider-b2-darwin-arm64
+          mv artifacts/py-terraform-provider-b2-windows-amd64/py-terraform-provider-b2 py-terraform-provider-b2-windows-amd64
       - name: Set release version output
         id: version
         run: |
