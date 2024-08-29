@@ -6,12 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-* Fixed `allowed_operations` stability issue
-
 ### Infrastructure
 * Replace removed macOS 11 Big Sur in favour of macOS 12 Monterey in CI/CD
 * Add support for Windows
+
+### Fixed
+* Fixed `allowed_operations` stability issue
+* Use macos-14 for ARM as macos-13-large is Intel
 
 ## [0.8.12] - 2024-06-20
 

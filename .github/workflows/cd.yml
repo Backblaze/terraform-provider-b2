@@ -23,9 +23,7 @@ jobs:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
           - { runner: ubuntu-latest, os: linux, arch: arm64 }
           - { runner: macos-12, os: darwin, arch: amd64 }
-            # macos-13-xlarge instance are Apple silicon instances,
-            # only large and xlarge instances are available as of yet.
-          - { runner: macos-13-large, os: darwin, arch: arm64 }
+          - { runner: macos-14, os: darwin, arch: arm64 }
           - { runner: windows-2019, os: windows, arch: amd64 }
     outputs:
       version: ${{ steps.build.outputs.version }}
