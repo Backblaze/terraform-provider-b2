@@ -2,7 +2,7 @@ NAME=py-terraform-provider-b2
 DIR=b2_terraform
 EGG_INFO=${NAME}.egg-info
 SPEC=${NAME}.spec
-UNAME_=$(shell uname)
+OS=$(shell python -c "import platform; print(platform.system())")
 
 default: build
 
@@ -26,10 +26,13 @@ clean:
 
 build:
 	@pyinstaller ${SPEC}
-ifeq ($(UNAME_), Linux)
+ifeq ($(OS), Linux)
 	@mv -f dist/py-terraform-provider-b2 dist/py-terraform-provider-b2-linked
 	@staticx --strip --loglevel INFO dist/py-terraform-provider-b2-linked dist/py-terraform-provider-b2
 	@rm -f dist/py-terraform-provider-b2-linked
+endif
+ifeq ($(OS), Windows)
+	@mv -f dist/py-terraform-provider-b2.exe dist/py-terraform-provider-b2
 endif
 ifneq ($(origin CI), undefined)
 	@echo "version=$(subst refs/tags/v,,${GITHUB_REF})" > "${GITHUB_OUTPUT}"

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Infrastructure
 * Replace removed macOS 11 Big Sur in favour of macOS 12 Monterey in CI/CD
+* Add support for Windows
 
 ## [0.8.12] - 2024-06-20
 
