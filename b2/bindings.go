@@ -12,7 +12,7 @@ package b2
 
 import (
 	"bufio"
-	"github.com/markbates/pkger"
+	"embed"
 	"io"
 	"io/ioutil"
 	"log"
@@ -24,10 +24,12 @@ import (
 
 var (
 	bindings *string
-	lock     = &sync.Mutex{}
+	//go:embed py-terraform-provider-b2
+	content embed.FS
+	lock    = &sync.Mutex{}
 )
 
-func GetBindings(sourcePath string, testing bool) (string, error) {
+func GetBindings() (string, error) {
 	if bindings == nil {
 		lock.Lock()
 		defer lock.Unlock()
@@ -36,19 +38,9 @@ func GetBindings(sourcePath string, testing bool) (string, error) {
 		return *bindings, nil
 	}
 
-	var sourceFile io.ReadCloser
-	if testing == true {
-		src, err := os.Open(sourcePath)
-		if err != nil {
-			return "", err
-		}
-		sourceFile = src
-	} else {
-		src, err := pkger.Open(sourcePath)
-		if err != nil {
-			return "", err
-		}
-		sourceFile = src
+	sourceFile, err := content.Open("py-terraform-provider-b2")
+	if err != nil {
+		return "", err
 	}
 	defer sourceFile.Close()
 

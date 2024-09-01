@@ -18,7 +18,6 @@ endif
 
 deps: _pybindings
 	@go mod download
-	@go install github.com/markbates/pkger/cmd/pkger
 	@go mod tidy
 	@cd tools && go mod download
 	@cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
@@ -39,24 +38,25 @@ lint: _pybindings
 	@python scripts/check-headers.py '**/*.go' pkged.go
 
 testacc: _pybindings
-	@chmod +rx python-bindings/dist/py-terraform-provider-b2
+	@cp python-bindings/dist/py-terraform-provider-b2 b2/
+	@chmod +rx b2/py-terraform-provider-b2
 	TF_ACC=1 go test ./${NAME} -v -count 1 -parallel 4 -timeout 120m $(TESTARGS)
 
 clean: _pybindings
-	@rm -rf dist pkged.go ${BINARY}
+	@rm -rf dist b2/py-terraform-provider-b2 ${BINARY}
 
 build: _pybindings
-	@pkger -include /python-bindings/dist/py-terraform-provider-b2
-	go build -tags netgo -o ${BINARY}
+	@cp python-bindings/dist/py-terraform-provider-b2 b2/
+	@go build -tags netgo -o ${BINARY}
 
 install: build
 	@mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
-	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+	@mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
 docs: build
 	@tfplugindocs
 
-docs-lint:
+docs-lint: build
 	@tfplugindocs validate
 
 all: deps lint build testacc

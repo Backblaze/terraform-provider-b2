@@ -46,6 +46,7 @@ pkged.go
 *.pyc
 *.egg-info
 .python-version
+b2/py-terraform-provider-b2
 build/
 dist/
 venv/

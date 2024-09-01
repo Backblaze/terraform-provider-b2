@@ -1,11 +1,8 @@
 module github.com/Backblaze/terraform-provider-b2
 
-go 1.20
+go 1.22
 
-require (
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.31.0
-	github.com/markbates/pkger v0.17.1
-)
+require github.com/hashicorp/terraform-plugin-sdk/v2 v2.31.0
 
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
@@ -13,7 +10,6 @@ require (
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/gobuffalo/here v0.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
