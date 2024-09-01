@@ -27,7 +27,7 @@ deps-check:
 	@go mod tidy
 	@cd tools && go mod tidy
 	@git diff --exit-code -- go.mod go.sum tools/go.mod tools/go.sum || \
-		(echo; echo "Unexpected difference in go.mod/go.sum files. Run 'go mod tidy' command or revert any go.mod/go.sum changes and commit."; exit 1)
+		(echo; echo "Unexpected difference in go.mod/go.sum files. Run 'make deps' command or revert any go.mod/go.sum changes and commit."; exit 1)
 
 format: _pybindings
 	@go fmt ./...
@@ -58,5 +58,8 @@ docs: build
 
 docs-lint: build
 	@tfplugindocs validate
+	@tfplugindocs
+	@git diff --exit-code -- docs/ || \
+		(echo; echo "Unexpected difference in docs. Run 'make docs' command or revert any changes in the schema."; exit 1)
 
 all: deps lint build testacc

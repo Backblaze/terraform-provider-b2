@@ -17,19 +17,17 @@ B2 application key resource.
 
 ### Required
 
-- **capabilities** (Set of String) A set of strings, each one naming a capability the key has.
-- **key_name** (String) The name of the key.
+- `capabilities` (Set of String) A set of strings, each one naming a capability the key has.
+- `key_name` (String) The name of the key.
 
 ### Optional
 
-- **bucket_id** (String) When present, restricts access to one bucket.
-- **id** (String) The ID of this resource.
-- **name_prefix** (String) When present, restricts access to files whose names start with the prefix.
+- `bucket_id` (String) When present, restricts access to one bucket.
+- `name_prefix` (String) When present, restricts access to files whose names start with the prefix.
 
 ### Read-Only
 
-- **application_key** (String, Sensitive) The key.
-- **application_key_id** (String) The ID of the newly created key.
-- **options** (Set of String) List of application key options.
-
-
+- `application_key` (String, Sensitive) The key.
+- `application_key_id` (String) The ID of the newly created key.
+- `id` (String) The ID of this resource.
+- `options` (Set of String) List of application key options.

@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-        uses: actions/setup-python@v2
+        uses: deadsnakes/action@v2.1.1
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}

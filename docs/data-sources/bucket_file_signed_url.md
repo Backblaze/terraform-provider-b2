@@ -17,16 +17,14 @@ B2 signed URL for a bucket file data source.
 
 ### Required
 
-- **bucket_id** (String) The ID of the bucket.
-- **file_name** (String) The file name.
+- `bucket_id` (String) The ID of the bucket.
+- `file_name` (String) The file name.
 
 ### Optional
 
-- **duration** (Number) The duration for which the presigned URL is valid
-- **id** (String) The ID of this resource.
+- `duration` (Number) The duration for which the presigned URL is valid
 
 ### Read-Only
 
-- **signed_url** (String) The signed URL for the given file
-
-
+- `id` (String) The ID of this resource.
+- `signed_url` (String) The signed URL for the given file

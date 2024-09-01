@@ -17,39 +17,39 @@ B2 bucket resource.
 
 ### Required
 
-- **bucket_name** (String) The name of the bucket.
-- **bucket_type** (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
+- `bucket_name` (String) The name of the bucket.
+- `bucket_type` (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
 
 ### Optional
 
-- **bucket_info** (Map of String) User-defined information to be stored with the bucket.
-- **cors_rules** (Block List) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
-- **default_server_side_encryption** (Block List, Max: 1) The default server-side encryption settings for this bucket. (see [below for nested schema](#nestedblock--default_server_side_encryption))
-- **file_lock_configuration** (Block List) File lock enabled flag, and default retention settings. (see [below for nested schema](#nestedblock--file_lock_configuration))
-- **id** (String) The ID of this resource.
-- **lifecycle_rules** (Block List) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedblock--lifecycle_rules))
+- `bucket_info` (Map of String) User-defined information to be stored with the bucket.
+- `cors_rules` (Block List) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
+- `default_server_side_encryption` (Block List, Max: 1) The default server-side encryption settings for this bucket. (see [below for nested schema](#nestedblock--default_server_side_encryption))
+- `file_lock_configuration` (Block List) File lock enabled flag, and default retention settings. (see [below for nested schema](#nestedblock--file_lock_configuration))
+- `lifecycle_rules` (Block List) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedblock--lifecycle_rules))
 
 ### Read-Only
 
-- **account_id** (String) Account ID that the bucket belongs to.
-- **bucket_id** (String) The ID of the bucket.
-- **options** (Set of String) List of bucket options.
-- **revision** (Number) Bucket revision.
+- `account_id` (String) Account ID that the bucket belongs to.
+- `bucket_id` (String) The ID of the bucket.
+- `id` (String) The ID of this resource.
+- `options` (Set of String) List of bucket options.
+- `revision` (Number) Bucket revision.
 
 <a id="nestedblock--cors_rules"></a>
 ### Nested Schema for `cors_rules`
 
 Required:
 
-- **allowed_operations** (List of String) A list specifying which operations the rule allows.
-- **allowed_origins** (List of String) A non-empty list specifying which origins the rule covers.
-- **cors_rule_name** (String) A name for humans to recognize the rule in a user interface.
-- **max_age_seconds** (Number) This specifies the maximum number of seconds that a browser may cache the response to a preflight request.
+- `allowed_operations` (List of String) A list specifying which operations the rule allows.
+- `allowed_origins` (List of String) A non-empty list specifying which origins the rule covers.
+- `cors_rule_name` (String) A name for humans to recognize the rule in a user interface.
+- `max_age_seconds` (Number) This specifies the maximum number of seconds that a browser may cache the response to a preflight request.
 
 Optional:
 
-- **allowed_headers** (List of String) If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.
-- **expose_headers** (List of String) If present, this is a list of headers that may be exposed to an application inside the client.
+- `allowed_headers` (List of String) If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.
+- `expose_headers` (List of String) If present, this is a list of headers that may be exposed to an application inside the client.
 
 
 <a id="nestedblock--default_server_side_encryption"></a>
@@ -57,8 +57,8 @@ Optional:
 
 Optional:
 
-- **algorithm** (String) Server-side encryption algorithm. AES256 is the only one supported.
-- **mode** (String) Server-side encryption mode.
+- `algorithm` (String) Server-side encryption algorithm. AES256 is the only one supported.
+- `mode` (String) Server-side encryption mode.
 
 
 <a id="nestedblock--file_lock_configuration"></a>
@@ -66,27 +66,27 @@ Optional:
 
 Optional:
 
-- **default_retention** (Block List, Max: 1) Default retention settings for files uploaded to this bucket (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention))
-- **is_file_lock_enabled** (Boolean) If present, the boolean value specifies whether bucket is File Lock-enabled. Defaults to `false`.
+- `default_retention` (Block List, Max: 1) Default retention settings for files uploaded to this bucket (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention))
+- `is_file_lock_enabled` (Boolean) If present, the boolean value specifies whether bucket is File Lock-enabled. Defaults to `false`.
 
 <a id="nestedblock--file_lock_configuration--default_retention"></a>
 ### Nested Schema for `file_lock_configuration.default_retention`
 
 Required:
 
-- **mode** (String) Default retention mode (compliance|governance|none).
+- `mode` (String) Default retention mode (compliance|governance|none).
 
 Optional:
 
-- **period** (Block List, Max: 1) How long for to make files immutable (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
+- `period` (Block List, Max: 1) How long for to make files immutable (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
 
 <a id="nestedblock--file_lock_configuration--default_retention--period"></a>
 ### Nested Schema for `file_lock_configuration.default_retention.period`
 
 Required:
 
-- **duration** (Number) Duration
-- **unit** (String) Unit for duration (days|years)
+- `duration` (Number) Duration
+- `unit` (String) Unit for duration (days|years)
 
 
 
@@ -96,11 +96,9 @@ Required:
 
 Required:
 
-- **file_name_prefix** (String) It specifies which files in the bucket it applies to.
+- `file_name_prefix` (String) It specifies which files in the bucket it applies to.
 
 Optional:
 
-- **days_from_hiding_to_deleting** (Number) It says how long to keep file versions that are not the current version.
-- **days_from_uploading_to_hiding** (Number) It causes files to be hidden automatically after the given number of days.
-
-
+- `days_from_hiding_to_deleting` (Number) It says how long to keep file versions that are not the current version.
+- `days_from_uploading_to_hiding` (Number) It causes files to be hidden automatically after the given number of days.
