@@ -20,7 +20,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
         uses: deadsnakes/action@v2.1.1
         with:
@@ -59,7 +59,7 @@ jobs:
           - macos-14  # arm64
           - windows-2019
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
         if: matrix.os == 'ubuntu-latest'
         uses: deadsnakes/action@v2.1.1
@@ -113,7 +113,7 @@ jobs:
           - os: windows-2019  # for Windows, the latest terraform is enough for ACC tests
             terraform: '1.4.*'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
         uses: actions/setup-go@v2.1.3

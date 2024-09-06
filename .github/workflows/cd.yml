@@ -28,7 +28,7 @@ jobs:
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Start a Docker container (linux)
         if: matrix.conf.os == 'linux' && matrix.conf.arch == 'arm64'
         run: |
@@ -106,7 +106,7 @@ jobs:
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
