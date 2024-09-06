@@ -119,14 +119,14 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
-      - uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v3
         name: Set up Terraform ${{ matrix.terraform }}
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
       - name: Download python bindings for given OS
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: py-terraform-provider-b2-${{ runner.os }}-${{ runner.arch }}
           path: python-bindings/dist/

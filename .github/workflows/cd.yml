@@ -117,7 +117,7 @@ jobs:
         run: |
           make deps
       - name: Download python bindings for all OSes
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: python-bindings/dist/artifacts/
       - name: Postprocess python bindings
@@ -142,7 +142,7 @@ jobs:
           version: ${{ steps.version.outputs.version }}
       - name: Import GPG key
         id: import_gpg
-        uses: paultyng/ghaction-import-gpg@v2.1.0
+        uses: paultyng/ghaction-import-gpg@v2
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           PASSPHRASE: ${{ secrets.PASSPHRASE }}
