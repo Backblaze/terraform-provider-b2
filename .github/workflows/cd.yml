@@ -92,7 +92,7 @@ jobs:
         run: |
           sudo chmod -R a+r python-bindings
       - name: Upload Python bindings
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
