@@ -110,7 +110,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v2.1.3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
