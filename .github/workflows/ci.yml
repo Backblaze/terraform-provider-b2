@@ -67,7 +67,7 @@ jobs:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
         if: matrix.os != 'ubuntu-latest'
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}

@@ -49,7 +49,7 @@ jobs:
               /bin/bash -c "sleep infinity"
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (darwin, windows)
         if: matrix.conf.os != 'linux'
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Define command wrapper (linux)
