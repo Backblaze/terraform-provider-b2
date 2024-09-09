@@ -20,15 +20,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Use external pybindings executable from git repo, not embedded one.
-var pybindingsSource string = "../python-bindings/dist/py-terraform-provider-b2"
-
 // providerFactories are used to instantiate a provider during acceptance testing.
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
 var providerFactories = map[string]func() (*schema.Provider, error){
 	"b2": func() (*schema.Provider, error) {
-		pybindings, err := GetBindings(pybindingsSource, true)
+		pybindings, err := GetBindings()
 		if err != nil {
 			log.Fatal(err.Error())
 			return nil, err
@@ -38,7 +35,7 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 }
 
 func TestProvider(t *testing.T) {
-	pybindings, err := GetBindings(pybindingsSource, true)
+	pybindings, err := GetBindings()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

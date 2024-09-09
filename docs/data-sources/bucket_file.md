@@ -17,41 +17,39 @@ B2 bucket file data source.
 
 ### Required
 
-- **bucket_id** (String) The ID of the bucket.
-- **file_name** (String) The file name.
+- `bucket_id` (String) The ID of the bucket.
+- `file_name` (String) The file name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **show_versions** (Boolean) Show all file versions.
+- `show_versions` (Boolean) Show all file versions.
 
 ### Read-Only
 
-- **file_versions** (List of Object) File versions. (see [below for nested schema](#nestedatt--file_versions))
+- `file_versions` (List of Object) File versions. (see [below for nested schema](#nestedatt--file_versions))
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--file_versions"></a>
 ### Nested Schema for `file_versions`
 
 Read-Only:
 
-- **action** (String)
-- **bucket_id** (String)
-- **content_md5** (String)
-- **content_sha1** (String)
-- **content_type** (String)
-- **file_id** (String)
-- **file_info** (Map of String)
-- **file_name** (String)
-- **server_side_encryption** (List of Object) (see [below for nested schema](#nestedobjatt--file_versions--server_side_encryption))
-- **size** (Number)
-- **upload_timestamp** (Number)
+- `action` (String)
+- `bucket_id` (String)
+- `content_md5` (String)
+- `content_sha1` (String)
+- `content_type` (String)
+- `file_id` (String)
+- `file_info` (Map of String)
+- `file_name` (String)
+- `server_side_encryption` (List of Object) (see [below for nested schema](#nestedobjatt--file_versions--server_side_encryption))
+- `size` (Number)
+- `upload_timestamp` (Number)
 
 <a id="nestedobjatt--file_versions--server_side_encryption"></a>
 ### Nested Schema for `file_versions.server_side_encryption`
 
 Read-Only:
 
-- **algorithm** (String)
-- **mode** (String)
-
-
+- `algorithm` (String)
+- `mode` (String)

@@ -9,9 +9,12 @@ The provider is written in go, but it uses official [B2 python SDK](https://gith
 Requirements
 ------------
 
+Runtime requirements:
 -	[Terraform](https://www.terraform.io/downloads.html) >= 1.0.0
--	[Go](https://golang.org/doc/install) >= 1.20
--	[Python](https://github.com/pyenv/pyenv) >= 3.9
+
+Development requirements:
+-	[Go](https://golang.org/doc/install) == 1.22
+-	[Python](https://github.com/pyenv/pyenv) == 3.12
 
 Dependencies
 ------------

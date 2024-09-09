@@ -17,18 +17,16 @@ B2 application key data source.
 
 ### Required
 
-- **key_name** (String) The name assigned when the key was created.
+- `key_name` (String) The name assigned when the key was created.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **name_prefix** (String) When present, restricts access to files whose names start with the prefix.
+- `name_prefix` (String) When present, restricts access to files whose names start with the prefix.
 
 ### Read-Only
 
-- **application_key_id** (String) The ID of the key.
-- **bucket_id** (String) When present, restricts access to one bucket.
-- **capabilities** (Set of String) A set of strings, each one naming a capability the key has.
-- **options** (Set of String) A list of application key options.
-
-
+- `application_key_id` (String) The ID of the key.
+- `bucket_id` (String) When present, restricts access to one bucket.
+- `capabilities` (Set of String) A set of strings, each one naming a capability the key has.
+- `id` (String) The ID of this resource.
+- `options` (Set of String) A list of application key options.

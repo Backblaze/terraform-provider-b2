@@ -17,41 +17,39 @@ B2 bucket file version resource.
 
 ### Required
 
-- **bucket_id** (String) The ID of the bucket.
-- **file_name** (String) The name of the B2 file.
-- **source** (String) Path to the local file.
+- `bucket_id` (String) The ID of the bucket.
+- `file_name` (String) The name of the B2 file.
+- `source` (String) Path to the local file.
 
 ### Optional
 
-- **content_type** (String) Content type. If not set, it will be set based on the file extension.
-- **file_info** (Map of String) The custom information that is uploaded with the file.
-- **id** (String) The ID of this resource.
-- **server_side_encryption** (Block List, Max: 1) Server-side encryption settings. (see [below for nested schema](#nestedblock--server_side_encryption))
+- `content_type` (String) Content type. If not set, it will be set based on the file extension.
+- `file_info` (Map of String) The custom information that is uploaded with the file.
+- `server_side_encryption` (Block List, Max: 1) Server-side encryption settings. (see [below for nested schema](#nestedblock--server_side_encryption))
 
 ### Read-Only
 
-- **action** (String) One of 'start', 'upload', 'hide', 'folder', or other values added in the future.
-- **content_md5** (String) MD5 sum of the content.
-- **content_sha1** (String) SHA1 hash of the content.
-- **file_id** (String) The unique identifier for this version of this file.
-- **size** (Number) The file size.
-- **upload_timestamp** (Number) This is a UTC time when this file was uploaded.
+- `action` (String) One of 'start', 'upload', 'hide', 'folder', or other values added in the future.
+- `content_md5` (String) MD5 sum of the content.
+- `content_sha1` (String) SHA1 hash of the content.
+- `file_id` (String) The unique identifier for this version of this file.
+- `id` (String) The ID of this resource.
+- `size` (Number) The file size.
+- `upload_timestamp` (Number) This is a UTC time when this file was uploaded.
 
 <a id="nestedblock--server_side_encryption"></a>
 ### Nested Schema for `server_side_encryption`
 
 Optional:
 
-- **algorithm** (String) Server-side encryption algorithm. AES256 is the only one supported.
-- **key** (Block List, Max: 1) Key used in SSE-C mode. (see [below for nested schema](#nestedblock--server_side_encryption--key))
-- **mode** (String) Server-side encryption mode.
+- `algorithm` (String) Server-side encryption algorithm. AES256 is the only one supported.
+- `key` (Block List, Max: 1) Key used in SSE-C mode. (see [below for nested schema](#nestedblock--server_side_encryption--key))
+- `mode` (String) Server-side encryption mode.
 
 <a id="nestedblock--server_side_encryption--key"></a>
 ### Nested Schema for `server_side_encryption.key`
 
 Optional:
 
-- **key_id** (String) Key identifier stored in file info metadata
-- **secret_b64** (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648)
-
-
+- `key_id` (String) Key identifier stored in file info metadata
+- `secret_b64` (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648)

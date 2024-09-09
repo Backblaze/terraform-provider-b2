@@ -1,7 +1,7 @@
 -r requirements.txt
 
-black~=22.3.0
-flake8~=3.9.0
-pyinstaller~=6.8.0
+black~=24.8.0
+flake8~=7.1.1
+pyinstaller~=6.10.0
 patchelf-wrapper~=1.2 ; sys_platform == 'linux'
-staticx~=0.13.8 ; sys_platform == 'linux'
+staticx~=0.14.1 ; sys_platform == 'linux'
