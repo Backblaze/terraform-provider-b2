@@ -21,10 +21,9 @@ builds:
       goarch: arm64
   hooks:
     pre:
-      - cp python-bindings/dist/py-terraform-provider-b2-{{ .Os }}-{{ .Arch }} python-bindings/dist/py-terraform-provider-b2
-      - pkger -include /python-bindings/dist/py-terraform-provider-b2
+      - cp python-bindings/dist/py-terraform-provider-b2-{{ .Os }}-{{ .Arch }} b2/py-terraform-provider-b2
     post:
-      - rm -f python-bindings/dist/py-terraform-provider-b2
+      - rm -f b2/py-terraform-provider-b2
 env:
   # goreleaser does not work with CGO, it could also complicate
   # usage by users in CI/CD systems like Terraform Cloud where

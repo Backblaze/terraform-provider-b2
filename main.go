@@ -21,8 +21,7 @@ import (
 var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary
-	pybindingsSource string = "/python-bindings/dist/py-terraform-provider-b2"
-	version          string = "dev"
+	version string = "dev"
 )
 
 func main() {
@@ -31,7 +30,7 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	pybindings, err := b2.GetBindings(pybindingsSource, false)
+	pybindings, err := b2.GetBindings()
 	if err != nil {
 		log.Fatal(err.Error())
 		return

@@ -42,4 +42,6 @@ install: build
 
 docs: build
 
+docs-lint: build
+
 all: deps lint build
