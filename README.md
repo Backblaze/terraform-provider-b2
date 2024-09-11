@@ -31,6 +31,17 @@ Building
 make build
 ```
 
+Documentation
+-------------
+
+The documentation is generated from the provider source code using
+[`tfplugindocs`](https://github.com/hashicorp/terraform-plugin-docs). You will need to regenerate the documentation if
+you add or change a data source, resource or argument.
+
+```
+make docs
+```
+
 Installing
 ----------
 
