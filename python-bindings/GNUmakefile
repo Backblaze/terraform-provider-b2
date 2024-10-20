@@ -3,6 +3,7 @@ DIR=b2_terraform
 EGG_INFO=${NAME}.egg-info
 SPEC=${NAME}.spec
 OS=$(shell python -c "import platform; print(platform.system())")
+STATICX?=1
 
 default: build
 
@@ -26,7 +27,7 @@ clean:
 
 build:
 	@pyinstaller ${SPEC}
-ifeq ($(OS), Linux)
+ifeq ($(OS)$(STATICX), Linux1)
 	@mv -f dist/py-terraform-provider-b2 dist/py-terraform-provider-b2-linked
 	@staticx --strip --loglevel INFO dist/py-terraform-provider-b2-linked dist/py-terraform-provider-b2
 	@rm -f dist/py-terraform-provider-b2-linked
