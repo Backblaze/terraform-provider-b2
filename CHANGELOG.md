@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
+* Use crazy-max/ghaction-import-gpg action as a replacement of deprecated paultyng/ghaction-import-gpg
+
 ## [0.9.0] - 2024-10-20
 
 ### Infrastructure
