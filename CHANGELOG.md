@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
+* Replace deprecated macos-12 with macos-13
+
 ## [0.9.0] - 2024-10-20
 
 ### Infrastructure
