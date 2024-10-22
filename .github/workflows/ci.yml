@@ -87,7 +87,7 @@ jobs:
       - name: Upload python bindings
         uses: actions/upload-artifact@v4
         with:
-          name: py-terraform-provider-b2-${{ runner.os }}-${{ runner.arch }}
+          name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
           if-no-files-found: error
           retention-days: 1
@@ -125,7 +125,7 @@ jobs:
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
         uses: actions/download-artifact@v4
         with:
-          name: py-terraform-provider-b2-${{ runner.os }}-${{ runner.arch }}
+          name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/
       - name: Run acceptance tests
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
