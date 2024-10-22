@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Replace deprecated macos-12 with macos-13
 * Use crazy-max/ghaction-import-gpg action as a replacement of deprecated paultyng/ghaction-import-gpg
 
+### Fixed
+* Do not allow setting 0 value for `days_from_hiding_to_deleting` and `days_from_uploading_to_hiding`
+
 ## [0.9.0] - 2024-10-20
 
 ### Infrastructure
