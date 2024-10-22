@@ -456,14 +456,16 @@ func getResourceLifecycleRulesElem() *schema.Resource {
 				Required:    true,
 			},
 			"days_from_hiding_to_deleting": {
-				Description: "It says how long to keep file versions that are not the current version.",
-				Type:        schema.TypeInt,
-				Optional:    true,
+				Description:  "It says how long to keep file versions that are not the current version.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(1),
 			},
 			"days_from_uploading_to_hiding": {
-				Description: "It causes files to be hidden automatically after the given number of days.",
-				Type:        schema.TypeInt,
-				Optional:    true,
+				Description:  "It causes files to be hidden automatically after the given number of days.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(1),
 			},
 		},
 	}
