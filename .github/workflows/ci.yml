@@ -17,7 +17,7 @@ defaults:
     shell: bash
 
 env:
-  PYTHON_DEFAULT_VERSION: '3.12'
+  PYTHON_DEFAULT_VERSION: '3.13'
   GO_DEFAULT_VERSION: '1.22'
 
 jobs:

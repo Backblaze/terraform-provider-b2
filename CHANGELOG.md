@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Infrastructure
+* Use Python 3.13 for embedded pybindings
+
+### Infrastructure
 * Replace deprecated macos-12 with macos-13
 * Use crazy-max/ghaction-import-gpg action as a replacement of deprecated paultyng/ghaction-import-gpg
 

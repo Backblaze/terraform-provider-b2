@@ -14,7 +14,7 @@ Runtime requirements:
 
 Development requirements:
 -	[Go](https://golang.org/doc/install) == 1.22
--	[Python](https://github.com/pyenv/pyenv) == 3.12
+-	[Python](https://github.com/pyenv/pyenv) == 3.13
 
 Dependencies
 ------------
