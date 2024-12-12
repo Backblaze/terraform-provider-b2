@@ -12,10 +12,11 @@ package main
 
 import (
 	"flag"
-	"github.com/Backblaze/terraform-provider-b2/b2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"log"
 	"os"
+
+	"github.com/Backblaze/terraform-provider-b2/b2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 var (

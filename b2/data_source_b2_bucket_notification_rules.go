@@ -1,8 +1,8 @@
 //####################################################################
 //
-// File: b2/data_source_b2_bucket_file.go
+// File: b2/data_source_b2_bucket_notification_rules.go
 //
-// Copyright 2021 Backblaze Inc. All Rights Reserved.
+// Copyright 2024 Backblaze Inc. All Rights Reserved.
 //
 // License https://www.backblaze.com/using_b2_code.html
 //
@@ -18,11 +18,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func dataSourceB2BucketFile() *schema.Resource {
+func dataSourceB2BucketNotificationRules() *schema.Resource {
 	return &schema.Resource{
-		Description: "B2 bucket file data source.",
+		Description: "B2 bucket notification rules data source.",
 
-		ReadContext: dataSourceB2BucketFileRead,
+		ReadContext: dataSourceB2BucketNotificationRulesRead,
 
 		Schema: map[string]*schema.Schema{
 			"bucket_id": {
@@ -31,36 +31,23 @@ func dataSourceB2BucketFile() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"file_name": {
-				Description:  "The file name.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.NoZeroValues,
-			},
-			"show_versions": {
-				Description: "Show all file versions.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"file_versions": {
-				Description: "File versions.",
+			"notification_rules": {
+				Description: "An array of Event Notification Rules.",
 				Type:        schema.TypeList,
-				Elem:        getDataSourceFileVersionsElem(),
+				Elem:        getNotificationRulesElem(true),
 				Computed:    true,
 			},
 		},
 	}
 }
 
-func dataSourceB2BucketFileRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_file"
+	const name = "bucket_notification_rules"
 	const op = DATA_SOURCE_READ
 
 	input := map[string]interface{}{
-		"bucket_id":     d.Get("bucket_id").(string),
-		"file_name":     d.Get("file_name").(string),
-		"show_versions": d.Get("show_versions").(bool),
+		"bucket_id": d.Get("bucket_id").(string),
 	}
 
 	output, err := client.apply(ctx, name, op, input)
@@ -68,7 +55,7 @@ func dataSourceB2BucketFileRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["_sha1"].(string))
+	d.SetId(output["bucket_id"].(string))
 
 	err = client.populate(ctx, name, op, output, d)
 	if err != nil {

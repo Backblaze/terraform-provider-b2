@@ -13,8 +13,8 @@ package b2
 import (
 	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -58,17 +58,19 @@ func New(version string, exec string) func() *schema.Provider {
 				},
 			},
 			DataSourcesMap: map[string]*schema.Resource{
-				"b2_account_info":           dataSourceB2AccountInfo(),
-				"b2_application_key":        dataSourceB2ApplicationKey(),
-				"b2_bucket":                 dataSourceB2Bucket(),
-				"b2_bucket_file":            dataSourceB2BucketFile(),
-				"b2_bucket_file_signed_url": dataSourceB2BucketFileSignedUrl(),
-				"b2_bucket_files":           dataSourceB2BucketFiles(),
+				"b2_account_info":              dataSourceB2AccountInfo(),
+				"b2_application_key":           dataSourceB2ApplicationKey(),
+				"b2_bucket":                    dataSourceB2Bucket(),
+				"b2_bucket_file":               dataSourceB2BucketFile(),
+				"b2_bucket_file_signed_url":    dataSourceB2BucketFileSignedUrl(),
+				"b2_bucket_files":              dataSourceB2BucketFiles(),
+				"b2_bucket_notification_rules": dataSourceB2BucketNotificationRules(),
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"b2_application_key":     resourceB2ApplicationKey(),
-				"b2_bucket":              resourceB2Bucket(),
-				"b2_bucket_file_version": resourceB2BucketFileVersion(),
+				"b2_application_key":           resourceB2ApplicationKey(),
+				"b2_bucket":                    resourceB2Bucket(),
+				"b2_bucket_file_version":       resourceB2BucketFileVersion(),
+				"b2_bucket_notification_rules": resourceB2BucketNotificationRules(),
 			},
 		}
 
@@ -117,7 +119,9 @@ func configure(version string, exec string, p *schema.Provider) func(context.Con
 			SensitiveResources:   sensitiveResources,
 		}
 
-		log.Printf("[DEBUG] User Agent append: %s\n", userAgent)
+		tflog.Info(ctx, "User Agent append", map[string]interface{}{
+			"user_agent_append": userAgent,
+		})
 
 		return client, nil
 	}

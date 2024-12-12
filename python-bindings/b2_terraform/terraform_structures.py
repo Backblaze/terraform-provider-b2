@@ -71,6 +71,24 @@ FILES_KEYS = {
     "file_versions": FILE_VERSION_KEYS,
 }
 
+NOTIFICATION_RULES = {
+    "bucket_id": None,
+    "notification_rules": {
+        "event_types": None,
+        "is_enabled": None,
+        "name": None,
+        "object_name_prefix": None,
+        "target_configuration": {
+            "target_type": None,
+            "url": None,
+            "custom_headers": None,
+            "hmac_sha256_signing_secret": None,
+        },
+    },
+    "is_suspended": None,
+    "suspension_reason": None,
+}
+
 BUCKET_KEYS = {
     "bucket_id": None,
     "bucket_name": None,

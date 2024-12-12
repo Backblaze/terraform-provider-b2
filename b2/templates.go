@@ -468,3 +468,115 @@ func getResourceLifecycleRulesElem() *schema.Resource {
 		},
 	}
 }
+
+func getNotificationRulesElem(ds bool) *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"event_types": {
+				Description: "The list of event types for the event notification rule.",
+				Type:        schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: If(ds,
+						nil,
+						validation.StringInSlice([]string{
+							"b2:ObjectCreated:*", "b2:ObjectCreated:Upload", "b2:ObjectCreated:MultipartUpload",
+							"b2:ObjectCreated:Copy", "b2:ObjectCreated:Replica", "b2:ObjectCreated:MultipartReplica",
+							"b2:ObjectDeleted:*", "b2:ObjectDeleted:Delete", "b2:ObjectDeleted:LifecycleRule",
+							"b2:HideMarkerCreated:*", "b2:HideMarkerCreated:Hide", "b2:HideMarkerCreated:LifecycleRule",
+							"b2:MultipartUploadCreated:*", "b2:MultipartUploadCreated:LiveRead",
+						}, false),
+					),
+				},
+				Computed: If(ds, true, false),
+				Required: If(ds, false, true),
+				MinItems: If(ds, 0, 1),
+			},
+			"is_enabled": {
+				Description: "Whether the event notification rule is enabled.",
+				Type:        schema.TypeBool,
+				Computed:    If(ds, true, false),
+				Optional:    If(ds, false, true),
+				DefaultFunc: If(ds,
+					nil,
+					func() (interface{}, error) { return true, nil },
+				),
+			},
+			"name": {
+				Description:  "A name for the event notification rule. The name must be unique among the bucket's notification rules.",
+				Type:         schema.TypeString,
+				Computed:     If(ds, true, false),
+				Required:     If(ds, false, true),
+				ValidateFunc: If(ds, nil, validation.NoZeroValues),
+			},
+			"object_name_prefix": {
+				Description: "Specifies which object(s) in the bucket the event notification rule applies to.",
+				Type:        schema.TypeString,
+				Computed:    If(ds, true, false),
+				Optional:    If(ds, false, true),
+			},
+			"target_configuration": {
+				Description: "The target configuration for the event notification rule.",
+				Type:        schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"target_type": {
+							Description:  "The type of the target configuration, currently \"webhook\" only.",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"webhook"}, false),
+						},
+						"url": {
+							Description:  "The URL for the webhook.",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.IsURLWithHTTPS,
+						},
+						"custom_headers": {
+							Description: "When present, additional header name/value pairs to be sent on the webhook invocation.",
+							Type:        schema.TypeList,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"name": {
+										Description:  "Name of the header.",
+										Type:         schema.TypeString,
+										Required:     true,
+										ValidateFunc: validation.NoZeroValues,
+									},
+									"value": {
+										Description:  "Value of the header.",
+										Type:         schema.TypeString,
+										Required:     true,
+										ValidateFunc: validation.NoZeroValues,
+									},
+								},
+							},
+							Optional: true,
+							MaxItems: 10,
+						},
+						"hmac_sha256_signing_secret": {
+							Description:  "The signing secret for use in verifying the X-Bz-Event-Notification-Signature.",
+							Type:         schema.TypeString,
+							Sensitive:    true,
+							Optional:     true,
+							ValidateFunc: StringLenExact(32),
+						},
+					},
+				},
+				Computed: If(ds, true, false),
+				Required: If(ds, false, true),
+				MaxItems: If(ds, 0, 1),
+			},
+			"is_suspended": {
+				Description: "Whether the event notification rule is suspended.",
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+			"suspension_reason": {
+				Description: "A brief description of why the event notification rule was suspended.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+		},
+	}
+}

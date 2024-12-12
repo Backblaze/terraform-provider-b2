@@ -12,12 +12,13 @@ package b2
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -42,9 +43,15 @@ type Client struct {
 	SensitiveResources   map[string]map[string]bool
 }
 
-func (c Client) apply(name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
-	log.Printf("[TRACE] Executing pybindings for '%s' and '%s' operation\n", name, op)
-	log.Printf("[TRACE] Input for pybindings: %+v\n", input)
+func (c Client) apply(ctx context.Context, name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
+	tflog.Info(ctx, "Executing pybindings", map[string]interface{}{
+		"name": name,
+		"op":   op,
+	})
+
+	tflog.Debug(ctx, "Input for pybindings", map[string]interface{}{
+		"input": input,
+	})
 
 	cmd := exec.Command(c.Exec, name, op)
 	cmd.Env = os.Environ()
@@ -66,12 +73,16 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if exitErr.Stderr != nil && len(exitErr.Stderr) > 0 {
-				log.Printf("[ERROR] Error in pybindings: %+v\n", string(exitErr.Stderr))
+				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
+					"stderr": fmt.Errorf(string(exitErr.Stderr)),
+				})
 				return nil, fmt.Errorf(string(exitErr.Stderr))
 			}
 			return nil, fmt.Errorf("failed to execute")
 		} else {
-			log.Println(err)
+			tflog.Error(ctx, "Error", map[string]interface{}{
+				"err": err,
+			})
 			return nil, err
 		}
 	}
@@ -99,12 +110,14 @@ func (c Client) apply(name string, op string, input map[string]interface{}) (map
 			safeOutput[k] = v
 		}
 	}
-	log.Printf("[TRACE] Safe output from pybindings: %+v\n", safeOutput)
+	tflog.Debug(ctx, "Safe output from pybindings", map[string]interface{}{
+		"output": safeOutput,
+	})
 
 	return output, nil
 }
 
-func (c Client) populate(name string, op string, output map[string]interface{}, d *schema.ResourceData) error {
+func (c Client) populate(ctx context.Context, name string, op string, output map[string]interface{}, d *schema.ResourceData) error {
 	resourceName := "b2_" + name
 	var schemaList []string
 	if op == DATA_SOURCE_READ {

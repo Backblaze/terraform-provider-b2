@@ -12,8 +12,8 @@ package b2
 
 import (
 	"context"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -134,14 +134,14 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["bucket_id"].(string))
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -159,18 +159,20 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 		"cors_rules": d.Get("cors_rules"),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	if _, ok := output["bucket_id"]; !ok && !d.IsNewResource() {
 		// deleted bucket
-		log.Printf("[WARN] Bucket (%s) not found, possible resource drift", d.Id())
+		tflog.Warn(ctx, "Bucket not found, possible resource drift", map[string]interface{}{
+			"bucket_id": d.Id(),
+		})
 		d.SetId("")
 		return nil
 	}
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -194,12 +196,12 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -216,7 +218,7 @@ func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_id": d.Id(),
 	}
 
-	_, err := client.apply(name, op, input)
+	_, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}

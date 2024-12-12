@@ -12,8 +12,8 @@ package b2
 
 import (
 	"context"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -95,14 +95,14 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 		"name_prefix":  d.Get("name_prefix").(string),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["application_key_id"].(string))
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -119,20 +119,22 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		"application_key_id": d.Id(),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	if _, ok := output["application_key_id"]; !ok && !d.IsNewResource() {
 		// deleted application key
-		log.Printf("[WARN] Application Key (%s) not found, possible resource drift", d.Id())
+		tflog.Warn(ctx, "Application Key not found, possible resource drift", map[string]interface{}{
+			"application_key_id": d.Id(),
+		})
 		d.SetId("")
 		return nil
 	}
 
 	output["application_key"] = d.Get("application_key").(string)
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -149,7 +151,7 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 		"application_key_id": d.Id(),
 	}
 
-	_, err := client.apply(name, op, input)
+	_, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}

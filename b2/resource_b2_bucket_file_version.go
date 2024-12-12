@@ -133,14 +133,14 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 		"server_side_encryption": d.Get("server_side_encryption").([]interface{}),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["file_id"].(string))
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -157,7 +157,7 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 		"file_id": d.Id(),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -166,7 +166,7 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	output["size"] = d.Get("size").(int)
 	output["source"] = d.Get("source").(string)
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -184,7 +184,7 @@ func resourceB2BucketFileVersionDelete(ctx context.Context, d *schema.ResourceDa
 		"file_name": d.Get("file_name").(string),
 	}
 
-	_, err := client.apply(name, op, input)
+	_, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
