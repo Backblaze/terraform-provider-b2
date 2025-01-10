@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-01-10
+
 ### Added
 * Added support for Event Notifications via `b2_bucket_notification_rules` resource and data source
 
@@ -201,7 +203,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.12...v0.9.0
 [0.8.12]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.11...v0.8.12
 [0.8.11]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.10...v0.8.11
