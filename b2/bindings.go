@@ -91,6 +91,6 @@ func GetBindings() (string, error) {
 	}
 
 	bindings = &destinationPath
-	log.Printf("[TRACE] Extracted pybindings: %s\n", *bindings)
+	log.Printf("Extracted pybindings: %s\n", *bindings)
 	return *bindings, nil
 }

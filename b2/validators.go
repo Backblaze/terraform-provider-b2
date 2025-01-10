@@ -13,6 +13,7 @@ package b2
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func validateBase64Key(i interface{}, k string) (warnings []string, errors []error) {
@@ -33,4 +34,22 @@ func validateBase64Key(i interface{}, k string) (warnings []string, errors []err
 	}
 
 	return warnings, errors
+}
+
+// StringLenExact returns a SchemaValidateFunc which tests if the provided value
+// is of type string and has given length
+func StringLenExact(length int) schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (warnings []string, errors []error) {
+		v, ok := i.(string)
+		if !ok {
+			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+			return warnings, errors
+		}
+
+		if len(v) != length {
+			errors = append(errors, fmt.Errorf("expected length of %s must be %d, got %s", k, length, v))
+		}
+
+		return warnings, errors
+	}
 }

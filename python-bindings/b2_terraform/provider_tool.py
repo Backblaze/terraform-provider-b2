@@ -35,6 +35,7 @@ from b2_terraform.terraform_structures import (
     FILE_SIGNED_URL_KEYS,
     FILE_VERSION_KEYS,
     FILES_KEYS,
+    NOTIFICATION_RULES,
 )
 
 
@@ -454,6 +455,61 @@ class BucketFileVersion(Command):
         return {
             'content_type': content_type,
             'encryption': server_side_encryption,
+            **kwargs,
+        }
+
+
+@B2Provider.register_subcommand
+class BucketNotificationRules(Command):
+    tf_keys = NOTIFICATION_RULES
+
+    def data_source_read(self, *, bucket_id, **kwargs):
+        bucket = self.api.get_bucket_by_id(bucket_id)
+        rules = bucket.get_notification_rules()
+        return self._postprocess(bucket_id=bucket_id, notification_rules=rules)
+
+    def resource_create(self, *, bucket_id, notification_rules, **kwargs):
+        params = self._preprocess(notification_rules=notification_rules)
+        bucket = self.api.get_bucket_by_id(bucket_id)
+        rules = bucket.set_notification_rules(**params)
+        return self._postprocess(bucket_id=bucket_id, notification_rules=rules)
+
+    def resource_read(self, *, bucket_id, **kwargs):
+        try:
+            bucket = self.api.get_bucket_by_id(bucket_id)
+        except BucketIdNotFound:
+            return None  # no bucket has been found
+
+        rules = bucket.get_notification_rules()
+        return self._postprocess(bucket_id=bucket_id, notification_rules=rules)
+
+    def resource_update(self, *, bucket_id, notification_rules, **kwargs):
+        params = self._preprocess(notification_rules=notification_rules)
+        bucket = self.api.get_bucket_by_id(bucket_id)
+        rules = bucket.set_notification_rules(**params)
+        return self._postprocess(bucket_id=bucket_id, notification_rules=rules)
+
+    def resource_delete(self, *, bucket_id, **kwargs):
+        try:
+            bucket = self.api.get_bucket_by_id(bucket_id)
+        except BucketIdNotFound:
+            return  # bucket that contains notification rules already removed
+
+        bucket.set_notification_rules([])
+
+    def _preprocess(self, **kwargs):
+        notification_rules = []
+        for notification_rule in kwargs.pop('notification_rules'):
+            if not notification_rule["target_configuration"][0]["hmac_sha256_signing_secret"]:
+                del notification_rule["target_configuration"][0]["hmac_sha256_signing_secret"]
+            notification_rule["target_configuration"] = change_keys(
+                notification_rule["target_configuration"][0], converter=camelize
+            )
+            notification_rule = change_keys(notification_rule, converter=camelize)
+            notification_rules.append(notification_rule)
+
+        return {
+            'rules': notification_rules,
             **kwargs,
         }
 

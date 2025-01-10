@@ -67,14 +67,14 @@ func dataSourceB2AccountInfoRead(ctx context.Context, d *schema.ResourceData, me
 
 	input := map[string]interface{}{}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["account_id"].(string))
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

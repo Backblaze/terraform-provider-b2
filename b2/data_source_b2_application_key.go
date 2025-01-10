@@ -76,14 +76,14 @@ func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData,
 		"key_name": d.Get("key_name").(string),
 	}
 
-	output, err := client.apply(name, op, input)
+	output, err := client.apply(ctx, name, op, input)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(output["application_key_id"].(string))
 
-	err = client.populate(name, op, output, d)
+	err = client.populate(ctx, name, op, output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

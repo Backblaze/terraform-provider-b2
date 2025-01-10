@@ -42,16 +42,29 @@ resource "b2_bucket_file_version" "example3" {
 
 data "b2_bucket" "example" {
   bucket_name = b2_bucket.example.bucket_name
+  depends_on = [
+    b2_bucket.example,
+  ]
 }
 
 data "b2_bucket_file" "example" {
   bucket_id     = b2_bucket_file_version.example2.bucket_id
   file_name     = b2_bucket_file_version.example2.file_name
   show_versions = true
+  depends_on = [
+    b2_bucket_file_version.example1,
+    b2_bucket_file_version.example2,
+    b2_bucket_file_version.example3,
+  ]
 }
 
 data "b2_bucket_files" "example" {
   bucket_id = b2_bucket_file_version.example3.bucket_id
+  depends_on = [
+    b2_bucket_file_version.example1,
+    b2_bucket_file_version.example2,
+    b2_bucket_file_version.example3,
+  ]
 }
 
 output "bucket_example" {

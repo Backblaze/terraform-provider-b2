@@ -6,12 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Infrastructure
-* Use Python 3.13 for embedded pybindings
+### Added
+* Added support for Event Notifications via `b2_bucket_notification_rules` resource and data source
 
 ### Infrastructure
 * Replace deprecated macos-12 with macos-13
 * Use crazy-max/ghaction-import-gpg action as a replacement of deprecated paultyng/ghaction-import-gpg
+* Use Python 3.13 for embedded pybindings
 
 ## [0.9.0] - 2024-10-20
 
