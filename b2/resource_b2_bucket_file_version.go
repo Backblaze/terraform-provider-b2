@@ -93,11 +93,13 @@ func resourceB2BucketFileVersion() *schema.Resource {
 			"content_md5": {
 				Description: "MD5 sum of the content.",
 				Type:        schema.TypeString,
+				Optional:    true,
 				Computed:    true,
 			},
 			"content_sha1": {
 				Description: "SHA1 hash of the content.",
 				Type:        schema.TypeString,
+				Optional:    true,
 				Computed:    true,
 			},
 			"file_id": {
