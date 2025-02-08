@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
+* Upgrade pyinstaller to 6.11.1
+
 ## [0.10.0] - 2025-01-10
 
 ### Added
