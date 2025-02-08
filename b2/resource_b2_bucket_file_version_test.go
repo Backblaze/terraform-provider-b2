@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -25,7 +26,7 @@ func TestAccResourceB2BucketFileVersion_basic(t *testing.T) {
 	resourceName := "b2_bucket_file_version.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 	defer os.Remove(tempFile)
 
 	resource.Test(t, resource.TestCase{
@@ -59,7 +60,7 @@ func TestAccResourceB2BucketFileVersion_all(t *testing.T) {
 	resourceName := "b2_bucket_file_version.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 	defer os.Remove(tempFile)
 
 	resource.Test(t, resource.TestCase{
@@ -94,7 +95,7 @@ func TestAccResourceB2BucketFileVersion_forceNew(t *testing.T) {
 	resourceName := "b2_bucket_file_version.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 	defer os.Remove(tempFile)
 
 	resource.Test(t, resource.TestCase{
@@ -127,12 +128,48 @@ func TestAccResourceB2BucketFileVersion_forceNew(t *testing.T) {
 	})
 }
 
+func TestAccResourceB2BucketFileVersion_largeFile(t *testing.T) {
+	parentResourceName := "b2_bucket.test"
+	resourceName := "b2_bucket_file_version.test"
+	var fileSize int64 = 105 * 1000 * 1000 // 105MB file is uploaded as a large file
+
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+	tempFile := createTempFileTruncate(t, fileSize)
+	defer os.Remove(tempFile)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceB2BucketFileVersionConfig_basic(bucketName, tempFile),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "action", "upload"),
+					resource.TestCheckResourceAttrPair(resourceName, "bucket_id", parentResourceName, "bucket_id"),
+					resource.TestCheckResourceAttr(resourceName, "content_md5", ""),      // empty for large files
+					resource.TestCheckResourceAttr(resourceName, "content_sha1", "none"), // "none" for large files
+					resource.TestCheckResourceAttr(resourceName, "content_type", "text/plain"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.%", "1"),
+					resource.TestMatchResourceAttr(resourceName, "file_info.large_file_sha1", regexp.MustCompile("^[a-z0-9]{40}$")),
+					resource.TestCheckResourceAttr(resourceName, "file_name", "temp.txt"),
+					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.mode", "none"),
+					resource.TestCheckResourceAttr(resourceName, "server_side_encryption.0.algorithm", ""),
+					resource.TestCheckResourceAttr(resourceName, "size", strconv.Itoa(int(fileSize))),
+					resource.TestCheckResourceAttr(resourceName, "source", tempFile),
+					resource.TestMatchResourceAttr(resourceName, "upload_timestamp", regexp.MustCompile("^[0-9]{13}$")),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceB2BucketFileVersion_sse_c(t *testing.T) {
 	parentResourceName := "b2_bucket.test"
 	resourceName := "b2_bucket_file_version.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 	defer os.Remove(tempFile)
 
 	resource.Test(t, resource.TestCase{

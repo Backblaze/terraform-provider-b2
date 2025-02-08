@@ -11,7 +11,6 @@
 package b2
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -60,18 +59,35 @@ func testAccPreCheck(t *testing.T) {
 
 // Utility functions
 
-func createTempFile(t *testing.T, data string) string {
-	tmpFile, err := ioutil.TempFile("", "test-b2-tfp")
+func createTempFile(t *testing.T) *os.File {
+	tmpFile, err := os.CreateTemp("", "test-b2-tfp")
 	if err != nil {
 		t.Fatal(err)
 	}
-	filename := tmpFile.Name()
 
-	err = ioutil.WriteFile(filename, []byte(data), 0644)
+	return tmpFile
+}
+
+func createTempFileString(t *testing.T, data string) string {
+	tmpFile := createTempFile(t)
+
+	_, err := tmpFile.WriteString(data)
 	if err != nil {
-		os.Remove(filename)
+		os.Remove(tmpFile.Name())
 		t.Fatal(err)
 	}
 
-	return filepath.ToSlash(filename)
+	return filepath.ToSlash(tmpFile.Name())
+}
+
+func createTempFileTruncate(t *testing.T, size int64) string {
+	tmpFile := createTempFile(t)
+
+	err := tmpFile.Truncate(size)
+	if err != nil {
+		os.Remove(tmpFile.Name())
+		t.Fatal(err)
+	}
+
+	return filepath.ToSlash(tmpFile.Name())
 }
