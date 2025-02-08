@@ -14,7 +14,6 @@ import (
 	"bufio"
 	"embed"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,7 +50,7 @@ func GetBindings() (string, error) {
 		tmpPattern = "py-terraform-provider*"
 	}
 
-	destinationFile, err := ioutil.TempFile("", tmpPattern)
+	destinationFile, err := os.CreateTemp("", tmpPattern)
 	if err != nil {
 		return "", err
 	}

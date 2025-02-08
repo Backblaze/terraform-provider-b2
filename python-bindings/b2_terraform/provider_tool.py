@@ -458,6 +458,10 @@ class BucketFileVersion(Command):
             **kwargs,
         }
 
+    def _postprocess(self, obj=None, **kwargs):
+        kwargs.setdefault('content_md5', None)
+        return super()._postprocess(obj, **kwargs)
+
 
 @B2Provider.register_subcommand
 class BucketNotificationRules(Command):

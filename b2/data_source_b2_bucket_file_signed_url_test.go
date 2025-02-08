@@ -25,7 +25,7 @@ func TestAccDataSourceB2BucketFileSignedUrl_singleFile(t *testing.T) {
 	dataSourceName := "data.b2_bucket_file_signed_url.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 	defer os.Remove(tempFile)
 
 	resource.Test(t, resource.TestCase{

@@ -24,7 +24,7 @@ func TestAccDataSourceB2BucketFiles_noFiles(t *testing.T) {
 	dataSourceName := "data.b2_bucket_files.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 	defer os.Remove(tempFile)
 
 	resource.Test(t, resource.TestCase{
@@ -49,7 +49,7 @@ func TestAccDataSourceB2BucketFiles_singleFile(t *testing.T) {
 	dataSourceName := "data.b2_bucket_files.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 	defer os.Remove(tempFile)
 
 	resource.Test(t, resource.TestCase{
@@ -86,7 +86,7 @@ func TestAccDataSourceB2BucketFiles_multipleFilesWithoutVersions(t *testing.T) {
 	dataSourceName := "data.b2_bucket_files.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -134,7 +134,7 @@ func TestAccDataSourceB2BucketFiles_multipleFilesWithVersions(t *testing.T) {
 	dataSourceName := "data.b2_bucket_files.test"
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
-	tempFile := createTempFile(t, "hello")
+	tempFile := createTempFileString(t, "hello")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
