@@ -141,6 +141,9 @@ func configure(version string, exec string, p *schema.Provider) func(context.Con
 		for k, v := range p.DataSourcesMap {
 			sensitiveDataSources[k] = make(map[string]bool)
 			for kk, vv := range v.Schema {
+				if vv.Deprecated != "" {
+					continue
+				}
 				dataSources[k] = append(dataSources[k], kk)
 				if vv.Sensitive {
 					sensitiveDataSources[k][kk] = true
@@ -153,6 +156,9 @@ func configure(version string, exec string, p *schema.Provider) func(context.Con
 		for k, v := range p.ResourcesMap {
 			sensitiveResources[k] = make(map[string]bool)
 			for kk, vv := range v.Schema {
+				if vv.Deprecated != "" {
+					continue
+				}
 				resources[k] = append(resources[k], kk)
 				if vv.Sensitive {
 					sensitiveResources[k][kk] = true

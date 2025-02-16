@@ -32,9 +32,9 @@ func TestAccDataSourceB2AccountInfo_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(dataSourceName, "api_url", regexp.MustCompile("https://api00[0-9].backblazeb2.com")),
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.#", "1"),
 					resource.TestMatchResourceAttr(dataSourceName, "allowed.0.capabilities.#", regexp.MustCompile("[1-9][0-9]*")),
-					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_name", ""),
-					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),
-					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),
+					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.buckets.#", "0"),
+					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_name", ""), // deprecated
+					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),   // deprecated
 					resource.TestMatchResourceAttr(dataSourceName, "download_url", regexp.MustCompile("https://f00[0-9].backblazeb2.com")),
 					resource.TestMatchResourceAttr(dataSourceName, "s3_api_url", regexp.MustCompile("https://s3.(us-west|eu-central)-00[0-9].backblazeb2.com")),
 				),

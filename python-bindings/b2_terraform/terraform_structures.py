@@ -16,7 +16,7 @@ Prevents error in terraform provider when API is extended with new fields.
 API_KEY_KEYS = {
     "application_key": None,
     "application_key_id": None,
-    "bucket_id": "",
+    "bucket_ids": None,
     "capabilities": None,
     "name_prefix": "",
     "options": None,
