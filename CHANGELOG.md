@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Upgraded b2sdk from v2.4.1 to v2.8.0
+* Use `b2sdk.v2` in python bindings
+
 ### Infrastructure
 * Upgrade pyinstaller to 6.11.1
 
