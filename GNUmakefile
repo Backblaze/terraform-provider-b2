@@ -34,8 +34,9 @@ format: _pybindings
 	@terraform fmt -recursive ./examples/
 
 lint: _pybindings
-	@python scripts/check-gofmt.py '**/*.go' pkged.go
-	@python scripts/check-headers.py '**/*.go' pkged.go
+	go vet ./...
+	@python scripts/check-gofmt.py '**/*.go'
+	@python scripts/check-headers.py '**/*.go'
 
 testacc: _pybindings
 	@cp python-bindings/dist/py-terraform-provider-b2 b2/

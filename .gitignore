@@ -37,7 +37,6 @@ website/vendor
 
 # Go
 .go-version
-pkged.go
 
 # Provider binary
 /terraform-provider-b2
