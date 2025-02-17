@@ -16,16 +16,16 @@ import traceback
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
-from b2sdk.v1 import (
+from b2sdk.v2 import (
+    B2Api,
     BucketRetentionSetting,
     EncryptionAlgorithm,
     EncryptionKey,
     EncryptionMode,
     EncryptionSetting,
+    InMemoryAccountInfo,
 )
 from b2sdk.v2.exception import BadRequest, BucketIdNotFound
-
-from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
 from b2_terraform.terraform_structures import (
