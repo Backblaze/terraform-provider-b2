@@ -73,10 +73,11 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if exitErr.Stderr != nil && len(exitErr.Stderr) > 0 {
+				err := fmt.Errorf("%s", string(exitErr.Stderr))
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
-					"stderr": fmt.Errorf(string(exitErr.Stderr)),
+					"stderr": err,
 				})
-				return nil, fmt.Errorf(string(exitErr.Stderr))
+				return nil, err
 			}
 			return nil, fmt.Errorf("failed to execute")
 		} else {
@@ -118,6 +119,11 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 }
 
 func (c Client) populate(ctx context.Context, name string, op string, output map[string]interface{}, d *schema.ResourceData) error {
+	tflog.Info(ctx, "Populating data from pybindings", map[string]interface{}{
+		"name": name,
+		"op":   op,
+	})
+
 	resourceName := "b2_" + name
 	var schemaList []string
 	if op == DATA_SOURCE_READ {

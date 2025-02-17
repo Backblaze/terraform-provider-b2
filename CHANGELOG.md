@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Infrastructure
 * Upgrade pyinstaller to 6.11.1
+* Use `go vet` for linting
 
 ### Fixed
 * Fix an issue with missing `content_md5` in case the file has been uploaded as a large file
