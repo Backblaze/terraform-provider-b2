@@ -17,7 +17,7 @@ B2 bucket resource.
 
 ### Required
 
-- `bucket_name` (String) The name of the bucket.
+- `bucket_name` (String) The name of the bucket. **Modifying this attribute will force creation of a new resource.**
 - `bucket_type` (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
 
 ### Optional
@@ -66,8 +66,8 @@ Optional:
 
 Optional:
 
-- `default_retention` (Block List, Max: 1) Default retention settings for files uploaded to this bucket (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention))
-- `is_file_lock_enabled` (Boolean) If present, the boolean value specifies whether bucket is File Lock-enabled. Defaults to `false`.
+- `default_retention` (Block List, Max: 1) Default retention settings for files uploaded to this bucket. (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention))
+- `is_file_lock_enabled` (Boolean) If present, the boolean value specifies whether bucket is File Lock-enabled. Defaults to `false`. **Modifying this attribute will force creation of a new resource.**
 
 <a id="nestedblock--file_lock_configuration--default_retention"></a>
 ### Nested Schema for `file_lock_configuration.default_retention`
@@ -78,15 +78,15 @@ Required:
 
 Optional:
 
-- `period` (Block List, Max: 1) How long for to make files immutable (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
+- `period` (Block List, Max: 1) How long for to make files immutable. (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
 
 <a id="nestedblock--file_lock_configuration--default_retention--period"></a>
 ### Nested Schema for `file_lock_configuration.default_retention.period`
 
 Required:
 
-- `duration` (Number) Duration
-- `unit` (String) Unit for duration (days|years)
+- `duration` (Number) Duration.
+- `unit` (String) Unit for duration (days|years).
 
 
 

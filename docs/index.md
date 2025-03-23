@@ -39,6 +39,6 @@ resource "b2_bucket" "example_bucket" {
 
 ### Optional
 
-- `application_key` (String, Sensitive) B2 Application Key (B2_APPLICATION_KEY env)
-- `application_key_id` (String, Sensitive) B2 Application Key ID (B2_APPLICATION_KEY_ID env)
-- `endpoint` (String) B2 endpoint - the string 'production' or a custom B2 API URL (B2_ENDPOINT env). Defaults to 'production'. You should not need to set this unless you work at Backblaze.
+- `application_key` (String, Sensitive) B2 Application Key (B2_APPLICATION_KEY env).
+- `application_key_id` (String, Sensitive) B2 Application Key ID (B2_APPLICATION_KEY_ID env).
+- `endpoint` (String) B2 endpoint - the string 'production' or a custom B2 API URL (B2_ENDPOINT env). You should not need to set this unless you work at Backblaze. Defaults to `production`.

@@ -108,7 +108,7 @@ func getDataSourceCorsRulesElem() *schema.Resource {
 				Computed:    true,
 			},
 			"allowed_origins": {
-				Description: "A non-empty list specifying which origins the rule covers. ",
+				Description: "A non-empty list specifying which origins the rule covers.",
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,

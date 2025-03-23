@@ -17,7 +17,7 @@ B2 bucket notification rules resource.
 
 ### Required
 
-- `bucket_id` (String) The ID of the bucket.
+- `bucket_id` (String) The ID of the bucket. **Modifying this attribute will force creation of a new resource.**
 - `notification_rules` (Block List, Min: 1) An array of Event Notification Rules. (see [below for nested schema](#nestedblock--notification_rules))
 
 ### Read-Only
@@ -35,7 +35,7 @@ Required:
 
 Optional:
 
-- `is_enabled` (Boolean) Whether the event notification rule is enabled.
+- `is_enabled` (Boolean) Whether the event notification rule is enabled. Defaults to `true`.
 - `object_name_prefix` (String) Specifies which object(s) in the bucket the event notification rule applies to.
 
 Read-Only:

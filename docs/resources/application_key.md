@@ -17,13 +17,13 @@ B2 application key resource.
 
 ### Required
 
-- `capabilities` (Set of String) A set of strings, each one naming a capability the key has.
-- `key_name` (String) The name of the key.
+- `capabilities` (Set of String) A set of strings, each one naming a capability the key has. **Modifying this attribute will force creation of a new resource.**
+- `key_name` (String) The name of the key. **Modifying this attribute will force creation of a new resource.**
 
 ### Optional
 
-- `bucket_id` (String) When present, restricts access to one bucket.
-- `name_prefix` (String) When present, restricts access to files whose names start with the prefix.
+- `bucket_id` (String) When present, restricts access to one bucket. **Modifying this attribute will force creation of a new resource.**
+- `name_prefix` (String) When present, restricts access to files whose names start with the prefix. Required when using `bucket_id`. **Modifying this attribute will force creation of a new resource.**
 
 ### Read-Only
 
