@@ -13,7 +13,7 @@ Runtime requirements:
 -	[Terraform](https://www.terraform.io/downloads.html) >= 1.0.0
 
 Development requirements:
--	[Go](https://golang.org/doc/install) == 1.22
+-	[Go](https://golang.org/doc/install) == 1.24
 -	[Python](https://github.com/pyenv/pyenv) == 3.13
 
 Dependencies
@@ -64,7 +64,7 @@ Debugging
 ---------
 
 Set TF_LOG_PROVIDER and TF_LOG_PATH env variables to see detailed information from the provider.
-Check https://www.terraform.io/docs/internals/debugging.html for details 
+Check https://www.terraform.io/docs/internals/debugging.html for details
 
 Release History
 -----------------
