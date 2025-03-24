@@ -11,8 +11,10 @@
 package b2
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -24,10 +26,62 @@ func init() {
 
 	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
 		desc := s.Description
-		if s.Default != nil {
-			desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
+		desc = strings.TrimSpace(desc)
+
+		if !bytes.HasSuffix([]byte(desc), []byte(".")) && desc != "" {
+			desc += "."
 		}
-		return desc
+
+		if s.Default != nil || s.DefaultFunc != nil {
+			if s.DefaultFunc != nil {
+				val, err := s.DefaultFunc()
+				if err == nil && val != nil {
+					desc += fmt.Sprintf(" Defaults to `%v`.", val)
+				}
+			} else if s.Default == "" {
+				desc += " Defaults to `\"\"`."
+			} else {
+				desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
+			}
+		}
+
+		if s.RequiredWith != nil && len(s.RequiredWith) > 0 {
+			requiredWith := make([]string, len(s.RequiredWith))
+			for i, c := range s.RequiredWith {
+				requiredWith[i] = fmt.Sprintf("`%s`", c)
+			}
+			desc += fmt.Sprintf(" Required when using %s.", strings.Join(requiredWith, ", "))
+		}
+
+		if s.ConflictsWith != nil && len(s.ConflictsWith) > 0 {
+			conflicts := make([]string, len(s.ConflictsWith))
+			for i, c := range s.ConflictsWith {
+				conflicts[i] = fmt.Sprintf("`%s`", c)
+			}
+			desc += fmt.Sprintf(" Conflicts with %s.", strings.Join(conflicts, ", "))
+		}
+
+		if s.ExactlyOneOf != nil && len(s.ExactlyOneOf) > 0 {
+			exactlyOneOfs := make([]string, len(s.ExactlyOneOf))
+			for i, c := range s.ExactlyOneOf {
+				exactlyOneOfs[i] = fmt.Sprintf("`%s`", c)
+			}
+			desc += fmt.Sprintf(" Must provide only one of %s.", strings.Join(exactlyOneOfs, ", "))
+		}
+
+		if s.AtLeastOneOf != nil && len(s.AtLeastOneOf) > 0 {
+			atLeastOneOfs := make([]string, len(s.AtLeastOneOf))
+			for i, c := range s.AtLeastOneOf {
+				atLeastOneOfs[i] = fmt.Sprintf("`%s`", c)
+			}
+			desc += fmt.Sprintf(" Must provide at least one of %s.", strings.Join(atLeastOneOfs, ", "))
+		}
+
+		if s.ForceNew {
+			desc += " **Modifying this attribute will force creation of a new resource.**"
+		}
+
+		return strings.TrimSpace(desc)
 	}
 }
 
@@ -51,7 +105,7 @@ func New(version string, exec string) func() *schema.Provider {
 				},
 				"endpoint": {
 					Description: "B2 endpoint - the string 'production' or a custom B2 API URL (B2_ENDPOINT env)." +
-						" Defaults to 'production'. You should not need to set this unless you work at Backblaze.",
+						" You should not need to set this unless you work at Backblaze.",
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("B2_ENDPOINT", "production"),

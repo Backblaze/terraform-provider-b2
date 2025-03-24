@@ -17,15 +17,15 @@ B2 bucket file version resource.
 
 ### Required
 
-- `bucket_id` (String) The ID of the bucket.
-- `file_name` (String) The name of the B2 file.
-- `source` (String) Path to the local file.
+- `bucket_id` (String) The ID of the bucket. **Modifying this attribute will force creation of a new resource.**
+- `file_name` (String) The name of the B2 file. **Modifying this attribute will force creation of a new resource.**
+- `source` (String) Path to the local file. **Modifying this attribute will force creation of a new resource.**
 
 ### Optional
 
-- `content_type` (String) Content type. If not set, it will be set based on the file extension.
-- `file_info` (Map of String) The custom information that is uploaded with the file.
-- `server_side_encryption` (Block List, Max: 1) Server-side encryption settings. (see [below for nested schema](#nestedblock--server_side_encryption))
+- `content_type` (String) Content type. If not set, it will be set based on the file extension. **Modifying this attribute will force creation of a new resource.**
+- `file_info` (Map of String) The custom information that is uploaded with the file. **Modifying this attribute will force creation of a new resource.**
+- `server_side_encryption` (Block List, Max: 1) Server-side encryption settings. **Modifying this attribute will force creation of a new resource.** (see [below for nested schema](#nestedblock--server_side_encryption))
 
 ### Read-Only
 
@@ -51,5 +51,5 @@ Optional:
 
 Optional:
 
-- `key_id` (String) Key identifier stored in file info metadata
-- `secret_b64` (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648)
+- `key_id` (String) Key identifier stored in file info metadata.
+- `secret_b64` (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648).

@@ -22,9 +22,9 @@ B2 signed URL for a bucket file data source.
 
 ### Optional
 
-- `duration` (Number) The duration for which the presigned URL is valid
+- `duration` (Number) The duration for which the presigned URL is valid.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `signed_url` (String) The signed URL for the given file
+- `signed_url` (String) The signed URL for the given file.
