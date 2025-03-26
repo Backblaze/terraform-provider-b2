@@ -57,25 +57,25 @@ func dataSourceB2Bucket() *schema.Resource {
 			"cors_rules": {
 				Description: "The initial list of CORS rules for this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getDataSourceCorsRulesElem(),
+				Elem:        getCorsRulesElem(true),
 				Computed:    true,
 			},
 			"file_lock_configuration": {
 				Description: "The default File Lock retention settings for this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getDataSourceFileLockConfiguration(),
+				Elem:        getFileLockConfigurationElem(true),
 				Computed:    true,
 			},
 			"default_server_side_encryption": {
 				Description: "The default server-side encryption settings of this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getDataSourceDefaultBucketServerSideEncryption(),
+				Elem:        getServerSideEncryptionElem(true),
 				Computed:    true,
 			},
 			"lifecycle_rules": {
 				Description: "The initial list of lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getDataSourceLifecycleRulesElem(),
+				Elem:        getLifecycleRulesElem(true),
 				Computed:    true,
 			},
 			"options": {
