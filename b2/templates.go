@@ -15,24 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func getDataSourceServerSideEncryption() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"algorithm": {
-				Description: "Server-side encryption algorithm.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-		},
-	}
-}
-
 func getDataSourceFileVersionsElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -82,7 +64,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 			"server_side_encryption": {
 				Description: "Server-side encryption settings.",
 				Type:        schema.TypeList,
-				Elem:        getDataSourceServerSideEncryption(),
+				Elem:        getServerSideEncryptionElem(true),
 				Computed:    true,
 			},
 			"upload_timestamp": {
@@ -94,129 +76,6 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Description: "The ID of the bucket.",
 				Type:        schema.TypeString,
 				Computed:    true,
-			},
-		},
-	}
-}
-
-func getDataSourceCorsRulesElem() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"cors_rule_name": {
-				Description: "A name for humans to recognize the rule in a user interface.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"allowed_origins": {
-				Description: "A non-empty list specifying which origins the rule covers.",
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Computed: true,
-			},
-			"allowed_operations": {
-				Description: "A list specifying which operations the rule allows.",
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Computed: true,
-			},
-			"max_age_seconds": {
-				Description: "This specifies the maximum number of seconds that a browser may cache the response to a preflight request.",
-				Type:        schema.TypeInt,
-				Computed:    true,
-			},
-			"allowed_headers": {
-				Description: "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Computed: true,
-			},
-			"expose_headers": {
-				Description: "If present, this is a list of headers that may be exposed to an application inside the client.",
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-				Computed: true,
-			},
-		},
-	}
-}
-
-func getDataSourceLifecycleRulesElem() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"file_name_prefix": {
-				Description: "It specifies which files in the bucket it applies to.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"days_from_hiding_to_deleting": {
-				Description: "It says how long to keep file versions that are not the current version.",
-				Type:        schema.TypeInt,
-				Computed:    true,
-			},
-			"days_from_uploading_to_hiding": {
-				Description: "It causes files to be hidden automatically after the given number of days.",
-				Type:        schema.TypeInt,
-				Computed:    true,
-			},
-		},
-	}
-}
-
-func getDataSourceFileLockConfiguration() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"is_file_lock_enabled": {
-				Description: "If present, the boolean value specifies whether bucket is File Lock-enabled.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Computed:    true,
-			},
-			"default_retention": {
-				Description: "Default retention settings for files uploaded to this bucket. This can only be set if is_file_lock_enabled is true",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Computed:    true,
-				MaxItems:    1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"mode": {
-							Description: "Default retention mode (compliance|governance|none).",
-							Type:        schema.TypeString,
-							Computed:    true,
-						},
-						"period": {
-							Description: "How long for to make files immutable",
-							Type:        schema.TypeList,
-							Optional:    true,
-							Computed:    true,
-							MaxItems:    1,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"duration": {
-										Description: "Duration",
-										Type:        schema.TypeInt,
-										Optional:    true,
-										Computed:    true,
-									},
-									"unit": {
-										Description: "Unit for duration (days|years)",
-										Type:        schema.TypeString,
-										Optional:    true,
-										Computed:    true,
-									},
-								},
-							},
-						},
-					},
-				},
 			},
 		},
 	}
@@ -255,43 +114,7 @@ func getDataSourceAllowedElem() *schema.Resource {
 	}
 }
 
-func getDataSourceDefaultBucketServerSideEncryption() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"mode": {
-				Description: "Server-side encryption mode.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"algorithm": {
-				Description: "Server-side encryption algorithm. AES256 is the only one supported.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-		},
-	}
-}
-
-func getResourceDefaultBucketServerSideEncryption() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"mode": {
-				Description:  "Server-side encryption mode.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"none", "SSE-B2"}, false),
-			},
-			"algorithm": {
-				Description:  "Server-side encryption algorithm. AES256 is the only one supported.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
-			},
-		},
-	}
-}
-
-func getResourceFileEncryption() *schema.Resource {
+func getResourceFileEncryptionElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"mode": {
@@ -339,14 +162,36 @@ func getResourceFileEncryption() *schema.Resource {
 	}
 }
 
-func getResourceCorsRulesElem() *schema.Resource {
+func getServerSideEncryptionElem(ds bool) *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description:  "Server-side encryption mode.",
+				Type:         schema.TypeString,
+				Computed:     If(ds, true, false),
+				Optional:     If(ds, false, true),
+				ValidateFunc: If(ds, nil, validation.StringInSlice([]string{"none", "SSE-B2"}, false)),
+			},
+			"algorithm": {
+				Description:  "Server-side encryption algorithm. AES256 is the only one supported.",
+				Type:         schema.TypeString,
+				Computed:     If(ds, true, false),
+				Optional:     If(ds, false, true),
+				ValidateFunc: If(ds, nil, validation.StringInSlice([]string{"AES256"}, false)),
+			},
+		},
+	}
+}
+
+func getCorsRulesElem(ds bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"cors_rule_name": {
 				Description:  "A name for humans to recognize the rule in a user interface.",
 				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.NoZeroValues,
+				Computed:     If(ds, true, false),
+				Required:     If(ds, false, true),
+				ValidateFunc: If(ds, nil, validation.NoZeroValues),
 			},
 			"allowed_origins": {
 				Description: "A non-empty list specifying which origins the rule covers. ",
@@ -354,7 +199,8 @@ func getResourceCorsRulesElem() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Required: true,
+				Computed: If(ds, true, false),
+				Required: If(ds, false, true),
 			},
 			"allowed_operations": {
 				Description: "A list specifying which operations the rule allows.",
@@ -362,12 +208,14 @@ func getResourceCorsRulesElem() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Required: true,
+				Computed: If(ds, true, false),
+				Required: If(ds, false, true),
 			},
 			"max_age_seconds": {
 				Description: "This specifies the maximum number of seconds that a browser may cache the response to a preflight request.",
 				Type:        schema.TypeInt,
-				Required:    true,
+				Computed:    If(ds, true, false),
+				Required:    If(ds, false, true),
 			},
 			"allowed_headers": {
 				Description: "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
@@ -375,7 +223,8 @@ func getResourceCorsRulesElem() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Optional: true,
+				Computed: If(ds, true, false),
+				Optional: If(ds, false, true),
 			},
 			"expose_headers": {
 				Description: "If present, this is a list of headers that may be exposed to an application inside the client.",
@@ -383,34 +232,43 @@ func getResourceCorsRulesElem() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Optional: true,
+				Computed: If(ds, true, false),
+				Optional: If(ds, false, true),
 			},
 		},
 	}
 }
 
-func getResourceFileLockConfiguration() *schema.Resource {
+func getFileLockConfigurationElem(ds bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"is_file_lock_enabled": {
 				Description: "If present, the boolean value specifies whether bucket is File Lock-enabled.",
 				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				ForceNew:    true,
+				Computed:    If(ds, true, false),
+				Optional:    If(ds, false, true),
+				DefaultFunc: If(ds,
+					nil,
+					func() (any, error) { return false, nil },
+				),
+				ForceNew: true,
 			},
 			"default_retention": {
 				Description: "Default retention settings for files uploaded to this bucket",
 				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// The API sets default value
-					if k == "default_retention.#" {
-						return old == "1" && new == "0"
-					}
-					return old == "none" && new == ""
-				},
+				Computed:    If(ds, true, false),
+				Optional:    If(ds, false, true),
+				MaxItems:    If(ds, 0, 1),
+				DiffSuppressFunc: If(ds,
+					nil,
+					func(k, old, new string, d *schema.ResourceData) bool {
+						// The API sets default value
+						if k == "default_retention.#" {
+							return old == "1" && new == "0"
+						}
+						return old == "none" && new == ""
+					},
+				),
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"mode": {
@@ -447,23 +305,26 @@ func getResourceFileLockConfiguration() *schema.Resource {
 	}
 }
 
-func getResourceLifecycleRulesElem() *schema.Resource {
+func getLifecycleRulesElem(ds bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"file_name_prefix": {
 				Description: "It specifies which files in the bucket it applies to.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Computed:    If(ds, true, false),
+				Required:    If(ds, false, true),
 			},
 			"days_from_hiding_to_deleting": {
 				Description: "It says how long to keep file versions that are not the current version.",
 				Type:        schema.TypeInt,
-				Optional:    true,
+				Computed:    If(ds, true, false),
+				Optional:    If(ds, false, true),
 			},
 			"days_from_uploading_to_hiding": {
 				Description: "It causes files to be hidden automatically after the given number of days.",
 				Type:        schema.TypeInt,
-				Optional:    true,
+				Computed:    If(ds, true, false),
+				Optional:    If(ds, false, true),
 			},
 		},
 	}
@@ -499,7 +360,7 @@ func getNotificationRulesElem(ds bool) *schema.Resource {
 				Optional:    If(ds, false, true),
 				DefaultFunc: If(ds,
 					nil,
-					func() (interface{}, error) { return true, nil },
+					func() (any, error) { return true, nil },
 				),
 			},
 			"name": {
