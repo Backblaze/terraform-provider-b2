@@ -56,13 +56,13 @@ func resourceB2Bucket() *schema.Resource {
 			"cors_rules": {
 				Description: "The initial list of CORS rules for this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getResourceCorsRulesElem(),
+				Elem:        getCorsRulesElem(false),
 				Optional:    true,
 			},
 			"file_lock_configuration": {
 				Description: "File lock enabled flag, and default retention settings.",
 				Type:        schema.TypeList,
-				Elem:        getResourceFileLockConfiguration(),
+				Elem:        getFileLockConfigurationElem(false),
 				Optional:    true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					// The API sets default value
@@ -75,7 +75,7 @@ func resourceB2Bucket() *schema.Resource {
 			"default_server_side_encryption": {
 				Description: "The default server-side encryption settings for this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getResourceDefaultBucketServerSideEncryption(),
+				Elem:        getServerSideEncryptionElem(false),
 				Optional:    true,
 				MaxItems:    1,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
@@ -89,7 +89,7 @@ func resourceB2Bucket() *schema.Resource {
 			"lifecycle_rules": {
 				Description: "The initial list of lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
-				Elem:        getResourceLifecycleRulesElem(),
+				Elem:        getLifecycleRulesElem(false),
 				Optional:    true,
 			},
 			"bucket_id": {
