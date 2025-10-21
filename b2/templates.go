@@ -326,6 +326,12 @@ func getLifecycleRulesElem(ds bool) *schema.Resource {
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),
 			},
+			"days_from_starting_to_canceling_unfinished_large_files": {
+				Description: "It causes files to be hidden automatically after the given number of days.",
+				Type:        schema.TypeInt,
+				Computed:    If(ds, true, false),
+				Optional:    If(ds, false, true),
+			},
 		},
 	}
 }

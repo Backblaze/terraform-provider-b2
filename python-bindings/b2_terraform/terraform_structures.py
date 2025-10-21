@@ -117,6 +117,7 @@ BUCKET_KEYS = {
         "file_name_prefix": None,
         "days_from_hiding_to_deleting": None,
         "days_from_uploading_to_hiding": None,
+        "days_from_starting_to_canceling_unfinished_large_files": None,
     },
     "account_id": None,
     "options": None,

@@ -90,8 +90,9 @@ func TestAccDataSourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dataSourceName, "default_server_side_encryption", resourceName, "default_server_side_encryption"),
 					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.#", "1"),
 					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.file_name_prefix", ""),
-					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "2"),
-					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
+					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "1"),
+					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "2"),
+					resource.TestCheckResourceAttr(dataSourceName, "lifecycle_rules.0.days_from_starting_to_canceling_unfinished_large_files", "3"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "lifecycle_rules", resourceName, "lifecycle_rules"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "options", resourceName, "options"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "revision", resourceName, "revision"),
@@ -145,8 +146,9 @@ resource "b2_bucket" "test" {
   }
   lifecycle_rules {
     file_name_prefix = ""
-    days_from_hiding_to_deleting = 2
-    days_from_uploading_to_hiding = 1
+    days_from_hiding_to_deleting = 1
+    days_from_uploading_to_hiding = 2
+    days_from_starting_to_canceling_unfinished_large_files = 3
   }
 }
 
