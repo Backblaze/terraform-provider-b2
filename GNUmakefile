@@ -58,11 +58,13 @@ install: build
 	@mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
 docs: build
-	@tfplugindocs
+	# We clear B2 application key env variables to not include them in docs. DO NOT REMOVE IT!
+	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs
 
 docs-lint: build
 	@tfplugindocs validate
-	@tfplugindocs
+	# We clear B2 application key env variables to not include them in docs. DO NOT REMOVE IT!
+	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs
 	@git diff --exit-code -- docs/ || \
 		(echo; echo "Unexpected difference in docs. Run 'make docs' command or revert any changes in the schema."; exit 1)
 
