@@ -73,7 +73,7 @@ func createTempFileString(t *testing.T, data string) string {
 
 	_, err := tmpFile.WriteString(data)
 	if err != nil {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name())
 		t.Fatal(err)
 	}
 
@@ -85,7 +85,7 @@ func createTempFileTruncate(t *testing.T, size int64) string {
 
 	err := tmpFile.Truncate(size)
 	if err != nil {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name())
 		t.Fatal(err)
 	}
 

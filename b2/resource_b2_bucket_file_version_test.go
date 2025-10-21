@@ -27,7 +27,7 @@ func TestAccResourceB2BucketFileVersion_basic(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFileString(t, "hello")
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -61,7 +61,7 @@ func TestAccResourceB2BucketFileVersion_all(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFileString(t, "hello")
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -96,7 +96,7 @@ func TestAccResourceB2BucketFileVersion_forceNew(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFileString(t, "hello")
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -135,7 +135,7 @@ func TestAccResourceB2BucketFileVersion_largeFile(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFileTruncate(t, fileSize)
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -170,7 +170,7 @@ func TestAccResourceB2BucketFileVersion_sse_c(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFileString(t, "hello")
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
