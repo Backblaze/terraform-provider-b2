@@ -59,9 +59,9 @@ jobs:
       matrix:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
-          - { runner: macos-13, os: darwin, arch: amd64 }
+          - { runner: macos-14-large, os: darwin, arch: amd64 }
           - { runner: macos-14, os: darwin, arch: arm64 }
-          - { runner: windows-2019, os: windows, arch: amd64 }
+          - { runner: windows-2022, os: windows, arch: amd64 }
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
@@ -105,10 +105,10 @@ jobs:
           - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.9.*' }
           - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.8.*'  }
           # for macOS, the latest terraform is enough for ACC tests
-          - { runner: macos-13, os: darwin, arch: amd64, terraform: '1.9.*' }
+          - { runner: macos-14-large, os: darwin, arch: amd64, terraform: '1.9.*' }
           - { runner: macos-14, os: darwin, arch: arm64, terraform: '1.9.*' }
           # for Windows, the latest terraform is enough for ACC tests
-          - { runner: windows-2019, os: windows, arch: amd64, terraform: '1.9.*' }
+          - { runner: windows-2022, os: windows, arch: amd64, terraform: '1.9.*' }
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
