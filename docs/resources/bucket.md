@@ -101,4 +101,5 @@ Required:
 Optional:
 
 - `days_from_hiding_to_deleting` (Number) It says how long to keep file versions that are not the current version.
+- `days_from_starting_to_canceling_unfinished_large_files` (Number) It causes files to be hidden automatically after the given number of days.
 - `days_from_uploading_to_hiding` (Number) It causes files to be hidden automatically after the given number of days.
