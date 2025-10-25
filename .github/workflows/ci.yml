@@ -24,13 +24,13 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-        uses: deadsnakes/action@v3.1.0  # staticx doesn't work with python installed by setup-python action
+        uses: deadsnakes/action@v3.2.0  # staticx doesn't work with python installed by setup-python action
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
@@ -59,23 +59,23 @@ jobs:
       matrix:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
-          - { runner: macos-13, os: darwin, arch: amd64 }
+          - { runner: macos-14-large, os: darwin, arch: amd64 }
           - { runner: macos-14, os: darwin, arch: arm64 }
-          - { runner: windows-2019, os: windows, arch: amd64 }
+          - { runner: windows-2022, os: windows, arch: amd64 }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
         if: matrix.conf.os == 'linux'
-        uses: deadsnakes/action@v3.1.0  # staticx doesn't work with python installed by setup-python action
+        uses: deadsnakes/action@v3.2.0  # staticx doesn't work with python installed by setup-python action
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
         if: matrix.conf.os != 'linux'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
@@ -87,7 +87,7 @@ jobs:
       - name: Upload python bindings
         uses: actions/upload-artifact@v4
         with:
-          name: py-terraform-provider-b2-${{ runner.os }}-${{ runner.arch }}
+          name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
           if-no-files-found: error
           retention-days: 1
@@ -102,18 +102,18 @@ jobs:
       fail-fast: false
       matrix:
         conf:
-          - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.9.*' }
-          - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.8.*'  }
+          - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.13.*' }
+          - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.12.*'  }
           # for macOS, the latest terraform is enough for ACC tests
-          - { runner: macos-13, os: darwin, arch: amd64, terraform: '1.9.*' }
-          - { runner: macos-14, os: darwin, arch: arm64, terraform: '1.9.*' }
+          - { runner: macos-14-large, os: darwin, arch: amd64, terraform: '1.13.*' }
+          - { runner: macos-14, os: darwin, arch: arm64, terraform: '1.13.*' }
           # for Windows, the latest terraform is enough for ACC tests
-          - { runner: windows-2019, os: windows, arch: amd64, terraform: '1.9.*' }
+          - { runner: windows-2022, os: windows, arch: amd64, terraform: '1.13.*' }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - uses: hashicorp/setup-terraform@v3
@@ -123,9 +123,9 @@ jobs:
           terraform_wrapper: false
       - name: Download python bindings for given OS
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
-          name: py-terraform-provider-b2-${{ runner.os }}-${{ runner.arch }}
+          name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/
       - name: Run acceptance tests
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}

@@ -21,6 +21,7 @@ deps: _pybindings
 	@go mod tidy
 	@cd tools && go mod download
 	@cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	@cd tools && go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
 	@cd tools && go mod tidy
 
 deps-check:
@@ -30,14 +31,15 @@ deps-check:
 		(echo; echo "Unexpected difference in go.mod/go.sum files. Run 'make deps' command or revert any go.mod/go.sum changes and commit."; exit 1)
 
 format: _pybindings
-	@go fmt ./...
+	@golangci-lint fmt ./...
 	@terraform fmt -recursive ./examples/
 
 lint: _pybindings
-	@python scripts/check-gofmt.py '**/*.go'
 	@python scripts/check-headers.py '**/*.go'
+	@golangci-lint fmt --diff ./...
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@go vet ./...
+	@golangci-lint run ./...
 
 testacc: _pybindings
 	@cp python-bindings/dist/py-terraform-provider-b2 b2/

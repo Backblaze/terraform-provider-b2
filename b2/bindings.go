@@ -41,7 +41,7 @@ func GetBindings() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer sourceFile.Close()
+	defer func() { _ = sourceFile.Close() }()
 
 	var tmpPattern string
 	if runtime.GOOS == "windows" {
@@ -54,7 +54,7 @@ func GetBindings() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer destinationFile.Close()
+	defer func() { _ = destinationFile.Close() }()
 
 	destinationPath := filepath.ToSlash(destinationFile.Name())
 	reader := bufio.NewReader(sourceFile)
@@ -82,7 +82,9 @@ func GetBindings() (string, error) {
 		}
 	}
 
-	destinationFile.Close()
+	if err := destinationFile.Close(); err != nil {
+		return destinationPath, err
+	}
 
 	err = os.Chmod(destinationPath, 0770)
 	if err != nil {

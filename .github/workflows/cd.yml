@@ -22,13 +22,13 @@ jobs:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
           - { runner: ubuntu-latest, os: linux, arch: arm64 }
-          - { runner: macos-13, os: darwin, arch: amd64 }
+          - { runner: macos-14-large, os: darwin, arch: amd64 }
           - { runner: macos-14, os: darwin, arch: arm64 }
-          - { runner: windows-2019, os: windows, arch: amd64 }
+          - { runner: windows-2022, os: windows, arch: amd64 }
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Start a Docker container (linux-arm64)
         if: matrix.conf.os == 'linux' && matrix.conf.arch == 'arm64'
         run: |
@@ -49,7 +49,7 @@ jobs:
               /bin/bash -c "sleep infinity"
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (darwin, windows)
         if: matrix.conf.os != 'linux'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Define command wrapper (linux)
@@ -106,18 +106,18 @@ jobs:
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
         run: |
           make deps
       - name: Download python bindings for all OSes
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: python-bindings/dist/artifacts/
       - name: Postprocess python bindings

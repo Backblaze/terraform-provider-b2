@@ -38,6 +38,8 @@ func validateBase64Key(i interface{}, k string) (warnings []string, errors []err
 
 // StringLenExact returns a SchemaValidateFunc which tests if the provided value
 // is of type string and has given length
+//
+//nolint:staticcheck // Using SchemaValidateFunc for backward compatibility; migrate to SchemaValidateDiagFunc later.
 func StringLenExact(length int) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (warnings []string, errors []error) {
 		v, ok := i.(string)

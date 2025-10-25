@@ -26,7 +26,7 @@ func TestAccDataSourceB2BucketFileSignedUrl_singleFile(t *testing.T) {
 
 	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
 	tempFile := createTempFileString(t, "hello")
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

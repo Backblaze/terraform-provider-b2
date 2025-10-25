@@ -72,7 +72,7 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			if exitErr.Stderr != nil && len(exitErr.Stderr) > 0 {
+			if len(exitErr.Stderr) > 0 {
 				err := fmt.Errorf("%s", string(exitErr.Stderr))
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
 					"stderr": err,

@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err.Error())
 		return
 	}
-	defer os.Remove(pybindings)
+	defer func() { _ = os.Remove(pybindings) }()
 
 	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, pybindings), Debug: debugMode}
 	plugin.Serve(opts)
