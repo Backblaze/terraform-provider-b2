@@ -344,6 +344,11 @@ class Bucket(Command):
                 days_from_uploading_to_hiding = item.get('days_from_uploading_to_hiding')
                 if days_from_uploading_to_hiding == 0:
                     item['days_from_uploading_to_hiding'] = None
+                days_from_starting_to_canceling_unfinished_large_files = item.get(
+                    'days_from_starting_to_canceling_unfinished_large_files'
+                )
+                if days_from_starting_to_canceling_unfinished_large_files == 0:
+                    item['days_from_starting_to_canceling_unfinished_large_files'] = None
                 lifecycle_rules[index] = change_keys(item, converter=camelize)
 
         result = {

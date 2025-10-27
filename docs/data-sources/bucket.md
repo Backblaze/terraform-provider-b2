@@ -88,5 +88,6 @@ Read-Only:
 Read-Only:
 
 - `days_from_hiding_to_deleting` (Number)
+- `days_from_starting_to_canceling_unfinished_large_files` (Number)
 - `days_from_uploading_to_hiding` (Number)
 - `file_name_prefix` (String)

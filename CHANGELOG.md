@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Add `days_from_starting_to_canceling_unfinished_large_files` to the bucket lifecycle rules
+
 ### Changed
 * Upgraded b2sdk from v2.4.1 to v2.8.0
 * Use `b2sdk.v2` in python bindings

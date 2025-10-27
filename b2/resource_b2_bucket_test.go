@@ -100,8 +100,9 @@ func TestAccResourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", "AES256"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.file_name_prefix", "c/"),
-					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "2"),
-					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "1"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "2"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_starting_to_canceling_unfinished_large_files", "3"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
 				),
@@ -127,13 +128,19 @@ func TestAccResourceB2Bucket_lifecycleRulesDefaults(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "bucket_name", bucketName),
 					resource.TestCheckResourceAttr(resourceName, "bucket_type", "allPublic"),
 					resource.TestCheckResourceAttr(resourceName, "cors_rules.#", "0"),
-					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "3"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.file_name_prefix", "a/"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "2"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "0"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_starting_to_canceling_unfinished_large_files", "0"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.1.file_name_prefix", "b/"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.1.days_from_hiding_to_deleting", "0"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.1.days_from_uploading_to_hiding", "2"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.1.days_from_starting_to_canceling_unfinished_large_files", "0"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.2.file_name_prefix", "c/"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.2.days_from_hiding_to_deleting", "0"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.2.days_from_uploading_to_hiding", "0"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.2.days_from_starting_to_canceling_unfinished_large_files", "2"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
 					resource.TestCheckResourceAttr(resourceName, "revision", "2"),
@@ -189,8 +196,9 @@ func TestAccResourceB2Bucket_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "default_server_side_encryption.0.algorithm", "AES256"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.file_name_prefix", "c/"),
-					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "2"),
-					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_hiding_to_deleting", "1"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "2"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_starting_to_canceling_unfinished_large_files", "3"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
 				),
@@ -291,6 +299,10 @@ resource "b2_bucket" "test" {
     file_name_prefix = "b/"
     days_from_uploading_to_hiding = 2
   }
+  lifecycle_rules {
+    file_name_prefix = "c/"
+    days_from_starting_to_canceling_unfinished_large_files = 2
+  }
 }
 `, bucketName)
 }
@@ -335,8 +347,9 @@ resource "b2_bucket" "test" {
   }
   lifecycle_rules {
     file_name_prefix = "c/"
-    days_from_hiding_to_deleting = 2
-    days_from_uploading_to_hiding = 1
+    days_from_hiding_to_deleting = 1
+    days_from_uploading_to_hiding = 2
+    days_from_starting_to_canceling_unfinished_large_files = 3
   }
 }
 `, bucketName)
