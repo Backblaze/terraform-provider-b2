@@ -16,6 +16,7 @@ env:
 jobs:
   build-pybindings:
     runs-on: ${{ matrix.conf.runner }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +104,7 @@ jobs:
     env:
       NOPYBINDINGS: 1  # do not build python bindings
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
