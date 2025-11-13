@@ -32,7 +32,8 @@ func TestAccDataSourceB2ApplicationKey_basic(t *testing.T) {
 				Config: testAccDataSourceB2ApplicationKeyConfig_basic(keyName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(dataSourceName, "application_key_id", resourceName, "application_key_id"),
-					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_ids", resourceName, "bucket_ids"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"), // deprecated
 					resource.TestCheckResourceAttr(dataSourceName, "capabilities.#", "1"),
 					resource.TestCheckResourceAttr(dataSourceName, "capabilities.0", "readFiles"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "capabilities", resourceName, "capabilities"),
@@ -60,7 +61,8 @@ func TestAccDataSourceB2ApplicationKey_all(t *testing.T) {
 				Config: testAccDataSourceB2ApplicationKeyConfig_all(keyName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(dataSourceName, "application_key_id", resourceName, "application_key_id"),
-					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_ids", resourceName, "bucket_ids"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"), // deprecated
 					resource.TestCheckResourceAttr(dataSourceName, "capabilities.#", "1"),
 					resource.TestCheckResourceAttr(dataSourceName, "capabilities.0", "writeFiles"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "capabilities", resourceName, "capabilities"),
@@ -102,7 +104,7 @@ resource "b2_bucket" "test" {
 resource "b2_application_key" "test" {
   key_name = "%s"
   capabilities = ["writeFiles"]
-  bucket_id = b2_bucket.test.bucket_id
+  bucket_ids = [b2_bucket.test.bucket_id]
   name_prefix = "prefix"
 }
 
