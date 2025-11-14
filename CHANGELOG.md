@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Add `recommended_part_size` and `absolute_minimum_part_size` to `b2_account_info` data source
+
 ## [0.11.0] - 2025-10-27
 
 ### Added
