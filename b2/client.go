@@ -32,15 +32,13 @@ const (
 )
 
 type Client struct {
-	Exec                 string
-	UserAgentAppend      string
-	ApplicationKeyId     string
-	ApplicationKey       string
-	Endpoint             string
-	DataSources          map[string][]string
-	Resources            map[string][]string
-	SensitiveDataSources map[string]map[string]bool
-	SensitiveResources   map[string]map[string]bool
+	Exec             string
+	UserAgentAppend  string
+	ApplicationKeyId string
+	ApplicationKey   string
+	Endpoint         string
+	DataSourcesMap   map[string]*schema.Resource
+	ResourcesMap     map[string]*schema.Resource
 }
 
 func (c Client) apply(ctx context.Context, name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
@@ -94,25 +92,13 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 		return nil, err
 	}
 
-	resourceName := "b2_" + name
-	var sensitiveSchemaMap map[string]bool
-	if op == DATA_SOURCE_READ {
-		sensitiveSchemaMap = c.SensitiveDataSources[resourceName]
-	} else {
-		sensitiveSchemaMap = c.SensitiveResources[resourceName]
+	schemaMap := c.getSchemaMap(name, op)
+	if schemaMap == nil {
+		return nil, fmt.Errorf("schema not found for resource: b2_%s", name)
 	}
 
-	// Do not log application_key
-	safeOutput := map[string]interface{}{}
-	for k, v := range output {
-		if sensitiveSchemaMap[k] {
-			safeOutput[k] = "***"
-		} else {
-			safeOutput[k] = v
-		}
-	}
 	tflog.Debug(ctx, "Safe output from pybindings", map[string]interface{}{
-		"output": safeOutput,
+		"output": sanitizeOutput(output, schemaMap),
 	})
 
 	return output, nil
@@ -124,15 +110,12 @@ func (c Client) populate(ctx context.Context, name string, op string, output map
 		"op":   op,
 	})
 
-	resourceName := "b2_" + name
-	var schemaList []string
-	if op == DATA_SOURCE_READ {
-		schemaList = c.DataSources[resourceName]
-	} else {
-		schemaList = c.Resources[resourceName]
+	schemaMap := c.getSchemaMap(name, op)
+	if schemaMap == nil {
+		return fmt.Errorf("schema not found for resource: b2_%s", name)
 	}
 
-	for _, k := range schemaList {
+	for k := range schemaMap {
 		v, ok := output[k]
 		if !ok {
 			return fmt.Errorf("error getting %s", k)
@@ -143,4 +126,30 @@ func (c Client) populate(ctx context.Context, name string, op string, output map
 	}
 
 	return nil
+}
+
+func (c Client) getSchemaMap(name string, op string) map[string]*schema.Schema {
+	resourceName := "b2_" + name
+	if op == DATA_SOURCE_READ {
+		if ds, ok := c.DataSourcesMap[resourceName]; ok {
+			return ds.Schema
+		}
+	} else {
+		if res, ok := c.ResourcesMap[resourceName]; ok {
+			return res.Schema
+		}
+	}
+	return nil
+}
+
+func sanitizeOutput(output map[string]interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
+	safeOutput := map[string]interface{}{}
+	for k, v := range output {
+		if s, ok := schemaMap[k]; ok && s.Sensitive {
+			safeOutput[k] = "***"
+		} else {
+			safeOutput[k] = v
+		}
+	}
+	return safeOutput
 }
