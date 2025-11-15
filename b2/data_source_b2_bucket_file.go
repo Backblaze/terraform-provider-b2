@@ -63,14 +63,15 @@ func dataSourceB2BucketFileRead(ctx context.Context, d *schema.ResourceData, met
 		"show_versions": d.Get("show_versions").(bool),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var bucketFile BucketFileSchema
+	err := client.apply(ctx, name, op, input, &bucketFile)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["_sha1"].(string))
+	d.SetId(bucketFile.Sha1)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &bucketFile, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

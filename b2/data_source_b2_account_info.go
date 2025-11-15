@@ -67,14 +67,15 @@ func dataSourceB2AccountInfoRead(ctx context.Context, d *schema.ResourceData, me
 
 	input := map[string]interface{}{}
 
-	output, err := client.apply(ctx, name, op, input)
+	var accountInfo AccountInfoSchema
+	err := client.apply(ctx, name, op, input, &accountInfo)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["account_id"].(string))
+	d.SetId(accountInfo.AccountId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &accountInfo, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

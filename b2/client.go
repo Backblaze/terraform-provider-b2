@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -41,7 +42,7 @@ type Client struct {
 	ResourcesMap     map[string]*schema.Resource
 }
 
-func (c Client) apply(ctx context.Context, name string, op string, input map[string]interface{}) (map[string]interface{}, error) {
+func (c Client) apply(ctx context.Context, name string, op string, input map[string]interface{}, output interface{}) error {
 	tflog.Info(ctx, "Executing pybindings", map[string]interface{}{
 		"name": name,
 		"op":   op,
@@ -62,7 +63,7 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 	inputJson, err := json.Marshal(input)
 	if err != nil {
 		// Should never happen
-		return nil, err
+		return err
 	}
 	cmd.Stdin = bytes.NewReader(inputJson)
 
@@ -75,36 +76,37 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
 					"stderr": err,
 				})
-				return nil, err
+				return err
 			}
-			return nil, fmt.Errorf("failed to execute")
+			return fmt.Errorf("failed to execute")
 		} else {
 			tflog.Error(ctx, "Error", map[string]interface{}{
 				"err": err,
 			})
-			return nil, err
+			return err
 		}
 	}
 
-	output := map[string]interface{}{}
-	err = json.Unmarshal(outputJson, &output)
-	if err != nil {
-		return nil, err
+	if output != nil {
+		err = json.Unmarshal(outputJson, output)
+		if err != nil {
+			return err
+		}
+
+		schemaMap := c.getSchemaMap(name, op)
+		if schemaMap == nil {
+			return fmt.Errorf("schema not found for resource: b2_%s", name)
+		}
+
+		tflog.Debug(ctx, "Safe output from pybindings", map[string]interface{}{
+			"output": sanitizeOutput(output, schemaMap),
+		})
 	}
 
-	schemaMap := c.getSchemaMap(name, op)
-	if schemaMap == nil {
-		return nil, fmt.Errorf("schema not found for resource: b2_%s", name)
-	}
-
-	tflog.Debug(ctx, "Safe output from pybindings", map[string]interface{}{
-		"output": sanitizeOutput(output, schemaMap),
-	})
-
-	return output, nil
+	return nil
 }
 
-func (c Client) populate(ctx context.Context, name string, op string, output map[string]interface{}, d *schema.ResourceData) error {
+func (c Client) populate(ctx context.Context, name string, op string, output interface{}, d *schema.ResourceData) error {
 	tflog.Info(ctx, "Populating data from pybindings", map[string]interface{}{
 		"name": name,
 		"op":   op,
@@ -115,8 +117,11 @@ func (c Client) populate(ctx context.Context, name string, op string, output map
 		return fmt.Errorf("schema not found for resource: b2_%s", name)
 	}
 
+	// Convert struct to map
+	outputMap := convertStructToMap(reflect.ValueOf(output)).(map[string]interface{})
+
 	for k := range schemaMap {
-		v, ok := output[k]
+		v, ok := outputMap[k]
 		if !ok {
 			return fmt.Errorf("error getting %s", k)
 		}
@@ -142,14 +147,48 @@ func (c Client) getSchemaMap(name string, op string) map[string]*schema.Schema {
 	return nil
 }
 
-func sanitizeOutput(output map[string]interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
+func convertStructToMap(v reflect.Value) interface{} {
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Struct:
+		m := make(map[string]interface{})
+		t := v.Type()
+		for i := 0; i < v.NumField(); i++ {
+			field := t.Field(i)
+			jsonTag := field.Tag.Get("json")
+			if jsonTag != "" && jsonTag != "-" {
+				m[jsonTag] = convertStructToMap(v.Field(i))
+			}
+		}
+		return m
+	case reflect.Slice:
+		s := make([]interface{}, v.Len())
+		for i := 0; i < v.Len(); i++ {
+			s[i] = convertStructToMap(v.Index(i))
+		}
+		return s
+	default:
+		return v.Interface()
+	}
+}
+
+func sanitizeOutput(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
 	safeOutput := map[string]interface{}{}
-	for k, v := range output {
+
+	// Convert struct to map
+	outputMap := convertStructToMap(reflect.ValueOf(output)).(map[string]interface{})
+
+	// Sanitize sensitive fields
+	for k, v := range outputMap {
 		if s, ok := schemaMap[k]; ok && s.Sensitive {
 			safeOutput[k] = "***"
 		} else {
 			safeOutput[k] = v
 		}
 	}
+
 	return safeOutput
 }

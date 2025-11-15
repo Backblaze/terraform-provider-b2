@@ -133,14 +133,15 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 		"server_side_encryption": d.Get("server_side_encryption").([]interface{}),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var fileVersion BucketFileVersionSchema
+	err := client.apply(ctx, name, op, input, &fileVersion)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["file_id"].(string))
+	d.SetId(fileVersion.FileId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &fileVersion, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -157,16 +158,17 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 		"file_id": d.Id(),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var fileVersion BucketFileVersionSchema
+	err := client.apply(ctx, name, op, input, &fileVersion)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	output["bucket_id"] = d.Get("bucket_id").(string)
-	output["size"] = d.Get("size").(int)
-	output["source"] = d.Get("source").(string)
+	// These fields are not returned by the API but are needed for the resource
+	fileVersion.BucketId = d.Get("bucket_id").(string)
+	fileVersion.Source = d.Get("source").(string)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &fileVersion, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -184,7 +186,7 @@ func resourceB2BucketFileVersionDelete(ctx context.Context, d *schema.ResourceDa
 		"file_name": d.Get("file_name").(string),
 	}
 
-	_, err := client.apply(ctx, name, op, input)
+	err := client.apply(ctx, name, op, input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
