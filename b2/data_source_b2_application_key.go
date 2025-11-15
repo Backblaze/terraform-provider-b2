@@ -55,7 +55,11 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 			"name_prefix": {
 				Description: "When present, restricts access to files whose names start with the prefix.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Computed:    true,
+			},
+			"expiration_timestamp": {
+				Description: "When present, says when this key will expire, in milliseconds since 1970.",
+				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 			"options": {

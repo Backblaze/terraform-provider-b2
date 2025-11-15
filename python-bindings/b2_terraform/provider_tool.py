@@ -140,14 +140,24 @@ class ApplicationKey(Command):
 
         raise RuntimeError(f'Could not find Application Key for "{key_name}"')
 
-    def resource_create(self, *, key_name, capabilities, bucket_ids, name_prefix, **kwargs):
+    def resource_create(
+        self,
+        *,
+        key_name,
+        capabilities,
+        bucket_ids,
+        name_prefix,
+        valid_duration_in_seconds,
+        **kwargs,
+    ):
         key = self.api.create_key(
             key_name=key_name,
             capabilities=capabilities,
             bucket_ids=bucket_ids or None,
             name_prefix=name_prefix or None,
+            valid_duration_seconds=valid_duration_in_seconds or None,
         )
-        return self._postprocess(key)
+        return self._postprocess(key, valid_duration_in_seconds)
 
     def resource_read(self, *, application_key_id, **kwargs):
         next_id = application_key_id
@@ -162,7 +172,7 @@ class ApplicationKey(Command):
     def resource_delete(self, *, application_key_id, **kwargs):
         self.api.delete_key_by_id(application_key_id=application_key_id)
 
-    def _postprocess(self, obj=None, **kwargs):
+    def _postprocess(self, obj=None, valid_duration_in_seconds=None, **kwargs):
         kwargs.setdefault('bucketIds', None)
         kwargs.setdefault('namePrefix', None)
         kwargs.setdefault('options', None)

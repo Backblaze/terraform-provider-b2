@@ -35,14 +35,16 @@ type AccountInfoSchema struct {
 }
 
 type ApplicationKeySchema struct {
-	ApplicationKeyId string   `json:"applicationKeyId"`
-	ApplicationKey   string   `json:"applicationKey"`
-	BucketIds        []string `json:"bucketIds"`
-	BucketId         string   `json:"bucketId"` // deprecated
-	Capabilities     []string `json:"capabilities"`
-	KeyName          string   `json:"keyName"`
-	NamePrefix       string   `json:"namePrefix"`
-	Options          []string `json:"options"`
+	ApplicationKeyId       string   `json:"applicationKeyId"`
+	ApplicationKey         string   `json:"applicationKey"`
+	BucketIds              []string `json:"bucketIds"`
+	BucketId               string   `json:"bucketId"` // deprecated
+	Capabilities           []string `json:"capabilities"`
+	ExpirationTimestamp    int      `json:"expirationTimestamp"`
+	KeyName                string   `json:"keyName"`
+	NamePrefix             string   `json:"namePrefix"`
+	Options                []string `json:"options"`
+	ValidDurationInSeconds int      `json:"validDurationInSeconds"`
 }
 
 type CorsRuleSchema struct {
