@@ -134,14 +134,15 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var bucket BucketSchema
+	err := client.apply(ctx, name, op, input, &bucket)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["bucket_id"].(string))
+	d.SetId(bucket.BucketId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &bucket, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -159,11 +160,12 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 		"cors_rules": d.Get("cors_rules"),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var bucket BucketSchema
+	err := client.apply(ctx, name, op, input, &bucket)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, ok := output["bucket_id"]; !ok && !d.IsNewResource() {
+	if bucket.BucketId == "" && !d.IsNewResource() {
 		// deleted bucket
 		tflog.Warn(ctx, "Bucket not found, possible resource drift", map[string]interface{}{
 			"bucket_id": d.Id(),
@@ -172,7 +174,7 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return nil
 	}
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &bucket, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -196,12 +198,13 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var bucket BucketSchema
+	err := client.apply(ctx, name, op, input, &bucket)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &bucket, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -218,7 +221,7 @@ func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_id": d.Id(),
 	}
 
-	_, err := client.apply(ctx, name, op, input)
+	err := client.apply(ctx, name, op, input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

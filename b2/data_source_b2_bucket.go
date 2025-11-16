@@ -104,14 +104,15 @@ func dataSourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta in
 		"bucket_name": d.Get("bucket_name").(string),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var bucket BucketSchema
+	err := client.apply(ctx, name, op, input, &bucket)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["bucket_id"].(string))
+	d.SetId(bucket.BucketId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &bucket, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -57,14 +57,15 @@ func resourceB2BucketNotificationRulesCreate(ctx context.Context, d *schema.Reso
 		"notification_rules": d.Get("notification_rules").([]interface{}),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var notificationRules BucketNotificationRulesSchema
+	err := client.apply(ctx, name, op, input, &notificationRules)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["bucket_id"].(string))
+	d.SetId(notificationRules.BucketId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &notificationRules, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -81,11 +82,12 @@ func resourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.Resour
 		"bucket_id": d.Id(),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var notificationRules BucketNotificationRulesSchema
+	err := client.apply(ctx, name, op, input, &notificationRules)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, ok := output["bucket_id"]; !ok && !d.IsNewResource() {
+	if notificationRules.BucketId == "" && !d.IsNewResource() {
 		// deleted bucket, thus notification rules no longer exist
 		tflog.Warn(ctx, "Bucket not found for Event Notifications, possible resource drift", map[string]interface{}{
 			"bucket_id": d.Id(),
@@ -94,7 +96,7 @@ func resourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.Resour
 		return nil
 	}
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &notificationRules, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -112,12 +114,13 @@ func resourceB2BucketNotificationRulesUpdate(ctx context.Context, d *schema.Reso
 		"notification_rules": d.Get("notification_rules").([]interface{}),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var notificationRules BucketNotificationRulesSchema
+	err := client.apply(ctx, name, op, input, &notificationRules)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &notificationRules, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -134,7 +137,7 @@ func resourceB2BucketNotificationRulesDelete(ctx context.Context, d *schema.Reso
 		"bucket_id": d.Id(),
 	}
 
-	_, err := client.apply(ctx, name, op, input)
+	err := client.apply(ctx, name, op, input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

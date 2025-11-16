@@ -62,14 +62,15 @@ func dataSourceB2BucketFileSignedUrlRead(ctx context.Context, d *schema.Resource
 		"duration":  d.Get("duration").(int),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var signedUrl BucketFileSignedUrlSchema
+	err := client.apply(ctx, name, op, input, &signedUrl)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["signed_url"].(string))
+	d.SetId(signedUrl.SignedUrl)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &signedUrl, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
