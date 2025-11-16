@@ -11,38 +11,38 @@
 package b2
 
 type AllowedSchema struct {
-	BucketId     string   `json:"bucket_id"`
-	BucketName   string   `json:"bucket_name"`
+	BucketId     string   `json:"bucketId"`
+	BucketName   string   `json:"bucketName"`
 	Capabilities []string `json:"capabilities"`
-	NamePrefix   string   `json:"name_prefix"`
+	NamePrefix   string   `json:"namePrefix"`
 }
 
 type AccountInfoSchema struct {
-	AccountId        string          `json:"account_id"`
-	AccountAuthToken string          `json:"account_auth_token"`
-	ApiUrl           string          `json:"api_url"`
+	AccountId        string          `json:"accountId"`
+	AccountAuthToken string          `json:"accountAuthToken"`
+	ApiUrl           string          `json:"apiUrl"`
 	Allowed          []AllowedSchema `json:"allowed"`
-	DownloadUrl      string          `json:"download_url"`
-	S3ApiUrl         string          `json:"s3_api_url"`
+	DownloadUrl      string          `json:"downloadUrl"`
+	S3ApiUrl         string          `json:"s3ApiUrl"`
 }
 
 type ApplicationKeySchema struct {
-	ApplicationKeyId string   `json:"application_key_id"`
-	ApplicationKey   string   `json:"application_key"`
-	BucketId         string   `json:"bucket_id"`
+	ApplicationKeyId string   `json:"applicationKeyId"`
+	ApplicationKey   string   `json:"applicationKey"`
+	BucketId         string   `json:"bucketId"`
 	Capabilities     []string `json:"capabilities"`
-	KeyName          string   `json:"key_name"`
-	NamePrefix       string   `json:"name_prefix"`
+	KeyName          string   `json:"keyName"`
+	NamePrefix       string   `json:"namePrefix"`
 	Options          []string `json:"options"`
 }
 
 type CorsRuleSchema struct {
-	CorsRuleName      string   `json:"cors_rule_name"`
-	AllowedOrigins    []string `json:"allowed_origins"`
-	AllowedOperations []string `json:"allowed_operations"`
-	MaxAgeSeconds     int      `json:"max_age_seconds"`
-	AllowedHeaders    []string `json:"allowed_headers"`
-	ExposeHeaders     []string `json:"expose_headers"`
+	CorsRuleName      string   `json:"corsRuleName"`
+	AllowedOrigins    []string `json:"allowedOrigins"`
+	AllowedOperations []string `json:"allowedOperations"`
+	MaxAgeSeconds     int      `json:"maxAgeSeconds"`
+	AllowedHeaders    []string `json:"allowedHeaders"`
+	ExposeHeaders     []string `json:"exposeHeaders"`
 }
 
 type RetentionPeriodSchema struct {
@@ -51,13 +51,13 @@ type RetentionPeriodSchema struct {
 }
 
 type DefaultRetentionSchema struct {
-	Mode   string                  `json:"mode"`
-	Period []RetentionPeriodSchema `json:"period"`
+	Mode   string                 `json:"mode"`
+	Period *RetentionPeriodSchema `json:"period"`
 }
 
 type FileLockConfigurationSchema struct {
-	IsFileLockEnabled bool                     `json:"is_file_lock_enabled"`
-	DefaultRetention  []DefaultRetentionSchema `json:"default_retention"`
+	IsFileLockEnabled bool                    `json:"isFileLockEnabled"`
+	DefaultRetention  *DefaultRetentionSchema `json:"defaultRetention"`
 }
 
 type ServerSideEncryptionSchema struct {
@@ -66,62 +66,62 @@ type ServerSideEncryptionSchema struct {
 }
 
 type LifecycleRuleSchema struct {
-	FileNamePrefix                                  string `json:"file_name_prefix"`
-	DaysFromHidingToDeleting                        int    `json:"days_from_hiding_to_deleting"`
-	DaysFromUploadingToHiding                       int    `json:"days_from_uploading_to_hiding"`
-	DaysFromStartingToCancelingUnfinishedLargeFiles int    `json:"days_from_starting_to_canceling_unfinished_large_files"`
+	FileNamePrefix                                  string `json:"fileNamePrefix"`
+	DaysFromHidingToDeleting                        int    `json:"daysFromHidingToDeleting"`
+	DaysFromUploadingToHiding                       int    `json:"daysFromUploadingToHiding"`
+	DaysFromStartingToCancelingUnfinishedLargeFiles int    `json:"daysFromStartingToCancelingUnfinishedLargeFiles"`
 }
 
 type BucketSchema struct {
-	AccountId                   string                        `json:"account_id"`
-	BucketId                    string                        `json:"bucket_id"`
-	BucketInfo                  map[string]string             `json:"bucket_info"`
-	BucketName                  string                        `json:"bucket_name"`
-	BucketType                  string                        `json:"bucket_type"`
-	CorsRules                   []CorsRuleSchema              `json:"cors_rules"`
-	DefaultServerSideEncryption []ServerSideEncryptionSchema  `json:"default_server_side_encryption"`
-	FileLockConfiguration       []FileLockConfigurationSchema `json:"file_lock_configuration"`
-	LifecycleRules              []LifecycleRuleSchema         `json:"lifecycle_rules"`
-	Options                     []string                      `json:"options"`
-	Revision                    int                           `json:"revision"`
+	AccountId                   string                       `json:"accountId"`
+	BucketId                    string                       `json:"bucketId"`
+	BucketInfo                  map[string]string            `json:"bucketInfo"`
+	BucketName                  string                       `json:"bucketName"`
+	BucketType                  string                       `json:"bucketType"`
+	CorsRules                   []CorsRuleSchema             `json:"corsRules"`
+	DefaultServerSideEncryption *ServerSideEncryptionSchema  `json:"defaultServerSideEncryption"`
+	FileLockConfiguration       *FileLockConfigurationSchema `json:"fileLockConfiguration"`
+	LifecycleRules              []LifecycleRuleSchema        `json:"lifecycleRules"`
+	Options                     []string                     `json:"options"`
+	Revision                    int                          `json:"revision"`
 }
 
 type FileVersionSchema struct {
-	Action               string                       `json:"action"`
-	BucketId             string                       `json:"bucket_id"`
-	ContentMd5           string                       `json:"content_md5"`
-	ContentSha1          string                       `json:"content_sha1"`
-	ContentType          string                       `json:"content_type"`
-	FileId               string                       `json:"file_id"`
-	FileInfo             map[string]string            `json:"file_info"`
-	FileName             string                       `json:"file_name"`
-	ServerSideEncryption []ServerSideEncryptionSchema `json:"server_side_encryption"`
-	Size                 int                          `json:"size"`
-	UploadTimestamp      int                          `json:"upload_timestamp"`
+	Action               string                      `json:"action"`
+	BucketId             string                      `json:"bucketId"`
+	ContentMd5           string                      `json:"contentMd5"`
+	ContentSha1          string                      `json:"contentSha1"`
+	ContentType          string                      `json:"contentType"`
+	FileId               string                      `json:"fileId"`
+	FileInfo             map[string]string           `json:"fileInfo"`
+	FileName             string                      `json:"fileName"`
+	ServerSideEncryption *ServerSideEncryptionSchema `json:"serverSideEncryption"`
+	Size                 int                         `json:"size"`
+	UploadTimestamp      int                         `json:"uploadTimestamp"`
 }
 
 type BucketFileSchema struct {
 	Sha1         string              `json:"_sha1"`
-	BucketId     string              `json:"bucket_id"`
-	FileName     string              `json:"file_name"`
-	ShowVersions bool                `json:"show_versions"`
-	FileVersions []FileVersionSchema `json:"file_versions"`
+	BucketId     string              `json:"bucketId"`
+	FileName     string              `json:"fileName"`
+	ShowVersions bool                `json:"showVersions"`
+	FileVersions []FileVersionSchema `json:"fileVersions"`
 }
 
 type BucketFilesSchema struct {
 	Sha1         string              `json:"_sha1"`
-	BucketId     string              `json:"bucket_id"`
-	FolderName   string              `json:"folder_name"`
+	BucketId     string              `json:"bucketId"`
+	FolderName   string              `json:"folderName"`
 	Recursive    bool                `json:"recursive"`
-	ShowVersions bool                `json:"show_versions"`
-	FileVersions []FileVersionSchema `json:"file_versions"`
+	ShowVersions bool                `json:"showVersions"`
+	FileVersions []FileVersionSchema `json:"fileVersions"`
 }
 
 type BucketFileSignedUrlSchema struct {
-	BucketId  string `json:"bucket_id"`
+	BucketId  string `json:"bucketId"`
 	Duration  int    `json:"duration"`
-	FileName  string `json:"file_name"`
-	SignedUrl string `json:"signed_url"`
+	FileName  string `json:"fileName"`
+	SignedUrl string `json:"signedUrl"`
 }
 
 type CustomHeaderSchema struct {
@@ -130,30 +130,30 @@ type CustomHeaderSchema struct {
 }
 
 type TargetConfigurationSchema struct {
-	CustomHeaders           []CustomHeaderSchema `json:"custom_headers"`
-	HmacSha256SigningSecret string               `json:"hmac_sha256_signing_secret"`
-	TargetType              string               `json:"target_type"`
+	CustomHeaders           []CustomHeaderSchema `json:"customHeaders"`
+	HmacSha256SigningSecret string               `json:"hmacSha256SigningSecret"`
+	TargetType              string               `json:"targetType"`
 	Url                     string               `json:"url"`
 }
 
 type NotificationRuleSchema struct {
-	EventTypes          []string                    `json:"event_types"`
-	IsEnabled           bool                        `json:"is_enabled"`
-	IsSuspended         bool                        `json:"is_suspended"`
-	Name                string                      `json:"name"`
-	ObjectNamePrefix    string                      `json:"object_name_prefix"`
-	SuspensionReason    string                      `json:"suspension_reason"`
-	TargetConfiguration []TargetConfigurationSchema `json:"target_configuration"`
+	EventTypes          []string                   `json:"eventTypes"`
+	IsEnabled           bool                       `json:"isEnabled"`
+	IsSuspended         bool                       `json:"isSuspended"`
+	Name                string                     `json:"name"`
+	ObjectNamePrefix    string                     `json:"objectNamePrefix"`
+	SuspensionReason    string                     `json:"suspensionReason"`
+	TargetConfiguration *TargetConfigurationSchema `json:"targetConfiguration"`
 }
 
 type BucketNotificationRulesSchema struct {
-	BucketId          string                   `json:"bucket_id"`
-	NotificationRules []NotificationRuleSchema `json:"notification_rules"`
+	BucketId          string                   `json:"bucketId"`
+	NotificationRules []NotificationRuleSchema `json:"notificationRules"`
 }
 
 type ResourceFileEncryptionKeySchema struct {
-	KeyId     string `json:"key_id"`
-	SecretB64 string `json:"secret_b64"`
+	KeyId     string `json:"keyId"`
+	SecretB64 string `json:"secretB64"`
 }
 
 type ResourceFileEncryptionSchema struct {
@@ -163,16 +163,16 @@ type ResourceFileEncryptionSchema struct {
 }
 
 type BucketFileVersionSchema struct {
-	Action               string                         `json:"action"`
-	BucketId             string                         `json:"bucket_id"`
-	ContentMd5           string                         `json:"content_md5"`
-	ContentSha1          string                         `json:"content_sha1"`
-	ContentType          string                         `json:"content_type"`
-	FileId               string                         `json:"file_id"`
-	FileInfo             map[string]string              `json:"file_info"`
-	FileName             string                         `json:"file_name"`
-	ServerSideEncryption []ResourceFileEncryptionSchema `json:"server_side_encryption"`
-	Size                 int                            `json:"size"`
-	Source               string                         `json:"source"`
-	UploadTimestamp      int                            `json:"upload_timestamp"`
+	Action               string                        `json:"action"`
+	BucketId             string                        `json:"bucketId"`
+	ContentMd5           string                        `json:"contentMd5"`
+	ContentSha1          string                        `json:"contentSha1"`
+	ContentType          string                        `json:"contentType"`
+	FileId               string                        `json:"fileId"`
+	FileInfo             map[string]string             `json:"fileInfo"`
+	FileName             string                        `json:"fileName"`
+	ServerSideEncryption *ResourceFileEncryptionSchema `json:"serverSideEncryption"`
+	Size                 int                           `json:"size"`
+	Source               string                        `json:"source"`
+	UploadTimestamp      int                           `json:"uploadTimestamp"`
 }

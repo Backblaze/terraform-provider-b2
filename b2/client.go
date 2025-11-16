@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -95,6 +94,7 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 
 		schemaMap := c.getSchemaMap(name, op)
 		if schemaMap == nil {
+			// Should never happen
 			return fmt.Errorf("schema not found for resource: b2_%s", name)
 		}
 
@@ -114,11 +114,11 @@ func (c Client) populate(ctx context.Context, name string, op string, output int
 
 	schemaMap := c.getSchemaMap(name, op)
 	if schemaMap == nil {
+		// Should never happen
 		return fmt.Errorf("schema not found for resource: b2_%s", name)
 	}
 
-	// Convert struct to map
-	outputMap := convertStructToMap(reflect.ValueOf(output)).(map[string]interface{})
+	outputMap := convertStructToMap(output)
 
 	for k := range schemaMap {
 		v, ok := outputMap[k]
@@ -147,39 +147,9 @@ func (c Client) getSchemaMap(name string, op string) map[string]*schema.Schema {
 	return nil
 }
 
-func convertStructToMap(v reflect.Value) interface{} {
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	switch v.Kind() {
-	case reflect.Struct:
-		m := make(map[string]interface{})
-		t := v.Type()
-		for i := 0; i < v.NumField(); i++ {
-			field := t.Field(i)
-			jsonTag := field.Tag.Get("json")
-			if jsonTag != "" && jsonTag != "-" {
-				m[jsonTag] = convertStructToMap(v.Field(i))
-			}
-		}
-		return m
-	case reflect.Slice:
-		s := make([]interface{}, v.Len())
-		for i := 0; i < v.Len(); i++ {
-			s[i] = convertStructToMap(v.Index(i))
-		}
-		return s
-	default:
-		return v.Interface()
-	}
-}
-
 func sanitizeOutput(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
 	safeOutput := map[string]interface{}{}
-
-	// Convert struct to map
-	outputMap := convertStructToMap(reflect.ValueOf(output)).(map[string]interface{})
+	outputMap := convertStructToMap(output)
 
 	// Sanitize sensitive fields
 	for k, v := range outputMap {
