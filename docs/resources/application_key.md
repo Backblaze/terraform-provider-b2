@@ -22,8 +22,9 @@ B2 application key resource.
 
 ### Optional
 
-- `bucket_id` (String) When present, restricts access to one bucket. **Modifying this attribute will force creation of a new resource.**
-- `name_prefix` (String) When present, restricts access to files whose names start with the prefix. Required when using `bucket_id`. **Modifying this attribute will force creation of a new resource.**
+- `bucket_id` (String, Deprecated) When present, restricts access to one bucket. Conflicts with `bucket_ids`. **Modifying this attribute will force creation of a new resource.**
+- `bucket_ids` (Set of String) When provided, the new key can only access the specified buckets. **Modifying this attribute will force creation of a new resource.**
+- `name_prefix` (String) When present, restricts access to files whose names start with the prefix. **Modifying this attribute will force creation of a new resource.**
 
 ### Read-Only
 

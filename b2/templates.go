@@ -84,17 +84,24 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 func getDataSourceAllowedElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"bucket_id": {
-				Description: "When present, restricts access to one bucket.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"bucket_name": {
-				Description: "When 'bucket_id' is set, and it is a valid bucket that has not been deleted, this field is set to the name of the bucket.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+			"buckets": {
+				Description: "A list of buckets that the application key is restricted to.",
+				Type:        schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Description: "The unique identifier for the bucket.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"name": {
+							Description: "The name of the bucket.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+					},
+				},
+				Computed: true,
 			},
 			"capabilities": {
 				Description: "A list of strings, each one naming a capability the key has.",
@@ -109,6 +116,20 @@ func getDataSourceAllowedElem() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
+			},
+			"bucket_id": {
+				Description: "When present, restricts access to one bucket.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Deprecated:  "This argument is deprecated in favor of 'buckets' argument",
+			},
+			"bucket_name": {
+				Description: "When 'bucket_id' is set, and it is a valid bucket that has not been deleted, this field is set to the name of the bucket.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Deprecated:  "This argument is deprecated in favor of 'buckets' argument",
 			},
 		},
 	}

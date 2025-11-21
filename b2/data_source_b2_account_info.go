@@ -79,5 +79,32 @@ func dataSourceB2AccountInfoRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
+	if err := dataSourceB2AccountInfoPopulateDeprecated(d); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
+}
+
+func dataSourceB2AccountInfoPopulateDeprecated(d *schema.ResourceData) error {
+	if allowed, ok := d.GetOk("allowed"); ok {
+		allowedList := allowed.([]interface{})
+		if len(allowedList) > 0 {
+			allowedMap := allowedList[0].(map[string]interface{})
+			if buckets, ok := allowedMap["buckets"].([]interface{}); ok && len(buckets) > 0 {
+				firstBucket := buckets[0].(map[string]interface{})
+				if bucketId, ok := firstBucket["id"].(string); ok {
+					allowedMap["bucket_id"] = bucketId
+				}
+				if bucketName, ok := firstBucket["name"].(string); ok {
+					allowedMap["bucket_name"] = bucketName
+				}
+			} else {
+				// Set empty strings if no buckets
+				allowedMap["bucket_id"] = ""
+				allowedMap["bucket_name"] = ""
+			}
+		}
+	}
 	return nil
 }
