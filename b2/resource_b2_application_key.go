@@ -119,7 +119,7 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	// Handle backward compatibility
-	for k, v := range resourceB2ApplicationKeyApplyDeprecated(d) {
+	for k, v := range resourceB2ApplicationKeyApplyDeprecatedToCurrent(d) {
 		input[k] = v
 	}
 
@@ -135,7 +135,7 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	if err := resourceB2ApplicationKeyPopulateDeprecated(d); err != nil {
+	if err := resourceB2ApplicationKeyPopulateDeprecatedToCurrent(d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -171,7 +171,7 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	if err := resourceB2ApplicationKeyPopulateDeprecated(d); err != nil {
+	if err := resourceB2ApplicationKeyPopulateDeprecatedToCurrent(d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -197,7 +197,7 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-func resourceB2ApplicationKeyApplyDeprecated(d *schema.ResourceData) map[string]interface{} {
+func resourceB2ApplicationKeyApplyDeprecatedToCurrent(d *schema.ResourceData) map[string]interface{} {
 	bucketIds := d.Get("bucket_ids").(*schema.Set).List()
 	if bucketId, ok := d.GetOk("bucket_id"); ok && bucketId.(string) != "" {
 		bucketIds = []interface{}{bucketId.(string)}
@@ -207,7 +207,7 @@ func resourceB2ApplicationKeyApplyDeprecated(d *schema.ResourceData) map[string]
 	}
 }
 
-func resourceB2ApplicationKeyPopulateDeprecated(d *schema.ResourceData) error {
+func resourceB2ApplicationKeyPopulateDeprecatedToCurrent(d *schema.ResourceData) error {
 	if bucketIds, ok := d.GetOk("bucket_ids"); ok {
 		bucketIdsList := bucketIds.(*schema.Set).List()
 		if len(bucketIdsList) > 0 {

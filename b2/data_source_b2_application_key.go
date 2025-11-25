@@ -37,7 +37,7 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Computed:    true,
 			},
 			"bucket_ids": {
-				Description: "When present, restricts access to one bucket.",
+				Description: "When present, restricts access to specified buckets.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
