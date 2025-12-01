@@ -85,14 +85,15 @@ func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData,
 		"key_name": d.Get("key_name").(string),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var applicationKey ApplicationKeySchema
+	err := client.apply(ctx, name, op, input, &applicationKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["application_key_id"].(string))
+	d.SetId(applicationKey.ApplicationKeyId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

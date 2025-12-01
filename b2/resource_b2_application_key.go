@@ -123,14 +123,15 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 		input[k] = v
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var applicationKey ApplicationKeySchema
+	err := client.apply(ctx, name, op, input, &applicationKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["application_key_id"].(string))
+	d.SetId(applicationKey.ApplicationKeyId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -151,11 +152,12 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		"application_key_id": d.Id(),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var applicationKey ApplicationKeySchema
+	err := client.apply(ctx, name, op, input, &applicationKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, ok := output["application_key_id"]; !ok && !d.IsNewResource() {
+	if applicationKey.ApplicationKeyId == "" && !d.IsNewResource() {
 		// deleted application key
 		tflog.Warn(ctx, "Application Key not found, possible resource drift", map[string]interface{}{
 			"application_key_id": d.Id(),
@@ -164,9 +166,9 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		return nil
 	}
 
-	output["application_key"] = d.Get("application_key").(string)
+	applicationKey.ApplicationKey = d.Get("application_key").(string)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -187,7 +189,7 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 		"application_key_id": d.Id(),
 	}
 
-	_, err := client.apply(ctx, name, op, input)
+	err := client.apply(ctx, name, op, input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

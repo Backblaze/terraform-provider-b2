@@ -50,14 +50,15 @@ func dataSourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.Reso
 		"bucket_id": d.Get("bucket_id").(string),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var notificationRules BucketNotificationRulesSchema
+	err := client.apply(ctx, name, op, input, &notificationRules)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["bucket_id"].(string))
+	d.SetId(notificationRules.BucketId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &notificationRules, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
