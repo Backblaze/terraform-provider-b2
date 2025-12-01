@@ -24,7 +24,7 @@ B2 account info data source.
 - `api_url` (String) The base URL to use for all API calls except for uploading and downloading files.
 - `download_url` (String) The base URL to use for downloading files.
 - `id` (String) The ID of this resource.
-- `recommended_part_size` (Number) The recommended file part size.
+- `recommended_part_size` (Number) The recommended number of bytes in a part of a large file.
 - `s3_api_url` (String) The base URL to use for S3-compatible API calls.
 
 <a id="nestedatt--allowed"></a>
