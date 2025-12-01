@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgrade pyinstaller to 6.11.1
 * Use `go vet` for linting
 * Use Go 1.24.1
-* * Use `golangci-lint` for linting and formatting
+* Use `golangci-lint` for linting and formatting
 * Deprecate macOS 13
 * Deprecate Windows 2019
 * Upgrade supported Terraform versions to 1.13 and 1.12
