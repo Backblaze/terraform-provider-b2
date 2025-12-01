@@ -36,10 +36,13 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
-			"bucket_id": {
-				Description: "When present, restricts access to one bucket.",
-				Type:        schema.TypeString,
-				Computed:    true,
+			"bucket_ids": {
+				Description: "When present, restricts access to specified buckets.",
+				Type:        schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
 			},
 			"capabilities": {
 				Description: "A set of strings, each one naming a capability the key has.",
@@ -63,6 +66,12 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				},
 				Computed: true,
 			},
+			"bucket_id": {
+				Description: "When present, restricts access to one bucket.",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Deprecated:  "This argument is deprecated in favor of 'bucket_ids' argument",
+			},
 		},
 	}
 }
@@ -76,17 +85,33 @@ func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData,
 		"key_name": d.Get("key_name").(string),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var applicationKey ApplicationKeySchema
+	err := client.apply(ctx, name, op, input, &applicationKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["application_key_id"].(string))
+	d.SetId(applicationKey.ApplicationKeyId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := dataSourceB2ApplicationKeyPopulateDeprecated(d); err != nil {
 		return diag.FromErr(err)
 	}
 
 	return nil
+}
+
+func dataSourceB2ApplicationKeyPopulateDeprecated(d *schema.ResourceData) error {
+	if bucketIds, ok := d.GetOk("bucket_ids"); ok {
+		bucketIdsList := bucketIds.(*schema.Set).List()
+		if len(bucketIdsList) > 0 {
+			return d.Set("bucket_id", bucketIdsList[0].(string))
+		}
+	}
+	// Set empty string if no bucket_ids
+	return d.Set("bucket_id", "")
 }

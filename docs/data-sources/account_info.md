@@ -34,5 +34,14 @@ Read-Only:
 
 - `bucket_id` (String)
 - `bucket_name` (String)
+- `buckets` (List of Object) (see [below for nested schema](#nestedobjatt--allowed--buckets))
 - `capabilities` (Set of String)
 - `name_prefix` (String)
+
+<a id="nestedobjatt--allowed--buckets"></a>
+### Nested Schema for `allowed.buckets`
+
+Read-Only:
+
+- `id` (String)
+- `name` (String)

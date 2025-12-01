@@ -47,18 +47,27 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"bucket_id": {
-				Description: "When present, restricts access to one bucket.",
+			"bucket_ids": {
+				Description: "When provided, the new key can only access the specified buckets.",
+				Type:        schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+				ForceNew: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// Suppress diff if bucket_id is set in config (backward compatibility)
+					if _, ok := d.GetOk("bucket_id"); ok {
+						return true
+					}
+					return false
+				},
+			},
+			"name_prefix": {
+				Description: "When present, restricts access to files whose names start with the prefix.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-			},
-			"name_prefix": {
-				Description:  "When present, restricts access to files whose names start with the prefix.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				RequiredWith: []string{"bucket_id"},
 			},
 			"application_key": {
 				Description: "The key.",
@@ -79,6 +88,21 @@ func resourceB2ApplicationKey() *schema.Resource {
 				},
 				Computed: true,
 			},
+			"bucket_id": {
+				Description:   "When present, restricts access to one bucket.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"bucket_ids"},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// Suppress diff if bucket_ids is set (bucket_id is auto-populated from bucket_ids)
+					if _, ok := d.GetOk("bucket_ids"); ok {
+						return true
+					}
+					return false
+				},
+				Deprecated: "This argument is deprecated in favor of 'bucket_ids' argument",
+			},
 		},
 	}
 }
@@ -91,19 +115,28 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 	input := map[string]interface{}{
 		"key_name":     d.Get("key_name").(string),
 		"capabilities": d.Get("capabilities").(*schema.Set).List(),
-		"bucket_id":    d.Get("bucket_id").(string),
 		"name_prefix":  d.Get("name_prefix").(string),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	// Handle backward compatibility
+	for k, v := range resourceB2ApplicationKeyApplyDeprecatedToCurrent(d) {
+		input[k] = v
+	}
+
+	var applicationKey ApplicationKeySchema
+	err := client.apply(ctx, name, op, input, &applicationKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["application_key_id"].(string))
+	d.SetId(applicationKey.ApplicationKeyId)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceB2ApplicationKeyPopulateDeprecatedToCurrent(d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -119,11 +152,12 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		"application_key_id": d.Id(),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var applicationKey ApplicationKeySchema
+	err := client.apply(ctx, name, op, input, &applicationKey)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, ok := output["application_key_id"]; !ok && !d.IsNewResource() {
+	if applicationKey.ApplicationKeyId == "" && !d.IsNewResource() {
 		// deleted application key
 		tflog.Warn(ctx, "Application Key not found, possible resource drift", map[string]interface{}{
 			"application_key_id": d.Id(),
@@ -132,10 +166,14 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		return nil
 	}
 
-	output["application_key"] = d.Get("application_key").(string)
+	applicationKey.ApplicationKey = d.Get("application_key").(string)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := resourceB2ApplicationKeyPopulateDeprecatedToCurrent(d); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -151,7 +189,7 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 		"application_key_id": d.Id(),
 	}
 
-	_, err := client.apply(ctx, name, op, input)
+	err := client.apply(ctx, name, op, input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -159,4 +197,25 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 	d.SetId("")
 
 	return nil
+}
+
+func resourceB2ApplicationKeyApplyDeprecatedToCurrent(d *schema.ResourceData) map[string]interface{} {
+	bucketIds := d.Get("bucket_ids").(*schema.Set).List()
+	if bucketId, ok := d.GetOk("bucket_id"); ok && bucketId.(string) != "" {
+		bucketIds = []interface{}{bucketId.(string)}
+	}
+	return map[string]interface{}{
+		"bucket_ids": bucketIds,
+	}
+}
+
+func resourceB2ApplicationKeyPopulateDeprecatedToCurrent(d *schema.ResourceData) error {
+	if bucketIds, ok := d.GetOk("bucket_ids"); ok {
+		bucketIdsList := bucketIds.(*schema.Set).List()
+		if len(bucketIdsList) > 0 {
+			return d.Set("bucket_id", bucketIdsList[0].(string))
+		}
+	}
+	// Set empty string if no bucket_ids
+	return d.Set("bucket_id", "")
 }
