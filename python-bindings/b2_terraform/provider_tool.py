@@ -16,7 +16,7 @@ import traceback
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
-from b2sdk.v2 import (
+from b2sdk.v3 import (
     B2Api,
     BucketRetentionSetting,
     EncryptionAlgorithm,
@@ -25,7 +25,7 @@ from b2sdk.v2 import (
     EncryptionSetting,
     InMemoryAccountInfo,
 )
-from b2sdk.v2.exception import BadRequest, BucketIdNotFound
+from b2sdk.v3.exception import BadRequest, BucketIdNotFound
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
 
@@ -125,7 +125,7 @@ class B2Provider(Command):
             raise RuntimeError('B2 Application Key and Application Key ID must be provided')
 
         self.api.authorize_account(
-            provider_endpoint, provider_application_key_id, provider_application_key
+            provider_application_key_id, provider_application_key, provider_endpoint
         )
 
 
@@ -140,11 +140,11 @@ class ApplicationKey(Command):
 
         raise RuntimeError(f'Could not find Application Key for "{key_name}"')
 
-    def resource_create(self, *, key_name, capabilities, bucket_id, name_prefix, **kwargs):
+    def resource_create(self, *, key_name, capabilities, bucket_ids, name_prefix, **kwargs):
         key = self.api.create_key(
             key_name=key_name,
             capabilities=capabilities,
-            bucket_id=bucket_id or None,
+            bucket_ids=bucket_ids or None,
             name_prefix=name_prefix or None,
         )
         return self._postprocess(key)
@@ -161,6 +161,12 @@ class ApplicationKey(Command):
 
     def resource_delete(self, *, application_key_id, **kwargs):
         self.api.delete_key_by_id(application_key_id=application_key_id)
+
+    def _postprocess(self, obj=None, **kwargs):
+        kwargs.setdefault('bucketIds', None)
+        kwargs.setdefault('namePrefix', None)
+        kwargs.setdefault('options', None)
+        return super()._postprocess(obj, **kwargs)
 
 
 @B2Provider.register_subcommand
@@ -291,7 +297,8 @@ class Bucket(Command):
                 else:
                     algorithm = None
                 default_server_side_encryption = EncryptionSetting(
-                    mode=apply_or_none(EncryptionMode, mode), algorithm=algorithm
+                    mode=apply_or_none(EncryptionMode, mode),
+                    algorithm=apply_or_none(EncryptionAlgorithm, algorithm),
                 )
             else:
                 default_server_side_encryption = None
@@ -374,7 +381,7 @@ class BucketFileVersion(Command):
                 local_file=source,
                 file_name=file_name,
                 content_type=content_type,
-                file_infos=file_info,
+                file_info=file_info,
                 server_side_encryption=server_side_encryption,
             ),
         )
@@ -405,12 +412,15 @@ class BucketFileVersion(Command):
                             secret=base64.b64decode(key['secret_b64'], validate=True),
                             key_id=key.get('key_id'),
                         )
-                        if len(customer_key.secret) != 32:
-                            raise RuntimeError(f'Wrong key length ({len(customer_key.secret)})')
+                        customer_key_size = len(customer_key.secret or b'')
+                        if customer_key_size != 32:
+                            raise RuntimeError(f'Wrong key length ({customer_key_size})')
                 else:
                     algorithm = None
                 server_side_encryption = EncryptionSetting(
-                    mode=apply_or_none(EncryptionMode, mode), algorithm=algorithm, key=customer_key
+                    mode=apply_or_none(EncryptionMode, mode),
+                    algorithm=apply_or_none(EncryptionAlgorithm, algorithm),
+                    key=customer_key,
                 )
             else:
                 server_side_encryption = None

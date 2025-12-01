@@ -26,7 +26,8 @@ B2 application key data source.
 ### Read-Only
 
 - `application_key_id` (String) The ID of the key.
-- `bucket_id` (String) When present, restricts access to one bucket.
+- `bucket_id` (String, Deprecated) When present, restricts access to one bucket.
+- `bucket_ids` (Set of String) When present, restricts access to specified buckets.
 - `capabilities` (Set of String) A set of strings, each one naming a capability the key has.
 - `id` (String) The ID of this resource.
 - `options` (Set of String) A list of application key options.

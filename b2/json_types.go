@@ -11,10 +11,16 @@
 package b2
 
 type AllowedSchema struct {
-	BucketId     string   `json:"bucketId"`
-	BucketName   string   `json:"bucketName"`
-	Capabilities []string `json:"capabilities"`
-	NamePrefix   string   `json:"namePrefix"`
+	Buckets      []AllowedBucketsSchema `json:"buckets"`
+	BucketId     string                 `json:"bucketId"`   // deprecated
+	BucketName   string                 `json:"bucketName"` // deprecated
+	Capabilities []string               `json:"capabilities"`
+	NamePrefix   string                 `json:"namePrefix"`
+}
+
+type AllowedBucketsSchema struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type AccountInfoSchema struct {
@@ -29,7 +35,8 @@ type AccountInfoSchema struct {
 type ApplicationKeySchema struct {
 	ApplicationKeyId string   `json:"applicationKeyId"`
 	ApplicationKey   string   `json:"applicationKey"`
-	BucketId         string   `json:"bucketId"`
+	BucketIds        []string `json:"bucketIds"`
+	BucketId         string   `json:"bucketId"` // deprecated
 	Capabilities     []string `json:"capabilities"`
 	KeyName          string   `json:"keyName"`
 	NamePrefix       string   `json:"namePrefix"`
