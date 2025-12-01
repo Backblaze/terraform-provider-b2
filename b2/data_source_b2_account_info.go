@@ -57,7 +57,7 @@ func dataSourceB2AccountInfo() *schema.Resource {
 				Computed:    true,
 			},
 			"recommended_part_size": {
-				Description: "The recommended file part size.",
+				Description: "The recommended number of bytes in a part of a large file.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
