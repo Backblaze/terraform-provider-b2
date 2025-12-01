@@ -42,7 +42,7 @@ class Command:
     # The registry for the subcommands, should be reinitialized  in subclass
     subcommands_registry = None
 
-    def __init__(self, provider_tool):
+    def __init__(self, provider_tool: "ProviderTool"):
         self.provider_tool = provider_tool
         self.api = provider_tool.api
 
@@ -555,14 +555,16 @@ class AccountInfo(Command):
             'apiUrl': account_info.get_api_url(),
             'downloadUrl': account_info.get_download_url(),
             's3ApiUrl': account_info.get_s3_api_url(),
+            'recommendedPartSize': account_info.get_recommended_part_size(),
+            'absoluteMinimumPartSize': account_info.get_absolute_minimum_part_size(),
         }
 
 
 class ProviderTool:
-    def __init__(self, b2_api):
+    def __init__(self, b2_api: B2Api):
         self.api = b2_api
 
-    def run_command(self, argv):
+    def run_command(self, argv) -> int:
         try:
             b2_provider = B2Provider(self)
             args = b2_provider.get_parser().parse_args(argv[1:])

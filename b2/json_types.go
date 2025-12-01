@@ -24,12 +24,14 @@ type AllowedBucketsSchema struct {
 }
 
 type AccountInfoSchema struct {
-	AccountId        string          `json:"accountId"`
-	AccountAuthToken string          `json:"accountAuthToken"`
-	ApiUrl           string          `json:"apiUrl"`
-	Allowed          []AllowedSchema `json:"allowed"`
-	DownloadUrl      string          `json:"downloadUrl"`
-	S3ApiUrl         string          `json:"s3ApiUrl"`
+	AccountId               string          `json:"accountId"`
+	AccountAuthToken        string          `json:"accountAuthToken"`
+	ApiUrl                  string          `json:"apiUrl"`
+	Allowed                 []AllowedSchema `json:"allowed"`
+	DownloadUrl             string          `json:"downloadUrl"`
+	S3ApiUrl                string          `json:"s3ApiUrl"`
+	RecommendedPartSize     int             `json:"recommendedPartSize"`
+	AbsoluteMinimumPartSize int             `json:"absoluteMinimumPartSize"`
 }
 
 type ApplicationKeySchema struct {

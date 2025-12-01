@@ -56,6 +56,16 @@ func dataSourceB2AccountInfo() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"recommended_part_size": {
+				Description: "The recommended number of bytes in a part of a large file.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"absolute_minimum_part_size": {
+				Description: "The smallest possible size of a part of a large file (except the last one). This is smaller than the recommendedPartSize. If you use it, you may find that it takes longer overall to upload a large file.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
 		},
 	}
 }

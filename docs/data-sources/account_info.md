@@ -17,12 +17,14 @@ B2 account info data source.
 
 ### Read-Only
 
+- `absolute_minimum_part_size` (Number) The smallest possible size of a part of a large file (except the last one). This is smaller than the recommendedPartSize. If you use it, you may find that it takes longer overall to upload a large file.
 - `account_auth_token` (String, Sensitive) An authorization token to use with all calls, other than b2_authorize_account, that need an Authorization header. This authorization token is valid for at most 24 hours.
 - `account_id` (String) The identifier for the account.
 - `allowed` (List of Object) An object containing the capabilities of this auth token, and any restrictions on using it. (see [below for nested schema](#nestedatt--allowed))
 - `api_url` (String) The base URL to use for all API calls except for uploading and downloading files.
 - `download_url` (String) The base URL to use for downloading files.
 - `id` (String) The ID of this resource.
+- `recommended_part_size` (Number) The recommended number of bytes in a part of a large file.
 - `s3_api_url` (String) The base URL to use for S3-compatible API calls.
 
 <a id="nestedatt--allowed"></a>

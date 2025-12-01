@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Add `buckets` list to `b2_account_info` data source to support multi-bucket application keys
 * Add `bucket_ids` list to `b2_application_key` resource and data source to support multi-bucket application keys
+* Add `recommended_part_size` and `absolute_minimum_part_size` to `b2_account_info` data source
 
 ### Changed
 * Migrate to B2 native api v4
@@ -34,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgrade pyinstaller to 6.11.1
 * Use `go vet` for linting
 * Use Go 1.24.1
-* * Use `golangci-lint` for linting and formatting
+* Use `golangci-lint` for linting and formatting
 * Deprecate macOS 13
 * Deprecate Windows 2019
 * Upgrade supported Terraform versions to 1.13 and 1.12

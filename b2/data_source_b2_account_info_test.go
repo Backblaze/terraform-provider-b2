@@ -37,6 +37,8 @@ func TestAccDataSourceB2AccountInfo_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(dataSourceName, "allowed.0.bucket_id", ""),   // deprecated
 					resource.TestMatchResourceAttr(dataSourceName, "download_url", regexp.MustCompile("https://f00[0-9].backblazeb2.com")),
 					resource.TestMatchResourceAttr(dataSourceName, "s3_api_url", regexp.MustCompile("https://s3.(us-west|eu-central)-00[0-9].backblazeb2.com")),
+					resource.TestMatchResourceAttr(dataSourceName, "recommended_part_size", regexp.MustCompile("^[1-9][0-9]*$")),
+					resource.TestMatchResourceAttr(dataSourceName, "absolute_minimum_part_size", regexp.MustCompile("^[1-9][0-9]*$")),
 				),
 			},
 		},
