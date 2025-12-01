@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Deprecate `bucket_name` and `bucket_id` in `b2_account_info` data source in favor of `buckets` list
 * Deprecate `bucket_id` in `b2_application_key` resource and data source in favor of `bucket_ids` list
 
+### Infrastructure
+* Upgrade pyinstaller to 6.17.0
+
 ## [0.11.0] - 2025-10-27
 
 ### Added
