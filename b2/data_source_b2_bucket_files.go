@@ -68,14 +68,15 @@ func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, me
 		"recursive":     d.Get("recursive").(bool),
 	}
 
-	output, err := client.apply(ctx, name, op, input)
+	var bucketFiles BucketFilesSchema
+	err := client.apply(ctx, name, op, input, &bucketFiles)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output["_sha1"].(string))
+	d.SetId(bucketFiles.Sha1)
 
-	err = client.populate(ctx, name, op, output, d)
+	err = client.populate(ctx, name, op, &bucketFiles, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
