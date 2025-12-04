@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2025-12-04
+
 ### Added
 * Add `buckets` list to `b2_account_info` data source to support multi-bucket application keys
 * Add `bucket_ids` list to `b2_application_key` resource and data source to support multi-bucket application keys
@@ -240,7 +242,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.12...v0.9.0
