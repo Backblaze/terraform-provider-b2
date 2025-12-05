@@ -80,6 +80,11 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"expiration_timestamp": {
+				Description: "When present, says when this key will expire, in milliseconds since 1970.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
 			"options": {
 				Description: "List of application key options.",
 				Type:        schema.TypeSet,
@@ -87,6 +92,13 @@ func resourceB2ApplicationKey() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Computed: true,
+			},
+			"valid_duration_in_seconds": {
+				Description:  "When provided, the key will expire after the given number of seconds, and will have expirationTimestamp set. Value must be a positive integer, and must be less than 1000 days (in seconds).",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IntBetween(1, 86400000),
 			},
 			"bucket_id": {
 				Description:   "When present, restricts access to one bucket.",
@@ -113,9 +125,10 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 	const op = RESOURCE_CREATE
 
 	input := map[string]interface{}{
-		"key_name":     d.Get("key_name").(string),
-		"capabilities": d.Get("capabilities").(*schema.Set).List(),
-		"name_prefix":  d.Get("name_prefix").(string),
+		"key_name":                  d.Get("key_name").(string),
+		"capabilities":              d.Get("capabilities").(*schema.Set).List(),
+		"name_prefix":               d.Get("name_prefix").(string),
+		"valid_duration_in_seconds": d.Get("valid_duration_in_seconds").(int),
 	}
 
 	// Handle backward compatibility
@@ -133,6 +146,11 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 
 	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Preserve valid_duration_in_seconds in state
+	if err := d.Set("valid_duration_in_seconds", input["valid_duration_in_seconds"]); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -167,9 +185,15 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	applicationKey.ApplicationKey = d.Get("application_key").(string)
+	validDuration := d.Get("valid_duration_in_seconds").(int)
 
 	err = client.populate(ctx, name, op, &applicationKey, d)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Restore valid_duration_in_seconds in state
+	if err := d.Set("valid_duration_in_seconds", validDuration); err != nil {
 		return diag.FromErr(err)
 	}
 

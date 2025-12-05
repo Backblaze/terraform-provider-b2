@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `buckets` list to `b2_account_info` data source to support multi-bucket application keys
 * Add `bucket_ids` list to `b2_application_key` resource and data source to support multi-bucket application keys
 * Add `recommended_part_size` and `absolute_minimum_part_size` to `b2_account_info` data source
+* Add `expiration_timestamp` to `b2_application_key` resource and data source
+* Add `valid_duration_in_seconds` to `b2_application_key` resource
 
 ### Changed
 * Migrate to B2 native api v4
@@ -20,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 * Deprecate `bucket_name` and `bucket_id` in `b2_account_info` data source in favor of `buckets` list
 * Deprecate `bucket_id` in `b2_application_key` resource and data source in favor of `bucket_ids` list
+
+### Fixed
+* Remove setting fields as optional in various data sources
 
 ### Infrastructure
 * Upgrade pyinstaller to 6.17.0

@@ -140,12 +140,22 @@ class ApplicationKey(Command):
 
         raise RuntimeError(f'Could not find Application Key for "{key_name}"')
 
-    def resource_create(self, *, key_name, capabilities, bucket_ids, name_prefix, **kwargs):
+    def resource_create(
+        self,
+        *,
+        key_name,
+        capabilities,
+        bucket_ids,
+        name_prefix,
+        valid_duration_in_seconds,
+        **kwargs,
+    ):
         key = self.api.create_key(
             key_name=key_name,
             capabilities=capabilities,
             bucket_ids=bucket_ids or None,
             name_prefix=name_prefix or None,
+            valid_duration_seconds=valid_duration_in_seconds or None,
         )
         return self._postprocess(key)
 
