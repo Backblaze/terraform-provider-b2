@@ -3,38 +3,38 @@ before:
   hooks:
     - go mod download
 builds:
-- binary: '{{ .ProjectName }}_{{ .Version }}'
-  mod_timestamp: '{{ .CommitTimestamp }}'
-  flags:
-    - -trimpath
-  ldflags:
-    - '-s -w -X main.version={{.Version}}'
-  goos:
-    - linux
-    - darwin
-    - windows
-  goarch:
-    - amd64
-    - arm64
-  ignore:
-    - goos: windows
-      goarch: arm64
-  hooks:
-    pre:
-      - cp python-bindings/dist/py-terraform-provider-b2-{{ .Os }}-{{ .Arch }} b2/py-terraform-provider-b2
-    post:
-      - rm -f b2/py-terraform-provider-b2
+  - binary: "{{ .ProjectName }}_{{ .Version }}"
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - "-s -w -X main.version={{.Version}}"
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    hooks:
+      pre:
+        - cp python-bindings/dist/py-terraform-provider-b2-{{ .Os }}-{{ .Arch }} b2/py-terraform-provider-b2
+      post:
+        - rm -f b2/py-terraform-provider-b2
 env:
   # goreleaser does not work with CGO, it could also complicate
   # usage by users in CI/CD systems like Terraform Cloud where
   # they are unable to install libraries.
   - CGO_ENABLED=0
 archives:
-- formats:
-    - zip
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+  - formats:
+      - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 checksum:
-  name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
 signs:
   - artifacts: checksum
