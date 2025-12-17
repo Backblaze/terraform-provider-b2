@@ -53,24 +53,22 @@ func dataSourceB2BucketFileSignedUrl() *schema.Resource {
 
 func dataSourceB2BucketFileSignedUrlRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_file_signed_url"
-	const op = DATA_SOURCE_READ
 
-	input := map[string]interface{}{
-		"bucket_id": d.Get("bucket_id").(string),
-		"file_name": d.Get("file_name").(string),
-		"duration":  d.Get("duration").(int),
+	input := BucketFileSignedUrlInput{
+		BucketId: d.Get("bucket_id").(string),
+		FileName: d.Get("file_name").(string),
+		Duration: d.Get("duration").(int),
 	}
 
-	var signedUrl BucketFileSignedUrlSchema
-	err := client.apply(ctx, name, op, input, &signedUrl)
+	var output BucketFileSignedUrlOutput
+	err := client.Apply(ctx, OpDataSourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(signedUrl.SignedUrl)
+	d.SetId(output.SignedUrl)
 
-	err = client.populate(ctx, name, op, &signedUrl, d)
+	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

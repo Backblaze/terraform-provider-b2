@@ -121,27 +121,25 @@ func resourceB2BucketFileVersion() *schema.Resource {
 
 func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_file_version"
-	const op = RESOURCE_CREATE
 
-	input := map[string]interface{}{
-		"bucket_id":              d.Get("bucket_id").(string),
-		"file_name":              d.Get("file_name").(string),
-		"source":                 d.Get("source").(string),
-		"content_type":           d.Get("content_type").(string),
-		"file_info":              d.Get("file_info").(map[string]interface{}),
-		"server_side_encryption": d.Get("server_side_encryption").([]interface{}),
+	input := BucketFileVersionInput{
+		BucketId:             d.Get("bucket_id").(string),
+		FileName:             d.Get("file_name").(string),
+		Source:               d.Get("source").(string),
+		ContentType:          d.Get("content_type").(string),
+		FileInfo:             d.Get("file_info").(map[string]interface{}),
+		ServerSideEncryption: d.Get("server_side_encryption").([]interface{}),
 	}
 
-	var fileVersion BucketFileVersionSchema
-	err := client.apply(ctx, name, op, input, &fileVersion)
+	var output BucketFileVersionOutput
+	err := client.Apply(ctx, OpResourceCreate, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(fileVersion.FileId)
+	d.SetId(output.FileId)
 
-	err = client.populate(ctx, name, op, &fileVersion, d)
+	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -151,24 +149,22 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 
 func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_file_version"
-	const op = RESOURCE_READ
 
-	input := map[string]interface{}{
-		"file_id": d.Id(),
+	input := BucketFileVersionInput{
+		FileId: d.Id(),
 	}
 
-	var fileVersion BucketFileVersionSchema
-	err := client.apply(ctx, name, op, input, &fileVersion)
+	var output BucketFileVersionOutput
+	err := client.Apply(ctx, OpResourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// These fields are not returned by the API but are needed for the resource
-	fileVersion.BucketId = d.Get("bucket_id").(string)
-	fileVersion.Source = d.Get("source").(string)
+	output.BucketId = d.Get("bucket_id").(string)
+	output.Source = d.Get("source").(string)
 
-	err = client.populate(ctx, name, op, &fileVersion, d)
+	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -178,15 +174,13 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 
 func resourceB2BucketFileVersionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_file_version"
-	const op = RESOURCE_DELETE
 
-	input := map[string]interface{}{
-		"file_id":   d.Id(),
-		"file_name": d.Get("file_name").(string),
+	input := BucketFileVersionInput{
+		FileId:   d.Id(),
+		FileName: d.Get("file_name").(string),
 	}
 
-	err := client.apply(ctx, name, op, input, nil)
+	err := client.Apply(ctx, OpResourceDelete, &input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

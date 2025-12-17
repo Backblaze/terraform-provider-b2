@@ -41,9 +41,27 @@ func convertReflectValue(v reflect.Value, wrapPointers bool) interface{} {
 		for i := 0; i < v.NumField(); i++ {
 			field := t.Field(i)
 			jsonTag := field.Tag.Get("json")
+
+			// Handle anonymous embedded structs by flattening their fields
+			if field.Anonymous && jsonTag == "" {
+				embeddedMap := convertReflectValue(v.Field(i), true)
+				if em, ok := embeddedMap.(map[string]interface{}); ok {
+					// Merge embedded struct fields into parent map
+					for k, v := range em {
+						m[k] = v
+					}
+				}
+				continue
+			}
+
 			if jsonTag != "" && jsonTag != "-" {
+				// Extract field name from JSON tag (before comma for options like omitempty)
+				fieldName := jsonTag
+				if commaIdx := strings.Index(jsonTag, ","); commaIdx != -1 {
+					fieldName = jsonTag[:commaIdx]
+				}
 				// Convert camelCase to snake_case
-				snakeKey := convertCamelToSnake(jsonTag)
+				snakeKey := convertCamelToSnake(fieldName)
 				// When processing struct fields, wrap pointers in arrays
 				m[snakeKey] = convertReflectValue(v.Field(i), true)
 			}

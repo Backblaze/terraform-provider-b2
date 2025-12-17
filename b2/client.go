@@ -22,13 +22,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	DATA_SOURCE_READ string = "data_source_read"
+// Operation represents a Terraform operation type
+type Operation string
 
-	RESOURCE_CREATE string = "resource_create"
-	RESOURCE_READ   string = "resource_read"
-	RESOURCE_UPDATE string = "resource_update"
-	RESOURCE_DELETE string = "resource_delete"
+const (
+	OpDataSourceRead Operation = "data_source_read"
+	OpResourceCreate Operation = "resource_create"
+	OpResourceRead   Operation = "resource_read"
+	OpResourceUpdate Operation = "resource_update"
+	OpResourceDelete Operation = "resource_delete"
 )
 
 type Client struct {
@@ -41,25 +43,31 @@ type Client struct {
 	ResourcesMap     map[string]*schema.Resource
 }
 
-func (c Client) apply(ctx context.Context, name string, op string, input map[string]interface{}, output interface{}) error {
+// Apply executes a provider operation with typed input and output.
+func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, output ResourceSchema) error {
+	name := input.ResourceName()
+
 	tflog.Info(ctx, "Executing pybindings", map[string]interface{}{
 		"name": name,
 		"op":   op,
 	})
 
+	// Convert input struct to map for backward compatibility with Python bindings
+	inputMap := convertStructToMap(input)
+
 	tflog.Debug(ctx, "Input for pybindings", map[string]interface{}{
-		"input": input,
+		"input": inputMap,
 	})
 
-	cmd := exec.Command(c.Exec, name, op)
+	cmd := exec.Command(c.Exec, name, string(op))
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("B2_USER_AGENT_APPEND=%s", c.UserAgentAppend))
 
-	input["provider_application_key_id"] = c.ApplicationKeyId
-	input["provider_application_key"] = c.ApplicationKey
-	input["provider_endpoint"] = c.Endpoint
+	inputMap["provider_application_key_id"] = c.ApplicationKeyId
+	inputMap["provider_application_key"] = c.ApplicationKey
+	inputMap["provider_endpoint"] = c.Endpoint
 
-	inputJson, err := json.Marshal(input)
+	inputJson, err := json.Marshal(inputMap)
 	if err != nil {
 		// Should never happen
 		return err
@@ -106,7 +114,10 @@ func (c Client) apply(ctx context.Context, name string, op string, input map[str
 	return nil
 }
 
-func (c Client) populate(ctx context.Context, name string, op string, output interface{}, d *schema.ResourceData) error {
+// Populate fills the Terraform ResourceData with values from the typed output.
+func (c Client) Populate(ctx context.Context, op Operation, output ResourceSchema, d *schema.ResourceData) error {
+	name := output.ResourceName()
+
 	tflog.Info(ctx, "Populating data from pybindings", map[string]interface{}{
 		"name": name,
 		"op":   op,
@@ -136,9 +147,9 @@ func (c Client) populate(ctx context.Context, name string, op string, output int
 	return nil
 }
 
-func (c Client) getSchemaMap(name string, op string) map[string]*schema.Schema {
+func (c Client) getSchemaMap(name string, op Operation) map[string]*schema.Schema {
 	resourceName := "b2_" + name
-	if op == DATA_SOURCE_READ {
+	if op == OpDataSourceRead {
 		if ds, ok := c.DataSourcesMap[resourceName]; ok {
 			return ds.Schema
 		}

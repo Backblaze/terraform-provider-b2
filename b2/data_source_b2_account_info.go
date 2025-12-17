@@ -72,20 +72,18 @@ func dataSourceB2AccountInfo() *schema.Resource {
 
 func dataSourceB2AccountInfoRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "account_info"
-	const op = DATA_SOURCE_READ
 
-	input := map[string]interface{}{}
+	input := AccountInfoInput{}
 
-	var accountInfo AccountInfoSchema
-	err := client.apply(ctx, name, op, input, &accountInfo)
+	var output AccountInfoOutput
+	err := client.Apply(ctx, OpDataSourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(accountInfo.AccountId)
+	d.SetId(output.AccountId)
 
-	err = client.populate(ctx, name, op, &accountInfo, d)
+	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -121,28 +121,26 @@ func resourceB2Bucket() *schema.Resource {
 
 func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket"
-	const op = RESOURCE_CREATE
 
-	input := map[string]interface{}{
-		"bucket_name":                    d.Get("bucket_name").(string),
-		"bucket_type":                    d.Get("bucket_type").(string),
-		"bucket_info":                    d.Get("bucket_info").(map[string]interface{}),
-		"cors_rules":                     d.Get("cors_rules").([]interface{}),
-		"file_lock_configuration":        d.Get("file_lock_configuration").([]interface{}),
-		"default_server_side_encryption": d.Get("default_server_side_encryption").([]interface{}),
-		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
+	input := BucketInput{
+		BucketName:                  d.Get("bucket_name").(string),
+		BucketType:                  d.Get("bucket_type").(string),
+		BucketInfo:                  d.Get("bucket_info").(map[string]interface{}),
+		CorsRules:                   d.Get("cors_rules").([]interface{}),
+		FileLockConfiguration:       d.Get("file_lock_configuration").([]interface{}),
+		DefaultServerSideEncryption: d.Get("default_server_side_encryption").([]interface{}),
+		LifecycleRules:              d.Get("lifecycle_rules").([]interface{}),
 	}
 
-	var bucket BucketSchema
-	err := client.apply(ctx, name, op, input, &bucket)
+	var output BucketOutput
+	err := client.Apply(ctx, OpResourceCreate, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(bucket.BucketId)
+	d.SetId(output.BucketId)
 
-	err = client.populate(ctx, name, op, &bucket, d)
+	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -152,20 +150,17 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket"
-	const op = RESOURCE_READ
 
-	input := map[string]interface{}{
-		"bucket_id":  d.Id(),
-		"cors_rules": d.Get("cors_rules"),
+	input := BucketInput{
+		BucketId: d.Id(),
 	}
 
-	var bucket BucketSchema
-	err := client.apply(ctx, name, op, input, &bucket)
+	var output BucketOutput
+	err := client.Apply(ctx, OpResourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if bucket.BucketId == "" && !d.IsNewResource() {
+	if output.BucketId == "" && !d.IsNewResource() {
 		// deleted bucket
 		tflog.Warn(ctx, "Bucket not found, possible resource drift", map[string]interface{}{
 			"bucket_id": d.Id(),
@@ -174,7 +169,7 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return nil
 	}
 
-	err = client.populate(ctx, name, op, &bucket, d)
+	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -184,27 +179,25 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket"
-	const op = RESOURCE_UPDATE
 
-	input := map[string]interface{}{
-		"bucket_id":                      d.Id(),
-		"account_id":                     d.Get("account_id").(string),
-		"bucket_type":                    d.Get("bucket_type").(string),
-		"bucket_info":                    d.Get("bucket_info").(map[string]interface{}),
-		"cors_rules":                     d.Get("cors_rules").([]interface{}),
-		"file_lock_configuration":        d.Get("file_lock_configuration").([]interface{}),
-		"default_server_side_encryption": d.Get("default_server_side_encryption").([]interface{}),
-		"lifecycle_rules":                d.Get("lifecycle_rules").([]interface{}),
+	input := BucketInput{
+		BucketId:                    d.Id(),
+		AccountId:                   d.Get("account_id").(string),
+		BucketType:                  d.Get("bucket_type").(string),
+		BucketInfo:                  d.Get("bucket_info").(map[string]interface{}),
+		CorsRules:                   d.Get("cors_rules").([]interface{}),
+		FileLockConfiguration:       d.Get("file_lock_configuration").([]interface{}),
+		DefaultServerSideEncryption: d.Get("default_server_side_encryption").([]interface{}),
+		LifecycleRules:              d.Get("lifecycle_rules").([]interface{}),
 	}
 
-	var bucket BucketSchema
-	err := client.apply(ctx, name, op, input, &bucket)
+	var output BucketOutput
+	err := client.Apply(ctx, OpResourceUpdate, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.populate(ctx, name, op, &bucket, d)
+	err = client.Populate(ctx, OpResourceUpdate, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -214,14 +207,12 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket"
-	const op = RESOURCE_DELETE
 
-	input := map[string]interface{}{
-		"bucket_id": d.Id(),
+	input := BucketInput{
+		BucketId: d.Id(),
 	}
 
-	err := client.apply(ctx, name, op, input, nil)
+	err := client.Apply(ctx, OpResourceDelete, &input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

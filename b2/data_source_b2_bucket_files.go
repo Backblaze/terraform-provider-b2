@@ -58,25 +58,23 @@ func dataSourceB2BucketFiles() *schema.Resource {
 
 func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_files"
-	const op = DATA_SOURCE_READ
 
-	input := map[string]interface{}{
-		"bucket_id":     d.Get("bucket_id").(string),
-		"folder_name":   d.Get("folder_name").(string),
-		"show_versions": d.Get("show_versions").(bool),
-		"recursive":     d.Get("recursive").(bool),
+	input := BucketFilesInput{
+		BucketId:     d.Get("bucket_id").(string),
+		FolderName:   d.Get("folder_name").(string),
+		ShowVersions: d.Get("show_versions").(bool),
+		Recursive:    d.Get("recursive").(bool),
 	}
 
-	var bucketFiles BucketFilesSchema
-	err := client.apply(ctx, name, op, input, &bucketFiles)
+	var output BucketFilesOutput
+	err := client.Apply(ctx, OpDataSourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(bucketFiles.Sha1)
+	d.SetId(output.Sha1)
 
-	err = client.populate(ctx, name, op, &bucketFiles, d)
+	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

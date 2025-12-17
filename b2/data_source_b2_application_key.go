@@ -82,22 +82,20 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 
 func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "application_key"
-	const op = DATA_SOURCE_READ
 
-	input := map[string]interface{}{
-		"key_name": d.Get("key_name").(string),
+	input := ApplicationKeyInput{
+		KeyName: d.Get("key_name").(string),
 	}
 
-	var applicationKey ApplicationKeySchema
-	err := client.apply(ctx, name, op, input, &applicationKey)
+	var output ApplicationKeyOutput
+	err := client.Apply(ctx, OpDataSourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(applicationKey.ApplicationKeyId)
+	d.SetId(output.ApplicationKeyId)
 
-	err = client.populate(ctx, name, op, &applicationKey, d)
+	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}

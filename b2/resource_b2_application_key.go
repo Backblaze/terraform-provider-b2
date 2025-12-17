@@ -121,36 +121,39 @@ func resourceB2ApplicationKey() *schema.Resource {
 
 func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "application_key"
-	const op = RESOURCE_CREATE
 
-	input := map[string]interface{}{
-		"key_name":                  d.Get("key_name").(string),
-		"capabilities":              d.Get("capabilities").(*schema.Set).List(),
-		"name_prefix":               d.Get("name_prefix").(string),
-		"valid_duration_in_seconds": d.Get("valid_duration_in_seconds").(int),
+	// Handle backward compatibility for bucket_id -> bucket_ids
+	bucketIds := d.Get("bucket_ids").(*schema.Set).List()
+	var bucketId string
+	if bid, ok := d.GetOk("bucket_id"); ok && bid.(string) != "" {
+		bucketIds = []interface{}{bid.(string)}
+		bucketId = bid.(string)
 	}
 
-	// Handle backward compatibility
-	for k, v := range resourceB2ApplicationKeyApplyDeprecatedToCurrent(d) {
-		input[k] = v
+	input := ApplicationKeyInput{
+		KeyName:                d.Get("key_name").(string),
+		Capabilities:           d.Get("capabilities").(*schema.Set).List(),
+		NamePrefix:             d.Get("name_prefix").(string),
+		ValidDurationInSeconds: d.Get("valid_duration_in_seconds").(int),
+		BucketIds:              bucketIds,
+		BucketId:               bucketId,
 	}
 
-	var applicationKey ApplicationKeySchema
-	err := client.apply(ctx, name, op, input, &applicationKey)
+	var output ApplicationKeyOutput
+	err := client.Apply(ctx, OpResourceCreate, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(applicationKey.ApplicationKeyId)
+	d.SetId(output.ApplicationKeyId)
 
-	err = client.populate(ctx, name, op, &applicationKey, d)
+	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Preserve valid_duration_in_seconds in state
-	if err := d.Set("valid_duration_in_seconds", input["valid_duration_in_seconds"]); err != nil {
+	if err := d.Set("valid_duration_in_seconds", input.ValidDurationInSeconds); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -163,19 +166,17 @@ func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData,
 
 func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "application_key"
-	const op = RESOURCE_READ
 
-	input := map[string]interface{}{
-		"application_key_id": d.Id(),
+	input := ApplicationKeyInput{
+		ApplicationKeyId: d.Id(),
 	}
 
-	var applicationKey ApplicationKeySchema
-	err := client.apply(ctx, name, op, input, &applicationKey)
+	var output ApplicationKeyOutput
+	err := client.Apply(ctx, OpResourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if applicationKey.ApplicationKeyId == "" && !d.IsNewResource() {
+	if output.ApplicationKeyId == "" && !d.IsNewResource() {
 		// deleted application key
 		tflog.Warn(ctx, "Application Key not found, possible resource drift", map[string]interface{}{
 			"application_key_id": d.Id(),
@@ -184,10 +185,10 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 		return nil
 	}
 
-	applicationKey.ApplicationKey = d.Get("application_key").(string)
+	output.ApplicationKey = d.Get("application_key").(string)
 	validDuration := d.Get("valid_duration_in_seconds").(int)
 
-	err = client.populate(ctx, name, op, &applicationKey, d)
+	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -206,14 +207,12 @@ func resourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData, m
 
 func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "application_key"
-	const op = RESOURCE_DELETE
 
-	input := map[string]interface{}{
-		"application_key_id": d.Id(),
+	input := ApplicationKeyInput{
+		ApplicationKeyId: d.Id(),
 	}
 
-	err := client.apply(ctx, name, op, input, nil)
+	err := client.Apply(ctx, OpResourceDelete, &input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -221,16 +220,6 @@ func resourceB2ApplicationKeyDelete(ctx context.Context, d *schema.ResourceData,
 	d.SetId("")
 
 	return nil
-}
-
-func resourceB2ApplicationKeyApplyDeprecatedToCurrent(d *schema.ResourceData) map[string]interface{} {
-	bucketIds := d.Get("bucket_ids").(*schema.Set).List()
-	if bucketId, ok := d.GetOk("bucket_id"); ok && bucketId.(string) != "" {
-		bucketIds = []interface{}{bucketId.(string)}
-	}
-	return map[string]interface{}{
-		"bucket_ids": bucketIds,
-	}
 }
 
 func resourceB2ApplicationKeyPopulateDeprecatedToCurrent(d *schema.ResourceData) error {

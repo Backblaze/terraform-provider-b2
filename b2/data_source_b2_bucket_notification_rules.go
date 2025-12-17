@@ -43,22 +43,20 @@ func dataSourceB2BucketNotificationRules() *schema.Resource {
 
 func dataSourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_notification_rules"
-	const op = DATA_SOURCE_READ
 
-	input := map[string]interface{}{
-		"bucket_id": d.Get("bucket_id").(string),
+	input := BucketNotificationRulesInput{
+		BucketId: d.Get("bucket_id").(string),
 	}
 
-	var notificationRules BucketNotificationRulesSchema
-	err := client.apply(ctx, name, op, input, &notificationRules)
+	var output BucketNotificationRulesOutput
+	err := client.Apply(ctx, OpDataSourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(notificationRules.BucketId)
+	d.SetId(output.BucketId)
 
-	err = client.populate(ctx, name, op, &notificationRules, d)
+	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
