@@ -150,7 +150,7 @@ class ApplicationKey(Command):
         raise RuntimeError(f'Could not find Application Key for "{key_name}"')
 
     def resource_create(self, *, apiver=None, **kwargs):
-        if apiver is None or apiver == 'v3':
+        if not apiver or apiver == 'v3':
             return self.resource_create_v3(**kwargs)
         if apiver == 'v2':
             return self.resource_create_v2(**kwargs)

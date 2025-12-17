@@ -97,22 +97,20 @@ func dataSourceB2Bucket() *schema.Resource {
 
 func dataSourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket"
-	const op = DATA_SOURCE_READ
 
-	input := map[string]interface{}{
-		"bucket_name": d.Get("bucket_name").(string),
+	input := BucketInput{
+		BucketName: d.Get("bucket_name").(string),
 	}
 
-	var bucket BucketSchema
-	err := client.apply(ctx, name, op, input, &bucket)
+	var output BucketOutput
+	err := client.Apply(ctx, OpDataSourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(bucket.BucketId)
+	d.SetId(output.BucketId)
 
-	err = client.populate(ctx, name, op, &bucket, d)
+	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
