@@ -121,9 +121,6 @@ func (c Client) populate(ctx context.Context, name string, op string, output int
 	outputMap := convertStructToMap(output)
 
 	for k := range schemaMap {
-		if schemaMap[k].Deprecated != "" {
-			continue
-		}
 		v, ok := outputMap[k]
 		if !ok {
 			return fmt.Errorf("error getting %s", k)
