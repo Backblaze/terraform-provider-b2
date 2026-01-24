@@ -98,20 +98,5 @@ func dataSourceB2ApplicationKeyRead(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	if err := dataSourceB2ApplicationKeyPopulateDeprecated(d); err != nil {
-		return diag.FromErr(err)
-	}
-
 	return nil
-}
-
-func dataSourceB2ApplicationKeyPopulateDeprecated(d *schema.ResourceData) error {
-	if bucketIds, ok := d.GetOk("bucket_ids"); ok {
-		bucketIdsList := bucketIds.(*schema.Set).List()
-		if len(bucketIdsList) > 0 {
-			return d.Set("bucket_id", bucketIdsList[0].(string))
-		}
-	}
-	// Set empty string if no bucket_ids
-	return d.Set("bucket_id", "")
 }

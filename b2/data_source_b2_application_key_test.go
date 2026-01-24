@@ -62,6 +62,36 @@ func TestAccDataSourceB2ApplicationKey_all(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(dataSourceName, "application_key_id", resourceName, "application_key_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_ids", resourceName, "bucket_ids"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_ids.0"), // deprecated
+					resource.TestCheckResourceAttr(dataSourceName, "capabilities.#", "1"),
+					resource.TestCheckResourceAttr(dataSourceName, "capabilities.0", "writeFiles"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "capabilities", resourceName, "capabilities"),
+					resource.TestCheckResourceAttr(dataSourceName, "key_name", keyName),
+					resource.TestCheckResourceAttrPair(dataSourceName, "key_name", resourceName, "key_name"),
+					resource.TestCheckResourceAttr(dataSourceName, "name_prefix", "prefix"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "name_prefix", resourceName, "name_prefix"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "options", resourceName, "options"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceB2ApplicationKey_deprecatedBucketId(t *testing.T) {
+	resourceName := "b2_application_key.test"
+	dataSourceName := "data.b2_application_key.test"
+
+	keyName := acctest.RandomWithPrefix("test-b2-tfp")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataSourceB2ApplicationKeyConfig_deprecatedBucketId(keyName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(dataSourceName, "application_key_id", resourceName, "application_key_id"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_ids", resourceName, "bucket_ids"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"), // deprecated
 					resource.TestCheckResourceAttr(dataSourceName, "capabilities.#", "1"),
 					resource.TestCheckResourceAttr(dataSourceName, "capabilities.0", "writeFiles"),
@@ -105,6 +135,30 @@ resource "b2_application_key" "test" {
   key_name = "%s"
   capabilities = ["writeFiles"]
   bucket_ids = [b2_bucket.test.bucket_id]
+  name_prefix = "prefix"
+}
+
+data "b2_application_key" "test" {
+  key_name = b2_application_key.test.key_name
+
+  depends_on = [
+    b2_application_key.test,
+  ]
+}
+`, keyName, keyName)
+}
+
+func testAccDataSourceB2ApplicationKeyConfig_deprecatedBucketId(keyName string) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+  bucket_name = "%s"
+  bucket_type = "allPrivate"
+}
+
+resource "b2_application_key" "test" {
+  key_name = "%s"
+  capabilities = ["writeFiles"]
+  bucket_id = b2_bucket.test.bucket_id
   name_prefix = "prefix"
 }
 
