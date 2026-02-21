@@ -1,4 +1,3 @@
 b2sdk==2.10.1
 phx-class-registry>=4.0,<5
 pyhumps==1.6.1
-setuptools>=60,<80; python_version < '3.10'  # required by phx-class-registry<4.1
