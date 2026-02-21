@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `expiration_timestamp` to `b2_application_key` resource and data source
 * Add `valid_duration_in_seconds` to `b2_application_key` resource
 
+### Infrastructure
+* Upgrade Terraform versions in CI to 1.14 and 1.13
+
 ## [0.12.1] - 2026-02-21
 
 ### Fixed
