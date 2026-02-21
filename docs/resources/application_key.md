@@ -23,7 +23,7 @@ B2 application key resource.
 ### Optional
 
 - `bucket_id` (String, Deprecated) When present, restricts access to one bucket. Conflicts with `bucket_ids`. **Modifying this attribute will force creation of a new resource.**
-- `bucket_ids` (Set of String) When provided, the new key can only access the specified buckets. **Modifying this attribute will force creation of a new resource.**
+- `bucket_ids` (Set of String) When provided, the new key can only access the specified buckets. Conflicts with `bucket_id`. **Modifying this attribute will force creation of a new resource.**
 - `name_prefix` (String) When present, restricts access to files whose names start with the prefix. **Modifying this attribute will force creation of a new resource.**
 - `valid_duration_in_seconds` (Number) When provided, the key will expire after the given number of seconds, and will have expirationTimestamp set. Value must be a positive integer, and must be less than 1000 days (in seconds). **Modifying this attribute will force creation of a new resource.**
 

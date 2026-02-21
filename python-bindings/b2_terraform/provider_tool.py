@@ -13,9 +13,11 @@ import json
 import hashlib
 import sys
 import traceback
+from functools import cached_property
 
 from class_registry import ClassRegistry
 from humps import camelize, decamelize
+from b2sdk.v2 import B2Api as B2ApiV2
 from b2sdk.v3 import (
     B2Api,
     BucketRetentionSetting,
@@ -44,7 +46,14 @@ class Command:
 
     def __init__(self, provider_tool: "ProviderTool"):
         self.provider_tool = provider_tool
-        self.api = provider_tool.api
+
+    @property
+    def api(self) -> B2Api:
+        return self.provider_tool.api
+
+    @property
+    def api_v2(self) -> B2ApiV2:
+        return self.provider_tool.api_v2
 
     @classmethod
     def name(cls):
@@ -140,7 +149,15 @@ class ApplicationKey(Command):
 
         raise RuntimeError(f'Could not find Application Key for "{key_name}"')
 
-    def resource_create(
+    def resource_create(self, *, apiver=None, **kwargs):
+        if apiver is None or apiver == 'v3':
+            return self.resource_create_v3(**kwargs)
+        if apiver == 'v2':
+            return self.resource_create_v2(**kwargs)
+
+        raise ValueError(f'Unrecognized apiver: {apiver}')
+
+    def resource_create_v3(
         self,
         *,
         key_name,
@@ -154,6 +171,18 @@ class ApplicationKey(Command):
             key_name=key_name,
             capabilities=capabilities,
             bucket_ids=bucket_ids or None,
+            name_prefix=name_prefix or None,
+            valid_duration_seconds=valid_duration_in_seconds or None,
+        )
+        return self._postprocess(key)
+
+    def resource_create_v2(
+        self, *, key_name, capabilities, bucket_id, name_prefix, valid_duration_in_seconds, **kwargs
+    ):
+        key = self.api_v2.create_key(
+            key_name=key_name,
+            capabilities=capabilities,
+            bucket_id=bucket_id or None,
             name_prefix=name_prefix or None,
             valid_duration_seconds=valid_duration_in_seconds or None,
         )
@@ -173,10 +202,13 @@ class ApplicationKey(Command):
         self.api.delete_key_by_id(application_key_id=application_key_id)
 
     def _postprocess(self, obj=None, **kwargs):
-        kwargs.setdefault('bucketIds', None)
-        kwargs.setdefault('namePrefix', None)
-        kwargs.setdefault('options', None)
-        return super()._postprocess(obj, **kwargs)
+        kwargs.update(obj.as_dict())
+        if bucket_ids := kwargs.get('bucketIds'):
+            kwargs['bucketId'] = bucket_ids[0]
+        elif bucket_id := kwargs.get('bucketId'):
+            kwargs['bucketIds'] = [bucket_id]
+
+        return kwargs
 
 
 @B2Provider.register_subcommand
@@ -571,8 +603,16 @@ class AccountInfo(Command):
 
 
 class ProviderTool:
-    def __init__(self, b2_api: B2Api):
-        self.api = b2_api
+    def __init__(self) -> None:
+        self.account_info = InMemoryAccountInfo()
+
+    @cached_property
+    def api(self) -> B2Api:
+        return B2Api(account_info=self.account_info)
+
+    @cached_property
+    def api_v2(self) -> B2ApiV2:
+        return B2ApiV2(account_info=self.account_info)
 
     def run_command(self, argv) -> int:
         try:
@@ -592,9 +632,7 @@ class ProviderTool:
 
 
 def main():
-    b2_api = B2Api(account_info=InMemoryAccountInfo())
-    provider_tool = ProviderTool(b2_api=b2_api)
-    return provider_tool.run_command(sys.argv)
+    return ProviderTool().run_command(sys.argv)
 
 
 if __name__ == '__main__':

@@ -5,4 +5,7 @@ flake8~=7.1.1
 pyinstaller~=6.17.0
 patchelf-wrapper~=1.2 ; sys_platform == 'linux'
 setuptools<80 ; sys_platform == 'linux'
-staticx~=0.14.1 ; sys_platform == 'linux'
+staticx~=0.14.1 ; sys_platform == 'linux' and platform_machine == 'x86_64'
+# staticx 0.14.1 fails with "ModuleNotFoundError: No module named 'pkg_resources'" on linux/arm
+# and a new version is not yet available on PyPI
+staticx @ git+https://github.com/JonathonReinhart/staticx.git@main ; sys_platform == 'linux' and platform_machine == 'aarch64'
