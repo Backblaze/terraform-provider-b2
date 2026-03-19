@@ -13,11 +13,10 @@ deps:
 	@pip install -r requirements-dev.txt
 
 format:
-	@black -Sl 100 ${DIR}
+	@ruff format ${DIR}
 
 lint:
-	@black --check -Sl 100 ${DIR}
-	@flake8 --ignore=E501,W503 ${DIR}
+	@ruff check ${DIR}
 	@python ../scripts/check-headers.py '**/*.py'
 
 testacc: build

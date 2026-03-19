@@ -44,7 +44,7 @@ class Command:
     # The registry for the subcommands, should be reinitialized  in subclass
     subcommands_registry = None
 
-    def __init__(self, provider_tool: "ProviderTool"):
+    def __init__(self, provider_tool: 'ProviderTool'):
         self.provider_tool = provider_tool
 
     @property
@@ -331,7 +331,7 @@ class Bucket(Command):
         if default_server_side_encryption:
             mode = default_server_side_encryption[0]['mode'] or None
             if mode:
-                if mode != "none":
+                if mode != 'none':
                     algorithm = apply_or_none(
                         EncryptionAlgorithm,
                         default_server_side_encryption[0]['algorithm'] or 'AES256',
@@ -443,11 +443,11 @@ class BucketFileVersion(Command):
             mode = server_side_encryption[0]['mode'] or None
             if mode:
                 customer_key = None
-                if mode != "none":
+                if mode != 'none':
                     algorithm = apply_or_none(
                         EncryptionAlgorithm, server_side_encryption[0]['algorithm'] or 'AES256'
                     )
-                    if mode == "SSE-C":
+                    if mode == 'SSE-C':
                         key = server_side_encryption[0]['key'][0]
                         # EncryptionKey only accepts raw bytes as keys, not base 64
                         customer_key = EncryptionKey(
@@ -515,10 +515,10 @@ class BucketNotificationRules(Command):
     def _preprocess(self, **kwargs):
         notification_rules = []
         for notification_rule in kwargs.pop('notification_rules'):
-            if not notification_rule["target_configuration"][0]["hmac_sha256_signing_secret"]:
-                del notification_rule["target_configuration"][0]["hmac_sha256_signing_secret"]
-            notification_rule["target_configuration"] = change_keys(
-                notification_rule["target_configuration"][0], converter=camelize
+            if not notification_rule['target_configuration'][0]['hmac_sha256_signing_secret']:
+                del notification_rule['target_configuration'][0]['hmac_sha256_signing_secret']
+            notification_rule['target_configuration'] = change_keys(
+                notification_rule['target_configuration'][0], converter=camelize
             )
             notification_rule = change_keys(notification_rule, converter=camelize)
             notification_rules.append(notification_rule)
