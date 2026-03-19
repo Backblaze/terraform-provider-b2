@@ -36,6 +36,9 @@ website/vendor
 # Keep windows files with windows line endings
 *.winfile eol=crlf
 
+# Tool versions
+.tool-versions
+
 # Go
 .go-version
 
