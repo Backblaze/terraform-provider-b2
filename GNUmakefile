@@ -7,7 +7,7 @@ OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint testacc clean build install docs docs-lint
+.PHONY: _pybindings deps deps-check format lint vulncheck testacc clean build install docs docs-lint
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -22,6 +22,7 @@ deps: _pybindings
 	@cd tools && go mod download
 	@cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 	@cd tools && go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
+	@cd tools && go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
 	@cd tools && go mod tidy
 
 deps-check:
@@ -40,6 +41,10 @@ lint: _pybindings
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@go vet ./...
 	@golangci-lint run ./...
+
+vulncheck:
+	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
+	@govulncheck ./...
 
 testacc: _pybindings
 	@cp python-bindings/dist/py-terraform-provider-b2 b2/

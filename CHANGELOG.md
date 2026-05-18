@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Infrastructure
 * Upgrade Terraform versions in CI to 1.14 and 1.13
 * Use ruff as a python-bindings formatter/linter
+* Add `govulncheck` to developer tools
 
 ## [0.12.1] - 2026-02-21
 
