@@ -21,8 +21,8 @@ deps: _pybindings
 	@go mod tidy
 	@cd tools && go mod download
 	@cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
-	@cd tools && go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
-	@cd tools && go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+	@cd tools && go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+	@cd tools && go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
 	@cd tools && go mod tidy
 
 deps-check:

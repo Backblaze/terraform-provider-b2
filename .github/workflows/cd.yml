@@ -10,7 +10,7 @@ defaults:
 
 env:
   PYTHON_DEFAULT_VERSION: '3.13'
-  GO_DEFAULT_VERSION: '1.24'
+  GO_DEFAULT_VERSION: '1.25'
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:

@@ -22,7 +22,7 @@ func convertStructToMap(input interface{}) map[string]interface{} {
 
 func convertReflectValue(v reflect.Value, wrapPointers bool) interface{} {
 	// Handle pointers
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return []interface{}{}
 		}
