@@ -1,0 +1,14 @@
+exclude = [
+    "build",
+    "dist",
+]
+
+line-length = 100
+target-version = "py313"
+
+[lint]
+fixable = ["ALL"]
+unfixable = []
+
+[format]
+quote-style = "single"
