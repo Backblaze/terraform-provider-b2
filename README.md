@@ -13,7 +13,7 @@ Runtime requirements:
 -	[Terraform](https://www.terraform.io/downloads.html) >= 1.0.0
 
 Development requirements:
--	[Go](https://golang.org/doc/install) == 1.24
+-	[Go](https://golang.org/doc/install) == 1.25
 -	[Python](https://github.com/pyenv/pyenv) == 3.13
 
 Dependencies

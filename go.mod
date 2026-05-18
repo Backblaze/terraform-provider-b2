@@ -1,8 +1,8 @@
 module github.com/Backblaze/terraform-provider-b2
 
-go 1.24.0
+go 1.25.0
 
-toolchain go1.24.1
+toolchain go1.25.9
 
 require github.com/hashicorp/terraform-plugin-log v0.9.0
 
