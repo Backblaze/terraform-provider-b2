@@ -43,6 +43,9 @@ jobs:
       - name: Run linters
         run: |
           make lint
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
       - name: Run docs linters
         run: |
           make docs-lint
