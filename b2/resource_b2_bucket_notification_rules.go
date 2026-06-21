@@ -49,23 +49,21 @@ func resourceB2BucketNotificationRules() *schema.Resource {
 
 func resourceB2BucketNotificationRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_notification_rules"
-	const op = RESOURCE_CREATE
 
-	input := map[string]interface{}{
-		"bucket_id":          d.Get("bucket_id").(string),
-		"notification_rules": d.Get("notification_rules").([]interface{}),
+	input := BucketNotificationRulesInput{
+		BucketId:          d.Get("bucket_id").(string),
+		NotificationRules: d.Get("notification_rules").([]interface{}),
 	}
 
-	var notificationRules BucketNotificationRulesSchema
-	err := client.apply(ctx, name, op, input, &notificationRules)
+	var output BucketNotificationRulesOutput
+	err := client.Apply(ctx, OpResourceCreate, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(notificationRules.BucketId)
+	d.SetId(output.BucketId)
 
-	err = client.populate(ctx, name, op, &notificationRules, d)
+	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -75,19 +73,17 @@ func resourceB2BucketNotificationRulesCreate(ctx context.Context, d *schema.Reso
 
 func resourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_notification_rules"
-	const op = RESOURCE_READ
 
-	input := map[string]interface{}{
-		"bucket_id": d.Id(),
+	input := BucketNotificationRulesInput{
+		BucketId: d.Id(),
 	}
 
-	var notificationRules BucketNotificationRulesSchema
-	err := client.apply(ctx, name, op, input, &notificationRules)
+	var output BucketNotificationRulesOutput
+	err := client.Apply(ctx, OpResourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if notificationRules.BucketId == "" && !d.IsNewResource() {
+	if output.BucketId == "" && !d.IsNewResource() {
 		// deleted bucket, thus notification rules no longer exist
 		tflog.Warn(ctx, "Bucket not found for Event Notifications, possible resource drift", map[string]interface{}{
 			"bucket_id": d.Id(),
@@ -96,7 +92,7 @@ func resourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.Resour
 		return nil
 	}
 
-	err = client.populate(ctx, name, op, &notificationRules, d)
+	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -106,21 +102,19 @@ func resourceB2BucketNotificationRulesRead(ctx context.Context, d *schema.Resour
 
 func resourceB2BucketNotificationRulesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_notification_rules"
-	const op = RESOURCE_UPDATE
 
-	input := map[string]interface{}{
-		"bucket_id":          d.Id(),
-		"notification_rules": d.Get("notification_rules").([]interface{}),
+	input := BucketNotificationRulesInput{
+		BucketId:          d.Id(),
+		NotificationRules: d.Get("notification_rules").([]interface{}),
 	}
 
-	var notificationRules BucketNotificationRulesSchema
-	err := client.apply(ctx, name, op, input, &notificationRules)
+	var output BucketNotificationRulesOutput
+	err := client.Apply(ctx, OpResourceUpdate, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = client.populate(ctx, name, op, &notificationRules, d)
+	err = client.Populate(ctx, OpResourceUpdate, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -130,14 +124,12 @@ func resourceB2BucketNotificationRulesUpdate(ctx context.Context, d *schema.Reso
 
 func resourceB2BucketNotificationRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	const name = "bucket_notification_rules"
-	const op = RESOURCE_DELETE
 
-	input := map[string]interface{}{
-		"bucket_id": d.Id(),
+	input := BucketNotificationRulesInput{
+		BucketId: d.Id(),
 	}
 
-	err := client.apply(ctx, name, op, input, nil)
+	err := client.Apply(ctx, OpResourceDelete, &input, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
