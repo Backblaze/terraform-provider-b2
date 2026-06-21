@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `expiration_timestamp` to `b2_application_key` resource and data source
 * Add `valid_duration_in_seconds` to `b2_application_key` resource
 
+### Fixed
+* Update `revision` in state after updating a `b2_bucket` resource
+
 ### Infrastructure
 * Upgrade Terraform versions in CI to 1.14 and 1.13
 * Use ruff as a python-bindings formatter/linter

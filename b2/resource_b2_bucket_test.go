@@ -105,6 +105,7 @@ func TestAccResourceB2Bucket_all(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_starting_to_canceling_unfinished_large_files", "3"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
+					resource.TestCheckResourceAttr(resourceName, "revision", "3"),
 				),
 			},
 		},
@@ -218,6 +219,7 @@ func TestAccResourceB2Bucket_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "options.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "options.0", "s3"),
+					resource.TestCheckResourceAttr(resourceName, "revision", "2"),
 				),
 			},
 		},
@@ -262,6 +264,35 @@ resource "b2_bucket" "test" {
 	}
 }
 `, bucketName, fileLockEnabled)
+}
+
+func TestAccResourceB2Bucket_revisionUpdatedOnChange(t *testing.T) {
+	resourceName := "b2_bucket.test"
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceB2BucketConfig_basic(bucketName),
+				Check:  resource.TestCheckResourceAttr(resourceName, "revision", "2"),
+			},
+			{
+				Config: testAccResourceB2BucketConfig_basicPrivate(bucketName),
+				Check:  resource.TestCheckResourceAttr(resourceName, "revision", "3"),
+			},
+		},
+	})
+}
+
+func testAccResourceB2BucketConfig_basicPrivate(bucketName string) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+  bucket_name = "%s"
+  bucket_type = "allPrivate"
+}
+`, bucketName)
 }
 
 func testAccResourceB2BucketConfig_basic(bucketName string) string {

@@ -15,6 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -30,6 +31,13 @@ func resourceB2Bucket() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+
+		// The API bumps the revision on every change. Mark it as computed
+		// whenever any other field changes so terraform stores the new value
+		// instead of reporting it as drift on the next plan.
+		CustomizeDiff: customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+			return len(d.GetChangedKeysPrefix("")) > 0
+		}),
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
