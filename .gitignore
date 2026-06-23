@@ -42,6 +42,9 @@ website/vendor
 # Go
 .go-version
 
+# Scratch
+tmp/
+
 # Provider binary
 /terraform-provider-b2
 
