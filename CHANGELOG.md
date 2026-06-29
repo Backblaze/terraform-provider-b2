@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Use ruff as a python-bindings formatter/linter
 * Add `govulncheck` to developer tools
 * Upgrade Go to 1.25
+* Upgrade Go toolchain to 1.25.11 to address GO-2026-5039 and GO-2026-5037
+* Upgrade `golang.org/x/net` to v0.55.0 to address GO-2026-5026
 
 ## [0.12.1] - 2026-02-21
 
