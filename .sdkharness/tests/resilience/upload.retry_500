@@ -1,0 +1,396 @@
+#!/usr/bin/env python3
+"""terraform-provider-b2 x upload.retry_500.
+
+Written from the reference check, bin/resilience/b2-sdk-python/upload.retry_503.
+The contract is bin/resilience/README.md; the question is the upload.retry_500 row of
+bin/resilience/scenarios.tsv.
+
+Fault   fault b2_upload_file 500 internal_error (count 1), armed after the bucket exists
+Assert  journal: exactly one injected 500, then a successful b2_upload_file on a DIFFERENT
+        uploadUrlId; end state: the apply succeeds and the stored version (read back
+        through b2_list_file_versions) carries the size and sha1 of the bytes sent
+        -- asserted on the 500 status only, never its code
+
+The expected behaviour is B2's, not the tool's.
+The Integration Checklist, Upload Retry Guidelines, lists the failures after which "the
+developer should call b2_get_upload_url or b2_get_upload_part_url and re-attempt the
+upload using the new URL and auth key pair"; among them:
+"The HTTP response status is between 500-599". Asserted on the 500 status only:
+its code is not sourced from any document.
+https://www.backblaze.com/docs/cloud-storage-integration-checklist
+
+It exercises the exact provider executable built from this checked-out revision through Terraform `dev_overrides`; `source = "Backblaze/b2"` remains the customer-facing address. The schema and harness scenario were originally derived from the sdkharness Terraform card and conformance path. A provider exposes
+no callable API, so the customer path is `terraform apply`. Every provider
+operation is a fresh PyInstaller-frozen b2sdk process (card.md, "Does it wrap
+b2-sdk-python?"), so what b2sdk did inside it is read from GET /journal, the only
+evidence that process leaves. A generated TF_CLI_CONFIG_FILE pins execution to the exact-revision provider supplied by the orchestrator. REALM: the provider block's
+`endpoint` is passed to b2sdk's authorize_account as its realm (card.md, "Auth
+model"), exactly as the conformance checks reach @simulator.
+
+Every apply after the first runs with -refresh=false, so it performs only the
+operation under test: no refresh reads land between the fault and the call.
+No terraform destroy: the server is fresh and discarded (bin/resilience/README.md).
+"""
+
+import hashlib
+import json
+import os
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import urllib.request
+import uuid
+
+from exact_provider import write_cli_config
+
+SLUG = "terraform-provider-b2"
+SCENARIO = "upload.retry_500"
+OBJECT_NAME = "res/retry_500.txt"
+ARM_PATH = "/faults"
+FAULT = {'on': 'b2_upload_file', 'status': 500, 'code': 'internal_error', 'count': 1}
+FAULTED = lambda e: e["endpoint"] == "b2_upload_file" and e["fault"] == "injected" and e["status"] == 500
+
+# The closed reason set, mirrored from bin/resilience/README.md. This
+# scenario's `needs` is `-`, so no-client-option is not available to it.
+REASONS = ('missing-runtime',)
+
+
+class Amber(Exception):
+    """The question could not be asked. Reason must be in REASONS."""
+
+    def __init__(self, reason: str, detail: str) -> None:
+        assert reason in REASONS, reason
+        self.reason = reason
+        self.detail = detail
+
+
+class Failure(Exception):
+    def __init__(self, step: str, detail: str) -> None:
+        self.step = step
+        self.detail = detail
+
+
+def say(verdict: str) -> None:
+    print(f"RESILIENCE {SLUG} {SCENARIO} @simulator: {verdict}", flush=True)
+
+
+def note(text: str) -> None:
+    print(f"NOTE {SLUG} {SCENARIO}: {text}", flush=True)
+
+
+def control(method: str, path: str, body=None):
+    data = None if body is None else json.dumps(body).encode()
+    req = urllib.request.Request(os.environ["RESILIENCE_CONTROL_URL"] + path, data=data, method=method,
+                                 headers={"content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.load(resp)
+
+
+def journal():
+    try:
+        return control("GET", "/journal")["entries"]
+    except Exception as error:  # noqa: BLE001 -- only the class name is reported
+        raise Failure("journal", type(error).__name__) from error
+
+
+def arm(path=None, spec=None):
+    try:
+        control("POST", path or ARM_PATH, spec or FAULT)
+    except Exception as error:  # noqa: BLE001
+        raise Failure("arm fault", type(error).__name__) from error
+
+
+def after(entries, seq, endpoint, status=None):
+    """Entries on `endpoint` later than `seq`, optionally with one status."""
+    return [e for e in entries if e["seq"] > seq and e["endpoint"] == endpoint
+            and (status is None or e["status"] == status)]
+
+
+def trace(entries, seq=0):
+    """The journal after `seq`, compact, for a NOTE: endpoint:status[:fault]."""
+    return " ".join(f"{e['endpoint'][3:]}:{e['status']}" + (f":{e['fault']}" if e["fault"] else "")
+                    for e in entries if e["seq"] > seq)
+
+
+class Stamps:
+    """First-seen monotonic time of each journal seq, polled every 20 ms.
+
+    The journal has no timestamps, and here the whole call is no evidence at all:
+    every apply pays terraform's and the frozen b2sdk's start-up (about 10 s
+    measured on the harness's own simulator), so a whole-call floor of 2 s holds
+    even for a client that never waits. An entry is journaled when the request
+    ARRIVES, so the gap between the faulted request and its retry is the client's
+    own wait, give or take one poll interval.
+    """
+
+    POLL_S = 0.02
+
+    def __init__(self) -> None:
+        self.seen = {}
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+
+    def _run(self) -> None:
+        while not self._stop.is_set():
+            try:
+                for e in control("GET", "/journal")["entries"]:
+                    self.seen.setdefault(e["seq"], time.monotonic())
+            except Exception:  # noqa: BLE001 -- a missed poll only widens the error
+                pass
+            self._stop.wait(self.POLL_S)
+
+    def __enter__(self):
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_):
+        self._stop.set()
+        self._thread.join(timeout=5)
+
+    def gap(self, first, second) -> float:
+        return self.seen[second["seq"]] - self.seen[first["seq"]]
+
+
+HCL = r'''
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    b2 = {
+      source = "Backblaze/b2"
+    }
+  }
+}
+
+# No credential is ever written here: the provider reads B2_APPLICATION_KEY_ID /
+# B2_APPLICATION_KEY from the environment. Only the realm is declared.
+provider "b2" {
+  endpoint = var.endpoint
+}
+
+variable "endpoint" { type = string }
+variable "bucket_name" { type = string }
+variable "object_name" { type = string }
+variable "stage" { type = number }
+variable "probe_account" {
+  type    = bool
+  default = false
+}
+
+# stage 0 bucket · 1 + the object · 2 + a listing (b2_list_file_names) ·
+# 3 + a versions read-back (b2_list_file_versions)
+data "b2_account_info" "a" {
+  count = var.probe_account ? 1 : 0
+}
+
+resource "b2_bucket" "b" {
+  bucket_name = var.bucket_name
+  bucket_type = "allPrivate"
+}
+
+resource "b2_bucket_file_version" "f" {
+  count     = var.stage >= 1 ? 1 : 0
+  bucket_id = b2_bucket.b.bucket_id
+  file_name = var.object_name
+  source    = "${path.module}/payload.bin"
+}
+
+data "b2_bucket_files" "list" {
+  count     = var.stage == 2 ? 1 : 0
+  bucket_id = b2_bucket.b.bucket_id
+  recursive = true
+}
+
+data "b2_bucket_file" "read" {
+  count         = var.stage == 3 ? 1 : 0
+  bucket_id     = b2_bucket.b.bucket_id
+  file_name     = var.object_name
+  show_versions = true
+}
+
+output "part_sizes" {
+  value = try([data.b2_account_info.a[0].recommended_part_size, data.b2_account_info.a[0].absolute_minimum_part_size], null)
+}
+output "file" {
+  value = try({ size = b2_bucket_file_version.f[0].size, content_sha1 = b2_bucket_file_version.f[0].content_sha1 }, null)
+}
+output "listed" {
+  value = try([for v in data.b2_bucket_files.list[0].file_versions : v.file_name], null)
+}
+output "versions" {
+  value = try([for v in data.b2_bucket_file.read[0].file_versions : {
+    file_name = v.file_name, size = v.size, content_sha1 = v.content_sha1, action = v.action, file_info = v.file_info
+  }], null)
+}
+'''
+
+
+class Tf:
+    """One terraform user: a scratch working directory this check owns, the exact checked-out
+    provider revision, and the simulator as the realm."""
+
+    def __init__(self, scratch: str) -> None:
+        self.dir = scratch
+        cfg = os.path.join(scratch, "cli.tfrc")
+        write_cli_config(cfg)
+        self.env = {k: v for k, v in os.environ.items()
+                    if not k.startswith(("B2_", "TF_LOG", "TF_VAR_", "TF_CLI_ARGS"))}
+        self.env.update(B2_APPLICATION_KEY_ID="test-key-id", B2_APPLICATION_KEY="test-key",
+                        TF_CLI_CONFIG_FILE=cfg, TF_INPUT="0", TF_IN_AUTOMATION="1", CHECKPOINT_DISABLE="1",
+                        TF_VAR_endpoint=os.environ["RESILIENCE_SIMULATOR_URL"],
+                        TF_VAR_bucket_name=f"sdkharness-res-{uuid.uuid4().hex[:12]}",
+                        TF_VAR_object_name=OBJECT_NAME)
+        with open(os.path.join(scratch, "main.tf"), "w") as handle:
+            handle.write(HCL)
+
+    def run(self, *args, env=None):
+        try:
+            return subprocess.run(["terraform", f"-chdir={self.dir}", *args], env={**self.env, **(env or {})},
+                                  capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=300)
+        except Exception as error:  # noqa: BLE001 -- only the class name is reported
+            raise Failure("terraform", type(error).__name__) from error
+
+    def apply(self, stage: int, **tfvars):
+        """One `terraform apply` at `stage`; the process is returned, not judged."""
+        flags = [] if stage == 0 else ["-refresh=false"]
+        extra = {f"TF_VAR_{k}": str(v).lower() if isinstance(v, bool) else str(v) for k, v in tfvars.items()}
+        return self.run("apply", "-auto-approve", "-input=false", "-no-color", *flags, "-var", f"stage={stage}",
+                        env=extra)
+
+    def must_apply(self, step_name, stage: int, **tfvars):
+        proc = self.apply(stage, **tfvars)
+        if proc.returncode != 0:
+            error_note(proc)
+            raise Failure(step_name, f"terraform apply exited {proc.returncode}")
+        return proc
+
+    def output(self, name):
+        proc = self.run("output", "-json")
+        try:
+            outputs = json.loads(proc.stdout)
+        except Exception as error:  # noqa: BLE001
+            raise Failure("output", "terraform output -json printed no JSON") from error
+        return outputs.get(name, {}).get("value")  # a null output is not stored at all
+
+    def payload(self, data: bytes) -> None:
+        with open(os.path.join(self.dir, "payload.bin"), "wb") as handle:
+            handle.write(data)
+
+
+def error_line(proc) -> str:
+    """b2sdk's exception, re-raised by the provider through a Python traceback:
+    the dotted class line at the END is the useful one, not "Error: Traceback"."""
+    lines = [ln.strip() for ln in (proc.stdout + proc.stderr).splitlines()]
+    dotted = [ln for ln in lines if ln.split(":")[0].count(".") >= 1 and ": " in ln
+              and ln.split(":")[0].replace(".", "").replace("_", "").isalnum()]
+    errs = [ln for ln in lines if ln.startswith("Error: ") and "traceback" not in ln.lower()]
+    return ((dotted or errs or ["terraform exited non-zero with no Error line"])[-1])[:240]
+
+
+def error_note(proc) -> None:
+    """The simulator's credential is its fixed fake and its tokens are synthetic,
+    so nothing real can appear here."""
+    note(f"terraform: {error_line(proc)}")
+
+
+def setup(stage: int = 0, payload: bytes = b"", **tfvars):
+    """An initialized working directory and a first apply. There is no
+    unreachable/unauthorized amber: the runner supplies the server and the
+    credential, so either failing is a harness defect."""
+    if shutil.which("terraform") is None:
+        raise Amber("missing-runtime", "terraform is not on PATH")
+    scratch = tempfile.mkdtemp(prefix="sdkharness-res-tf.")
+    CLEANUP.append(scratch)
+    tf = Tf(scratch)
+    tf.payload(payload)
+    init = tf.run("init", "-input=false", "-no-color")
+    if init.returncode != 0:
+        error_note(init)
+        raise Amber("missing-runtime", "terraform init could not prepare the exact-revision provider")
+    tf.must_apply("setup apply", stage, **tfvars)
+    return tf
+
+
+def uploaded_or_fail(tf, proc, payload, endpoint="b2_upload_file"):
+    """An upload apply that must have recovered: exit 0, and the created version
+    carries the size and sha1 of the bytes sent."""
+    if proc.returncode != 0:
+        error_note(proc)
+        entries = journal()
+        note(f"journal from the first {endpoint}: {trace(entries, min([e['seq'] for e in entries if e['endpoint'] == endpoint] or [1]) - 1)}")
+        tries = len([e for e in entries if e["endpoint"] == endpoint])
+        raise Failure("upload", f"terraform apply exited {proc.returncode} after {tries} {endpoint} "
+                                "attempt(s); the upload was not recovered")
+    made = tf.output("file") or {}
+    if made.get("size") != len(payload) or made.get("content_sha1") != hashlib.sha1(payload).hexdigest():
+        raise Failure("upload", "the created version's size/content_sha1 do not match the bytes sent")
+
+
+def read_back(tf, payload, most=1):
+    """Every stored version of the object, read through a second surface
+    (b2_list_file_versions), must carry the bytes that went up. The provider has
+    no download-content path (card: files.download_content `no`), so byte fidelity
+    rests on contentSha1 agreement, as in the conformance checks."""
+    tf.must_apply("read back", 3)
+    mine = [v for v in (tf.output("versions") or []) if v.get("file_name") == OBJECT_NAME and v.get("action") == "upload"]
+    if not 1 <= len(mine) <= most:
+        raise Failure("end state", f"{len(mine)} stored versions of the object, expected 1..{most}")
+    if any(v.get("size") != len(payload) or v.get("content_sha1") != hashlib.sha1(payload).hexdigest() for v in mine):
+        raise Failure("end state", "a stored version does not carry the uploaded bytes")
+    return mine
+
+
+def listed(tf):
+    tf.must_apply("list", 2)
+    return tf.output("listed")
+
+
+CLEANUP = []
+
+
+def main() -> int:
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+    try:
+        run()
+    except Amber as amber:
+        say(f"COULD-NOT-RUN ({amber.reason} -- {amber.detail})")
+        return 0
+    except Failure as failure:
+        say(f"FAIL ({failure.step} -- {failure.detail})")
+        return 1
+    except Exception as error:  # noqa: BLE001 -- never a silent crash
+        say(f"FAIL (setup -- {type(error).__name__})")
+        return 1
+    finally:
+        for path in CLEANUP:
+            shutil.rmtree(path, ignore_errors=True)
+    say("PASS")
+    return 0
+
+
+def run() -> None:
+    payload = (b"sdkharness resilience " * 64)[:1024]
+    tf = setup(0)
+    tf.payload(payload)
+    arm()
+    uploaded_or_fail(tf, tf.apply(1), payload)
+    read_back(tf, payload)
+
+    entries = journal()
+    uploads = [e for e in entries if e["endpoint"] == "b2_upload_file"]
+    faulted = [e for e in uploads if FAULTED(e)]
+    if len(faulted) != 1:
+        raise Failure("journal", f"{len(faulted)} 500 on b2_upload_file, expected 1")
+    retries = after(entries, faulted[0]["seq"], "b2_upload_file", 200)
+    if not retries:
+        raise Failure("journal", "no successful b2_upload_file after the 500")
+    if retries[0]["uploadUrlId"] in (None, faulted[0]["uploadUrlId"]):
+        raise Failure("recovery path", "the retry reused the upload URL that got the 500")
+    note(f"journal after the fault: {trace(entries, faulted[0]['seq'] - 1)}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

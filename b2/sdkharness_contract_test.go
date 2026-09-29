@@ -23,15 +23,15 @@ func TestSDKHarnessContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(contract)), "\n")
-	if len(lines) != 17 || lines[0] != "test_level\tscenario\ttarget\texecutable" {
+	if len(lines) != 32 || lines[0] != "test_level\tscenario\ttarget\texecutable" {
 		t.Fatalf("unexpected tests.tsv schema: %q", string(contract))
 	}
 	wantRow := "health\tgolden-path\tsimulator\t./.sdkharness/tests/health-golden-path"
-	if lines[len(lines)-1] != wantRow {
+	if lines[16] != wantRow {
 		t.Fatalf("tests.tsv does not contain %q", wantRow)
 	}
 	seenScenarios := make(map[string]bool)
-	for _, line := range lines[1 : len(lines)-1] {
+	for _, line := range lines[1:16] {
 		fields := strings.Split(line, "\t")
 		if len(fields) != 4 || fields[0] != "conformance" || fields[2] != "simulator" || fields[3] != "./.sdkharness/tests/run-conformance" {
 			t.Fatalf("unexpected conformance contract row: %q", line)
@@ -41,8 +41,19 @@ func TestSDKHarnessContract(t *testing.T) {
 		}
 		seenScenarios[fields[1]] = true
 	}
+	seenScenarios = make(map[string]bool)
+	for _, line := range lines[17:] {
+		fields := strings.Split(line, "\t")
+		if len(fields) != 4 || fields[0] != "resilience" || fields[2] != "simulator" || fields[3] != "./.sdkharness/tests/run-resilience" {
+			t.Fatalf("unexpected resilience contract row: %q", line)
+		}
+		if seenScenarios[fields[1]] {
+			t.Fatalf("duplicate resilience scenario: %s", fields[1])
+		}
+		seenScenarios[fields[1]] = true
+	}
 
-	for _, executable := range []string{"health-golden-path", "run-conformance"} {
+	for _, executable := range []string{"health-golden-path", "run-conformance", "run-resilience"} {
 		info, statErr := os.Stat(filepath.Join(root, "tests", executable))
 		if statErr != nil {
 			t.Fatal(statErr)
