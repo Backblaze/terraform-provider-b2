@@ -1,0 +1,318 @@
+#!/usr/bin/env bash
+# CONFORMANCE CHECK -- terraform-provider-b2 x urls.native_download
+#
+# Contract: bin/conformance/README.md (frozen).
+# Reference implementation: bin/conformance/b2-sdk-python/files.upload.
+#
+# SHAPE. A Terraform provider exposes no callable API. Its customer path is
+# `terraform apply` of a resource, a read-back, then `terraform destroy`. This
+# file wraps that round trip so it still emits exactly ONE contract result line.
+#
+# Scenario (approved 2026-09-22):
+#   Setup   a fixture object
+#   Action  get a download authorization with a short TTL, fetch over plain
+#           HTTP, then wait past expiry
+#   Assert  200 with the correct bytes, then 401
+#   MUST    assert the B2-NATIVE share-token shape, not a SigV4 query string
+#
+# The signed URL is requested in its own stage so its TTL starts at the END of
+# a short apply rather than the beginning of a long one.
+#
+# DOCS. The expected values are B2's published NATIVE contract, not SigV4.
+# b2_get_download_authorization "Returns an authorization token that can be
+# passed to b2_download_file_by_name in the Authorization header or as an
+# Authorization parameter", limited to fileNamePrefix and expiring after
+# validDurationInSeconds. b2_download_file_by_name addresses
+# <downloadUrl>/file/<bucket>/<name>, accepts the token "in the URL query string
+# instead of being passed in the HTTP header", and answers an expired one with
+# 401 expired_auth_token.
+# https://www.backblaze.com/apidocs/b2-get-download-authorization
+# https://www.backblaze.com/apidocs/b2-download-file-by-name
+# The shape leg matches: ?Authorization=, no X-Amz-, /file/<bucket>/<name>.
+# NEEDS REVIEW: docs say an expired token is 401 expired_auth_token; the
+# expiry leg also accepts 403. Unresolved here, not fixed.
+#
+# It exercises the provider built from this exact checkout. Terraform still names
+# `source = "Backblaze/b2"`, while the repository contract installs a `dev_overrides`
+# entry for the exact-revision binary. Schema expectations come from the provider's
+# own docs and the reviewed B2 API contract.
+#
+# TF_ACC=1 gates the provider's OWN Go acceptance suite, which lives in this repository. This check never runs it: it drives the terraform CLI against the
+# exact-revision provider binary, so TF_ACC has no bearing here.
+# REALM. The provider block's `endpoint` attribute (default B2_ENDPOINT) is
+# passed to the embedded b2sdk's authorize_account as its realm
+# (docs/sdks/terraform-provider-b2/card.md, "Auth model"), and b2sdk uses a
+# value it does not recognise verbatim as the realm URL. So @staging and
+# @production name their API URLs, and @simulator names
+# CONFORMANCE_SIMULATOR_URL, the harness's own server (bin/simulator/serve.mjs),
+# with its fixed test credential. Plain http:// is enough: the provider also
+# accepts the http upload and download URLs that realm mints.
+set -uo pipefail
+case "$-" in *x*) set +x ;; esac   # trace guard -- a credential must never be echoed
+
+SLUG="terraform-provider-b2"
+CAPABILITY="urls.native_download"
+TARGET="${CONFORMANCE_TARGET:-staging}"
+
+VERDICT="FAIL (harness -- the check ended without a verdict)"
+EXIT_CODE=1
+WORK=""
+APPLIED=0
+CONF_EXTRA_SECRET=""   # a secret this check mints itself, scrubbed from every line
+
+note() { printf 'NOTE %s %s: %s\n' "$SLUG" "$CAPABILITY" "$1"; }
+
+# Every line that leaves this process passes through here. <detail> carries an
+# error class, never a response body and never a key.
+redact() {
+  local s
+  s="$(cat)"
+  [ -n "${B2_APPLICATION_KEY_ID:-}" ] && s="${s//${B2_APPLICATION_KEY_ID}/[redacted]}"
+  [ -n "${B2_APPLICATION_KEY:-}" ] && s="${s//${B2_APPLICATION_KEY}/[redacted]}"
+  [ -n "${CONF_EXTRA_SECRET:-}" ] && s="${s//${CONF_EXTRA_SECRET}/[redacted]}"
+  printf '%s' "$s" | sed -e 's/[Aa]uthorization=[^ "&]*/Authorization=[redacted]/g'
+}
+
+first_error() { # <file> -> one sanitised line
+  local line
+  # The b2 provider re-raises b2sdk's exceptions through a Python traceback, so
+  # the useful line is the dotted exception class at the END, not the
+  # "Error: Traceback (most recent call last):" at the start.
+  line="$(grep -m1 -E '^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+: ' "$1" 2>/dev/null | tr -d '\r\t')"
+  [ -n "$line" ] || line="$(grep -E '^Error: ' "$1" 2>/dev/null | grep -v -i 'traceback' | head -1 | tr -d '\r\t')"
+  [ -n "$line" ] || line="$(grep -m1 -i 'error' "$1" 2>/dev/null | tr -d '\r\t')"
+  [ -n "$line" ] || line="terraform exited non-zero with no Error line"
+  printf '%s' "$line" | redact | cut -c1-140
+}
+
+# Cleanup runs on every path, including the error path: a failed run that
+# leaves a bucket standing is a leak, not a result. Stage 99 is the destroy
+# stage -- every resource present, every data source gone.
+finish() {
+  if [ "$APPLIED" = 1 ] && [ -n "$WORK" ]; then
+    if ! TF_VAR_stage=99 terraform -chdir="$WORK" destroy -auto-approve \
+         -input=false -no-color >"$WORK/destroy.out" 2>&1; then
+      if [ "$VERDICT" = "PASS" ]; then
+        VERDICT="FAIL (cleanup -- terraform destroy left resources behind: $(first_error "$WORK/destroy.out"))"
+        EXIT_CODE=1
+      fi
+    fi
+  fi
+  [ -n "$WORK" ] && rm -rf "$WORK"
+  printf 'CONFORMANCE %s %s @%s: %s\n' "$SLUG" "$CAPABILITY" "$TARGET" "$VERDICT"
+  exit "$EXIT_CODE"
+}
+trap finish EXIT
+
+amber() { VERDICT="COULD-NOT-RUN ($1 -- $2)"; EXIT_CODE=0; exit 0; }
+fail()  { VERDICT="FAIL ($1 -- $2)"; EXIT_CODE=1; exit 1; }
+pass()  { VERDICT="PASS"; EXIT_CODE=0; exit 0; }
+
+need() { command -v "$1" >/dev/null 2>&1; }
+
+sha1_of() {
+  if need sha1sum; then sha1sum "$1" | cut -d' ' -f1
+  elif need shasum; then shasum -a 1 "$1" | cut -d' ' -f1
+  elif need openssl; then openssl dgst -sha1 "$1" | awk '{print $NF}'
+  else return 1
+  fi
+}
+
+rand_hex() {
+  if need openssl; then openssl rand -hex 6
+  else LC_ALL=C tr -dc 'a-f0-9' < /dev/urandom 2>/dev/null | head -c 12
+  fi
+}
+
+tf() { terraform -chdir="$WORK" "$@" >"$WORK/last.out" 2>&1; }
+
+# The environment's own errors, converted. An unreachable realm and a rejected
+# key are amber; anything else is the capability failing. The b2 provider makes
+# no B2 call of its own -- it shells out to an embedded b2sdk and re-raises that
+# exception through a Python traceback -- so what is matched here is b2sdk's
+# exception CLASSES and codes, never an HTTP status line the provider never
+# prints. Verified against a live `terraform apply` on 2026-09-22.
+tf_trouble() { # <step>
+  local txt
+  txt="$(LC_ALL=C tr '[:upper:]' '[:lower:]' <"$WORK/last.out" 2>/dev/null)"
+  case "$txt" in
+    *unauthorized*|*bad_auth_token*|*invalidauthtoken*|*expired_auth_token*|*"invalid authorization token"*|*not_authorized*|*"not authorized"*|*access_denied*|*accessdenied*|*"access denied"*|*forbidden*|*restrictedbucket*|*"invalid application key"*|*"bad auth token"*|*" 401"*|*" 403"*)
+      amber unauthorized "B2 rejected the credential during $1" ;;
+  esac
+  case "$txt" in
+    *"no such host"*|*"could not resolve"*|*"connection refused"*|*"network is unreachable"*|*"i/o timeout"*|*"timed out"*|*"dial tcp"*|*"name resolution"*|*"name or service not known"*|*"nodename nor servname"*|*gaierror*|*b2connectionerror*|*connectionerror*|*"max retries exceeded"*|*"failed to establish a new connection"*|*"connection aborted"*|*"connection reset"*|*b2requesttimeout*|*"failed to query available provider packages"*|*"could not connect"*|*"no route to host"*|*unknownhost*)
+      amber unreachable "neither the $TARGET realm nor the provider registry answered during $1" ;;
+  esac
+  fail "$1" "$(first_error "$WORK/last.out")"
+}
+
+tfout()  { terraform -chdir="$WORK" output -raw "$1" 2>/dev/null; }
+assert() { # <output> <step> <detail>
+  [ "$(tfout "$1")" = "true" ] && return 0
+  fail "$2" "$3"
+}
+
+# --- 1. which realm ---------------------------------------------------------
+case "$TARGET" in
+  staging)    ENDPOINT="https://api.backblaze.net" ;;
+  production) ENDPOINT="https://api.backblazeb2.com" ;;
+  simulator)
+    [ -n "${CONFORMANCE_SIMULATOR_URL:-}" ] \
+      || amber no-realm-option "CONFORMANCE_SIMULATOR_URL is unset"
+    ENDPOINT="$CONFORMANCE_SIMULATOR_URL"
+    # The simulator's fixed test credential, whatever the environment holds,
+    # so a real B2_* value can never be sent there.
+    export B2_APPLICATION_KEY_ID="test-key-id" B2_APPLICATION_KEY="test-key" ;;
+  *)          amber no-realm-option "the b2 provider's endpoint takes a realm URL; it ships no '$TARGET'" ;;
+esac
+
+# --- 2. a credential the provider can actually read -------------------------
+if [ -z "${B2_APPLICATION_KEY_ID:-}" ] && [ -z "${B2_APPLICATION_KEY:-}" ] && [ -z "${B2_TEST_APPLICATION_KEY_ID:-}" ]; then
+  amber no-credential "B2_APPLICATION_KEY_ID / B2_APPLICATION_KEY unset"
+fi
+if [ -z "${B2_APPLICATION_KEY_ID:-}" ] || [ -z "${B2_APPLICATION_KEY:-}" ]; then
+  amber unauthorized "the provider authorizes from B2_APPLICATION_KEY_ID + B2_APPLICATION_KEY; only one of the pair is set"
+fi
+
+# --- 3. runtimes ------------------------------------------------------------
+need terraform || amber missing-runtime "terraform is not on PATH"
+sha1_of /dev/null >/dev/null 2>&1 || amber missing-runtime "no sha1 tool (sha1sum / shasum / openssl) on PATH"
+need curl || amber missing-runtime "curl is not on PATH, so the share token cannot be exercised over HTTP"
+
+# --- 4. a scratch working directory this check owns -------------------------
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sdkharness-conf-tf-nativeurl.XXXXXX")" \
+  || fail setup "could not create a scratch working directory"
+
+export TF_INPUT=0 TF_IN_AUTOMATION=1 CHECKPOINT_DISABLE=1
+unset TF_LOG TF_LOG_PATH TF_LOG_CORE TF_LOG_PROVIDER
+sdkharness_tf_cli_config "$WORK/cli.tfrc" || fail setup "exact-revision provider is unavailable"
+export TF_CLI_CONFIG_FILE="$WORK/cli.tfrc"   # exact-revision dev override
+export TF_VAR_endpoint="$ENDPOINT"
+export TF_VAR_bucket_name="sdkharness-conf-$(rand_hex)"
+export TF_VAR_stage=1
+
+DURATION=15
+WAIT=20
+export TF_VAR_object_name="st/native.txt"
+export TF_VAR_duration="$DURATION"
+TF_VAR_url_re="/file/${TF_VAR_bucket_name}/st/native.txt"
+export TF_VAR_url_re
+
+printf 'sdkharness conformance native download payload\n' >"$WORK/payload.bin"
+TF_VAR_expected_sha1="$(sha1_of "$WORK/payload.bin")"
+export TF_VAR_expected_sha1
+
+cat >"$WORK/main.tf" <<'HCL'
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    b2 = {
+      source = "Backblaze/b2"
+    }
+  }
+}
+
+# No credential is ever written here. The provider reads
+# B2_APPLICATION_KEY_ID / B2_APPLICATION_KEY from the environment; only the
+# realm is declared, through the endpoint attribute the card documents.
+provider "b2" {
+  endpoint = var.endpoint
+}
+
+variable "endpoint" { type = string }
+variable "bucket_name" { type = string }
+variable "stage" { type = number }
+
+variable "object_name" { type = string }
+variable "duration" { type = number }
+variable "url_re" { type = string }
+variable "expected_sha1" { type = string }
+
+resource "b2_bucket" "b" {
+  bucket_name = var.bucket_name
+  bucket_type = "allPrivate"
+}
+
+resource "b2_bucket_file_version" "f" {
+  bucket_id = b2_bucket.b.bucket_id
+  file_name = var.object_name
+  source    = "${path.module}/payload.bin"
+}
+
+data "b2_bucket_file_signed_url" "u" {
+  count     = var.stage == 2 ? 1 : 0
+  bucket_id = b2_bucket.b.bucket_id
+  file_name = b2_bucket_file_version.f.file_name
+  duration  = var.duration
+}
+
+locals {
+  url = try(data.b2_bucket_file_signed_url.u[0].signed_url, "")
+}
+
+# The URL carries a live share token, so it is sensitive: only its SHAPE is
+# rendered as a boolean, and the value itself is read with `output -raw` into a
+# shell variable that is never printed.
+output "signed_url" {
+  value     = local.url
+  sensitive = true
+}
+output "ok_native_token" { value = can(regex("[?&]Authorization=", local.url)) }
+output "ok_not_sigv4" { value = !can(regex("X-Amz-", local.url)) }
+output "ok_file_path" { value = can(regex(var.url_re, local.url)) }
+HCL
+
+# --- 5. install the published provider, then check our config against it -----
+tf init -input=false -no-color || tf_trouble "terraform init (installing the registry provider)"
+tf validate -no-color \
+  || fail "terraform validate" "the configuration does not match the installed provider schema: $(first_error "$WORK/last.out")"
+
+# --- 6. the fixture object --------------------------------------------------
+APPLIED=1
+tf apply -auto-approve -input=false -no-color || tf_trouble "terraform apply (create bucket + fixture object)"
+
+# --- 7. the short-lived native share token ----------------------------------
+export TF_VAR_stage=2
+tf apply -auto-approve -input=false -no-color || tf_trouble "terraform apply (download authorization)"
+
+assert ok_native_token "share token" "the signed URL carries no Authorization query parameter, so it is not a B2-native share token"
+assert ok_not_sigv4    "share token" "the signed URL carries X-Amz- parameters -- that is a SigV4 presigned URL, not a B2-native share token"
+assert ok_file_path    "share token" "the signed URL does not address /file/<bucket>/<name>"
+
+URL="$(tfout signed_url)"
+[ -n "$URL" ] || fail "share token" "the data source produced no signed_url"
+
+# The token reaches curl through --config, never argv: a URL on a command line
+# is readable by every process on the box.
+umask 077
+{
+  printf 'url = "%s"\n' "$URL"
+  printf 'silent\nshow-error\nmax-time = 60\n'
+  printf 'output = "%s"\n' "$WORK/dl.bin"
+  printf 'write-out = "%%{http_code}"\n'
+} >"$WORK/curl.cfg"
+
+code="$(curl --config "$WORK/curl.cfg" 2>"$WORK/curl.err")"
+crc=$?
+if [ "$crc" != 0 ]; then
+  ctxt="$(LC_ALL=C tr '[:upper:]' '[:lower:]' <"$WORK/curl.err" 2>/dev/null)"
+  case "$ctxt" in
+    *"could not resolve"*|*"couldn't resolve"*|*"connection refused"*|*"failed to connect"*|*"network is unreachable"*|*"timed out"*|*"no route to host"*)
+      amber unreachable "the $TARGET download host did not answer the share-token fetch" ;;
+  esac
+  fail "native download" "curl exited $crc fetching the share token"
+fi
+[ "$code" = "200" ] || fail "native download" "the share-token fetch returned HTTP $code, expected 200"
+[ "$(sha1_of "$WORK/dl.bin")" = "$TF_VAR_expected_sha1" ] \
+  || fail "native download" "the bytes fetched through the share token differ from what was uploaded"
+
+# --- 8. past expiry ---------------------------------------------------------
+sleep "$WAIT"
+code2="$(curl --config "$WORK/curl.cfg" 2>"$WORK/curl.err")"
+case "$code2" in
+  401|403) : ;;
+  *) fail "expiry" "the share token still returned HTTP $code2 ${WAIT}s after its ${DURATION}s duration elapsed" ;;
+esac
+
+note "the provider exposes the download authorization per file (b2_bucket_file_signed_url takes file_name), not per prefix, so the scenario's prefix TTL is exercised at file granularity."
+pass

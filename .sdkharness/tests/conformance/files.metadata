@@ -1,0 +1,286 @@
+#!/usr/bin/env bash
+# CONFORMANCE CHECK -- terraform-provider-b2 x files.metadata
+#
+# Contract: bin/conformance/README.md (frozen).
+# Reference implementation: bin/conformance/b2-sdk-python/files.upload.
+#
+# SHAPE. A Terraform provider exposes no callable API. Its customer path is
+# `terraform apply` of a resource, a read-back, then `terraform destroy`. This
+# file wraps that round trip so it still emits exactly ONE contract result line.
+#
+# Scenario (approved 2026-09-22):
+#   Setup   an object carrying a custom fileInfo entry
+#   Action  read metadata by id, then by name
+#   Assert  contentType / length / sha1 / the custom entry all round-trip;
+#           record which path was taken
+#
+# The provider exposes exactly ONE metadata read path -- the b2_bucket_file
+# data source, keyed on (bucket_id, file_name). There is no by-file-id data
+# source, so the path taken is BY NAME, and the check says so.
+#
+# The expected values are B2's published contract. By id: b2_get_file_info
+# "Gets information about a file" and returns contentType, contentLength,
+# contentSha1 and fileInfo ("The custom information that was uploaded with the
+# file").
+# https://www.backblaze.com/apidocs/b2-get-file-info
+# B2 has no get-file-info by NAME; that read is b2_download_file_by_name, whose
+# headers (Content-Length, Content-Type, X-Bz-Content-Sha1, X-Bz-Info-*)
+# "contain the same information they did when the file was uploaded".
+# https://www.backblaze.com/apidocs/b2-download-file-by-name
+# A custom field name "is converted to lower case when it is stored and
+# returned in the fileInfo object" -- hence the lower-case key.
+# https://www.backblaze.com/apidocs/b2-upload-file
+# The provider is held to its own docs too: b2_bucket_file is keyed on
+# file_name and returns file_versions carrying content_type, content_sha1,
+# file_id, file_info and size; b2_bucket_file_version says "B2 converts keys to
+# lower case, so they are stored and returned in lower case."
+# https://registry.terraform.io/providers/Backblaze/b2/latest/docs/data-sources/bucket_file
+#
+# It exercises the provider built from this exact checkout. Terraform still names
+# `source = "Backblaze/b2"`, while the repository contract installs a `dev_overrides`
+# entry for the exact-revision binary. Schema expectations come from the provider's
+# own docs and the reviewed B2 API contract.
+#
+# TF_ACC=1 gates the provider's OWN Go acceptance suite, which lives in this repository. This check never runs it: it drives the terraform CLI against the
+# exact-revision provider binary, so TF_ACC has no bearing here.
+# REALM. The provider block's `endpoint` attribute (default B2_ENDPOINT) is
+# passed to the embedded b2sdk's authorize_account as its realm
+# (docs/sdks/terraform-provider-b2/card.md, "Auth model"), and b2sdk uses a
+# value it does not recognise verbatim as the realm URL. So @staging and
+# @production name their API URLs, and @simulator names
+# CONFORMANCE_SIMULATOR_URL, the harness's own server (bin/simulator/serve.mjs),
+# with its fixed test credential. Plain http:// is enough: the provider also
+# accepts the http upload and download URLs that realm mints.
+set -uo pipefail
+case "$-" in *x*) set +x ;; esac   # trace guard -- a credential must never be echoed
+
+SLUG="terraform-provider-b2"
+CAPABILITY="files.metadata"
+TARGET="${CONFORMANCE_TARGET:-staging}"
+
+VERDICT="FAIL (harness -- the check ended without a verdict)"
+EXIT_CODE=1
+WORK=""
+APPLIED=0
+CONF_EXTRA_SECRET=""   # a secret this check mints itself, scrubbed from every line
+
+note() { printf 'NOTE %s %s: %s\n' "$SLUG" "$CAPABILITY" "$1"; }
+
+# Every line that leaves this process passes through here. <detail> carries an
+# error class, never a response body and never a key.
+redact() {
+  local s
+  s="$(cat)"
+  [ -n "${B2_APPLICATION_KEY_ID:-}" ] && s="${s//${B2_APPLICATION_KEY_ID}/[redacted]}"
+  [ -n "${B2_APPLICATION_KEY:-}" ] && s="${s//${B2_APPLICATION_KEY}/[redacted]}"
+  [ -n "${CONF_EXTRA_SECRET:-}" ] && s="${s//${CONF_EXTRA_SECRET}/[redacted]}"
+  printf '%s' "$s" | sed -e 's/[Aa]uthorization=[^ "&]*/Authorization=[redacted]/g'
+}
+
+first_error() { # <file> -> one sanitised line
+  local line
+  # The b2 provider re-raises b2sdk's exceptions through a Python traceback, so
+  # the useful line is the dotted exception class at the END, not the
+  # "Error: Traceback (most recent call last):" at the start.
+  line="$(grep -m1 -E '^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+: ' "$1" 2>/dev/null | tr -d '\r\t')"
+  [ -n "$line" ] || line="$(grep -E '^Error: ' "$1" 2>/dev/null | grep -v -i 'traceback' | head -1 | tr -d '\r\t')"
+  [ -n "$line" ] || line="$(grep -m1 -i 'error' "$1" 2>/dev/null | tr -d '\r\t')"
+  [ -n "$line" ] || line="terraform exited non-zero with no Error line"
+  printf '%s' "$line" | redact | cut -c1-140
+}
+
+# Cleanup runs on every path, including the error path: a failed run that
+# leaves a bucket standing is a leak, not a result. Stage 99 is the destroy
+# stage -- every resource present, every data source gone.
+finish() {
+  if [ "$APPLIED" = 1 ] && [ -n "$WORK" ]; then
+    if ! TF_VAR_stage=99 terraform -chdir="$WORK" destroy -auto-approve \
+         -input=false -no-color >"$WORK/destroy.out" 2>&1; then
+      if [ "$VERDICT" = "PASS" ]; then
+        VERDICT="FAIL (cleanup -- terraform destroy left resources behind: $(first_error "$WORK/destroy.out"))"
+        EXIT_CODE=1
+      fi
+    fi
+  fi
+  [ -n "$WORK" ] && rm -rf "$WORK"
+  printf 'CONFORMANCE %s %s @%s: %s\n' "$SLUG" "$CAPABILITY" "$TARGET" "$VERDICT"
+  exit "$EXIT_CODE"
+}
+trap finish EXIT
+
+amber() { VERDICT="COULD-NOT-RUN ($1 -- $2)"; EXIT_CODE=0; exit 0; }
+fail()  { VERDICT="FAIL ($1 -- $2)"; EXIT_CODE=1; exit 1; }
+pass()  { VERDICT="PASS"; EXIT_CODE=0; exit 0; }
+
+need() { command -v "$1" >/dev/null 2>&1; }
+
+sha1_of() {
+  if need sha1sum; then sha1sum "$1" | cut -d' ' -f1
+  elif need shasum; then shasum -a 1 "$1" | cut -d' ' -f1
+  elif need openssl; then openssl dgst -sha1 "$1" | awk '{print $NF}'
+  else return 1
+  fi
+}
+
+rand_hex() {
+  if need openssl; then openssl rand -hex 6
+  else LC_ALL=C tr -dc 'a-f0-9' < /dev/urandom 2>/dev/null | head -c 12
+  fi
+}
+
+tf() { terraform -chdir="$WORK" "$@" >"$WORK/last.out" 2>&1; }
+
+# The environment's own errors, converted. An unreachable realm and a rejected
+# key are amber; anything else is the capability failing. The b2 provider makes
+# no B2 call of its own -- it shells out to an embedded b2sdk and re-raises that
+# exception through a Python traceback -- so what is matched here is b2sdk's
+# exception CLASSES and codes, never an HTTP status line the provider never
+# prints. Verified against a live `terraform apply` on 2026-09-22.
+tf_trouble() { # <step>
+  local txt
+  txt="$(LC_ALL=C tr '[:upper:]' '[:lower:]' <"$WORK/last.out" 2>/dev/null)"
+  case "$txt" in
+    *unauthorized*|*bad_auth_token*|*invalidauthtoken*|*expired_auth_token*|*"invalid authorization token"*|*not_authorized*|*"not authorized"*|*access_denied*|*accessdenied*|*"access denied"*|*forbidden*|*restrictedbucket*|*"invalid application key"*|*"bad auth token"*|*" 401"*|*" 403"*)
+      amber unauthorized "B2 rejected the credential during $1" ;;
+  esac
+  case "$txt" in
+    *"no such host"*|*"could not resolve"*|*"connection refused"*|*"network is unreachable"*|*"i/o timeout"*|*"timed out"*|*"dial tcp"*|*"name resolution"*|*"name or service not known"*|*"nodename nor servname"*|*gaierror*|*b2connectionerror*|*connectionerror*|*"max retries exceeded"*|*"failed to establish a new connection"*|*"connection aborted"*|*"connection reset"*|*b2requesttimeout*|*"failed to query available provider packages"*|*"could not connect"*|*"no route to host"*|*unknownhost*)
+      amber unreachable "neither the $TARGET realm nor the provider registry answered during $1" ;;
+  esac
+  fail "$1" "$(first_error "$WORK/last.out")"
+}
+
+tfout()  { terraform -chdir="$WORK" output -raw "$1" 2>/dev/null; }
+assert() { # <output> <step> <detail>
+  [ "$(tfout "$1")" = "true" ] && return 0
+  fail "$2" "$3"
+}
+
+# --- 1. which realm ---------------------------------------------------------
+case "$TARGET" in
+  staging)    ENDPOINT="https://api.backblaze.net" ;;
+  production) ENDPOINT="https://api.backblazeb2.com" ;;
+  simulator)
+    [ -n "${CONFORMANCE_SIMULATOR_URL:-}" ] \
+      || amber no-realm-option "CONFORMANCE_SIMULATOR_URL is unset"
+    ENDPOINT="$CONFORMANCE_SIMULATOR_URL"
+    # The simulator's fixed test credential, whatever the environment holds,
+    # so a real B2_* value can never be sent there.
+    export B2_APPLICATION_KEY_ID="test-key-id" B2_APPLICATION_KEY="test-key" ;;
+  *)          amber no-realm-option "the b2 provider's endpoint takes a realm URL; it ships no '$TARGET'" ;;
+esac
+
+# --- 2. a credential the provider can actually read -------------------------
+if [ -z "${B2_APPLICATION_KEY_ID:-}" ] && [ -z "${B2_APPLICATION_KEY:-}" ] && [ -z "${B2_TEST_APPLICATION_KEY_ID:-}" ]; then
+  amber no-credential "B2_APPLICATION_KEY_ID / B2_APPLICATION_KEY unset"
+fi
+if [ -z "${B2_APPLICATION_KEY_ID:-}" ] || [ -z "${B2_APPLICATION_KEY:-}" ]; then
+  amber unauthorized "the provider authorizes from B2_APPLICATION_KEY_ID + B2_APPLICATION_KEY; only one of the pair is set"
+fi
+
+# --- 3. runtimes ------------------------------------------------------------
+need terraform || amber missing-runtime "terraform is not on PATH"
+sha1_of /dev/null >/dev/null 2>&1 || amber missing-runtime "no sha1 tool (sha1sum / shasum / openssl) on PATH"
+
+# --- 4. a scratch working directory this check owns -------------------------
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/sdkharness-conf-tf-metadata.XXXXXX")" \
+  || fail setup "could not create a scratch working directory"
+
+export TF_INPUT=0 TF_IN_AUTOMATION=1 CHECKPOINT_DISABLE=1
+unset TF_LOG TF_LOG_PATH TF_LOG_CORE TF_LOG_PROVIDER
+sdkharness_tf_cli_config "$WORK/cli.tfrc" || fail setup "exact-revision provider is unavailable"
+export TF_CLI_CONFIG_FILE="$WORK/cli.tfrc"   # exact-revision dev override
+export TF_VAR_endpoint="$ENDPOINT"
+export TF_VAR_bucket_name="sdkharness-conf-$(rand_hex)"
+export TF_VAR_stage=1
+
+export TF_VAR_object_name="st/metadata.txt"
+export TF_VAR_content_type="text/plain"
+export TF_VAR_marker_key="conf-marker"      # B2 lower-cases fileInfo keys
+export TF_VAR_marker_value="sdkharness-conformance"
+
+printf 'sdkharness conformance metadata payload\n' >"$WORK/payload.bin"
+TF_VAR_expected_sha1="$(sha1_of "$WORK/payload.bin")"
+export TF_VAR_expected_sha1
+TF_VAR_expected_size="$(wc -c <"$WORK/payload.bin" | tr -d ' ')"
+export TF_VAR_expected_size
+
+cat >"$WORK/main.tf" <<'HCL'
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    b2 = {
+      source = "Backblaze/b2"
+    }
+  }
+}
+
+# No credential is ever written here. The provider reads
+# B2_APPLICATION_KEY_ID / B2_APPLICATION_KEY from the environment; only the
+# realm is declared, through the endpoint attribute the card documents.
+provider "b2" {
+  endpoint = var.endpoint
+}
+
+variable "endpoint" { type = string }
+variable "bucket_name" { type = string }
+variable "stage" { type = number }
+
+variable "object_name" { type = string }
+variable "content_type" { type = string }
+variable "marker_key" { type = string }
+variable "marker_value" { type = string }
+variable "expected_sha1" { type = string }
+variable "expected_size" { type = number }
+
+resource "b2_bucket" "b" {
+  bucket_name = var.bucket_name
+  bucket_type = "allPrivate"
+}
+
+resource "b2_bucket_file_version" "f" {
+  bucket_id    = b2_bucket.b.bucket_id
+  file_name    = var.object_name
+  source       = "${path.module}/payload.bin"
+  content_type = var.content_type
+  file_info = {
+    (var.marker_key) = var.marker_value
+  }
+}
+
+data "b2_bucket_file" "read" {
+  count     = var.stage == 1 ? 1 : 0
+  bucket_id = b2_bucket.b.bucket_id
+  file_name = b2_bucket_file_version.f.file_name
+}
+
+locals {
+  read = try(data.b2_bucket_file.read[0].file_versions[0], null)
+}
+
+output "ok_id" { value = try(local.read.file_id, "") == b2_bucket_file_version.f.file_id }
+output "ok_name" { value = try(local.read.file_name, "") == var.object_name }
+output "ok_type" { value = try(local.read.content_type, "") == var.content_type }
+output "ok_size" { value = try(local.read.size, -1) == var.expected_size }
+output "ok_sha1" { value = try(local.read.content_sha1, "") == var.expected_sha1 }
+output "ok_marker" { value = try(lookup(local.read.file_info, var.marker_key, ""), "") == var.marker_value }
+HCL
+
+# --- 5. install the published provider, then check our config against it -----
+tf init -input=false -no-color || tf_trouble "terraform init (installing the registry provider)"
+tf validate -no-color \
+  || fail "terraform validate" "the configuration does not match the installed provider schema: $(first_error "$WORK/last.out")"
+
+# --- 6. the customer path ---------------------------------------------------
+APPLIED=1
+tf apply -auto-approve -input=false -no-color || tf_trouble "terraform apply (upload + metadata read)"
+
+assert ok_id     "metadata" "the by-name metadata read returned a different file_id"
+assert ok_name   "metadata" "the by-name metadata read returned a different file_name"
+assert ok_type   "metadata" "contentType did not round-trip"
+assert ok_size   "metadata" "contentLength did not round-trip"
+assert ok_sha1   "metadata" "contentSha1 did not round-trip"
+assert ok_marker "metadata" "the custom fileInfo entry did not round-trip"
+
+note "path taken: BY NAME. The provider registers no by-file-id metadata data source -- b2_bucket_file is keyed on (bucket_id, file_name) -- so the scenario's by-id leg has no provider expression here."
+pass

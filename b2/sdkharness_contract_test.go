@@ -16,26 +16,39 @@ import (
 	"testing"
 )
 
-func TestSDKHarnessHealthContract(t *testing.T) {
+func TestSDKHarnessContract(t *testing.T) {
 	root := filepath.Join("..", ".sdkharness")
 	contract, err := os.ReadFile(filepath.Join(root, "tests.tsv"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(contract)), "\n")
-	if len(lines) != 2 || lines[0] != "test_level\tscenario\ttarget\texecutable" {
+	if len(lines) != 17 || lines[0] != "test_level\tscenario\ttarget\texecutable" {
 		t.Fatalf("unexpected tests.tsv schema: %q", string(contract))
 	}
 	wantRow := "health\tgolden-path\tsimulator\t./.sdkharness/tests/health-golden-path"
-	if lines[1] != wantRow {
+	if lines[len(lines)-1] != wantRow {
 		t.Fatalf("tests.tsv does not contain %q", wantRow)
 	}
-
-	info, err := os.Stat(filepath.Join(root, "tests", "health-golden-path"))
-	if err != nil {
-		t.Fatal(err)
+	seenScenarios := make(map[string]bool)
+	for _, line := range lines[1 : len(lines)-1] {
+		fields := strings.Split(line, "\t")
+		if len(fields) != 4 || fields[0] != "conformance" || fields[2] != "simulator" || fields[3] != "./.sdkharness/tests/run-conformance" {
+			t.Fatalf("unexpected conformance contract row: %q", line)
+		}
+		if seenScenarios[fields[1]] {
+			t.Fatalf("duplicate conformance scenario: %s", fields[1])
+		}
+		seenScenarios[fields[1]] = true
 	}
-	if info.Mode()&0o111 == 0 {
-		t.Fatal("health-golden-path is not executable")
+
+	for _, executable := range []string{"health-golden-path", "run-conformance"} {
+		info, statErr := os.Stat(filepath.Join(root, "tests", executable))
+		if statErr != nil {
+			t.Fatal(statErr)
+		}
+		if info.Mode()&0o111 == 0 {
+			t.Fatalf("%s is not executable", executable)
+		}
 	}
 }
