@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Contract dispatcher for repository-owned Terraform conformance scenarios.
+set -u
+
+LEVEL=conformance
+SCENARIO="${SDKHARNESS_SCENARIO:-}"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+
+result() {
+  printf 'SDKHARNESS_RESULT\t%s\t%s\t%s\t%s\n' "$LEVEL" "$SCENARIO" "$1" "$2"
+}
+
+[ "${SDKHARNESS_TEST_LEVEL:-}" = "$LEVEL" ] \
+  || { result FAIL 'configuration: unexpected test level'; exit 1; }
+case "$SCENARIO" in ''|*[!A-Za-z0-9_.-]*)
+  result FAIL 'configuration: invalid scenario'; exit 1 ;;
+esac
+[ -n "${SDKHARNESS_TERRAFORM_PROVIDER_DIR:-}" ] \
+  || { result FAIL 'configuration: exact-revision provider directory is unset'; exit 1; }
+[ -n "${SDKHARNESS_SIMULATOR_URL:-}" ] \
+  || { result FAIL 'configuration: simulator URL is unset'; exit 1; }
+python3 -c '
+import sys
+from urllib.parse import urlsplit
+url = urlsplit(sys.argv[1])
+valid = (url.scheme == "http" and url.hostname == "127.0.0.1" and url.port is not None
+         and url.username is None and url.password is None and url.path in ("", "/")
+         and not url.query and not url.fragment)
+raise SystemExit(0 if valid else 1)
+' "$SDKHARNESS_SIMULATOR_URL" \
+  || { result FAIL 'configuration: simulator URL must be a bare IPv4 loopback HTTP origin'; exit 1; }
+export CONFORMANCE_TARGET=simulator
+export CONFORMANCE_SIMULATOR_URL="$SDKHARNESS_SIMULATOR_URL"
+check="$HERE/conformance/$SCENARIO"
+[ -f "$check" ] && [ -x "$check" ] \
+  || { result FAIL 'configuration: scenario executable is unavailable'; exit 1; }
+
+log="$(mktemp "${TMPDIR:-/tmp}/sdkharness-tf-conformance.XXXXXX")" \
+  || { result FAIL 'setup: could not create a child log'; exit 1; }
+trap 'rm -f "$log"' EXIT
+export BASH_ENV="$HERE/lib/terraform-provider.sh"
+if "$check" >"$log" 2>&1; then
+  child_rc=0
+else
+  child_rc=$?
+fi
+# Preserve diagnostics without leaking the legacy standing-protocol line. The
+# harness adapter will emit the one authoritative CONFORMANCE result.
+prefix="CONFORMANCE terraform-provider-b2 $SCENARIO @"
+grep -Fv "$prefix" "$log" || true
+
+count="$(grep -Fc "$prefix" "$log" 2>/dev/null || true)"
+[ "$count" = 1 ] \
+  || { result FAIL "contract: expected one standing result, got $count"; exit 1; }
+line="$(grep -F "$prefix" "$log")"
+verdict="${line#*: }"
+case "$verdict" in
+  PASS)
+    [ "$child_rc" = 0 ] \
+      || { result FAIL "contract: PASS exited $child_rc"; exit 1; }
+    result PASS -
+    ;;
+  'FAIL ('*')')
+    reason="${verdict#FAIL (}"; reason="${reason%)}"
+    result FAIL "$reason"
+    exit 1
+    ;;
+  'COULD-NOT-RUN ('*')')
+    reason="${verdict#COULD-NOT-RUN (}"; reason="${reason%)}"
+    result SKIP "$reason"
+    ;;
+  *)
+    result FAIL 'contract: malformed standing verdict'
+    exit 1
+    ;;
+esac
