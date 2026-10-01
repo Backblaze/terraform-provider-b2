@@ -19,9 +19,15 @@ orchestration, evidence retention, and fleet reporting.
   allows no other installation method, and checks do **not** run `terraform init`:
   with `dev_overrides` nothing needs installing, and `init` would contact the provider
   registry.
-- **No other network.** Proxy-aware clients are pointed at a dead proxy with loopback
-  exempt, so a connection to anything but the simulator fails at once and is reported as a
-  `FAIL` ("a non-loopback connection was attempted"), not as an amber "unreachable".
+- **No other network while asserting.** Proxy-aware clients are pointed at a dead proxy with
+  loopback exempt, so a connection to anything but the simulator fails at once and is reported
+  as a `FAIL` ("a non-loopback connection was attempted"), not as an amber "unreachable".
+- **Building is a separate, earlier step and never touches the checkout.** The conformance and
+  resilience dispatchers require `SDKHARNESS_TERRAFORM_PROVIDER_DIR` and never build. The health
+  check uses it too; only when it is unset does the health check build the provider from a
+  scratch **copy** of the checkout (`make build STATICX=0`), before any assertion. That build
+  may download Go modules and Python packages, so it is not covered by the guard above. For a
+  fully offline run, build the provider yourself first (below) and pass the directory.
 - A check that reports `COULD-NOT-RUN` must exit 0; the dispatcher reports a nonzero exit
   after such a verdict as a `FAIL`, never as amber evidence.
 
@@ -36,8 +42,13 @@ orchestration, evidence retention, and fleet reporting.
   Makefile's `staticx` wrapper rejects those interpreters and only matters for shipping the
   binding, not for simulator checks.
 
+Build the provider into its own directory first (this is the step that may use the network).
+Do it in a scratch copy so the checkout stays untouched:
+
 ```bash
-make build STATICX=0        # writes ./terraform-provider-b2
+tmp="$(mktemp -d)" && cp -R . "$tmp/provider"
+(cd "$tmp/provider" && make build STATICX=0)     # writes $tmp/provider/terraform-provider-b2
+export SDKHARNESS_TERRAFORM_PROVIDER_DIR="$tmp/provider"
 ```
 
 ## Run one check by hand
@@ -59,7 +70,7 @@ these names.)
 ```bash
 export SDKHARNESS_SIMULATOR_URL=http://127.0.0.1:<port>
 export SDKHARNESS_SIMULATOR_CONTROL_URL=http://127.0.0.1:<control-port>   # resilience only
-export SDKHARNESS_TERRAFORM_PROVIDER_DIR="$PWD"      # the directory holding terraform-provider-b2
+export SDKHARNESS_TERRAFORM_PROVIDER_DIR="$tmp/provider"   # from "Prerequisites" above
 ```
 
 Then, from the repository root:
