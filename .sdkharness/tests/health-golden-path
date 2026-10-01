@@ -56,6 +56,10 @@ need() {
 [ -n "${B2_APPLICATION_KEY_ID:-}" ] || fail configuration 'application key ID is unset'
 [ -n "${B2_APPLICATION_KEY:-}" ] || fail configuration 'application key is unset'
 [ -n "${B2_BUCKET_NAME:-}" ] || fail configuration 'throwaway bucket is unset'
+# Only the simulator's fixed test credential is accepted, so running this file directly cannot
+# send a real key anywhere.
+[ "$B2_APPLICATION_KEY_ID" = test-key-id ] && [ "$B2_APPLICATION_KEY" = test-key ] \
+  || fail configuration "only the simulator's fixed test credential is accepted"
 
 need terraform
 need go
@@ -100,11 +104,14 @@ provider_installation {
   dev_overrides {
     "Backblaze/b2" = $PROVIDER_HCL
   }
-  direct {}
 }
 EOF
 export TF_CLI_CONFIG_FILE="$WORK/cli.tfrc"
 export TF_INPUT=0 TF_IN_AUTOMATION=1 CHECKPOINT_DISABLE=1
+# Only the loopback simulator may be reached: every proxy-aware client gets a dead proxy, loopback is exempt.
+export HTTP_PROXY=http://127.0.0.1:1 HTTPS_PROXY=http://127.0.0.1:1 ALL_PROXY=http://127.0.0.1:1
+export http_proxy=http://127.0.0.1:1 https_proxy=http://127.0.0.1:1 all_proxy=http://127.0.0.1:1
+export NO_PROXY=127.0.0.1,localhost,::1 no_proxy=127.0.0.1,localhost,::1
 unset TF_LOG TF_LOG_PATH TF_LOG_CORE TF_LOG_PROVIDER
 export TF_VAR_endpoint="$SDKHARNESS_SIMULATOR_URL"
 
@@ -141,9 +148,8 @@ data "b2_bucket_file" "verify" {
 output "versions" { value = data.b2_bucket_file.verify.file_versions }
 EOF
 
-if ! terraform -chdir="$WORK" init -input=false -no-color >"$WORK/init.log" 2>&1; then
-  fail initialize 'Terraform could not initialize the exact-revision provider'
-fi
+# No `terraform init`: dev_overrides needs no installation, and init would contact the provider
+# registry -- network this check must not use.
 DESTROY_NEEDED=1
 if ! terraform -chdir="$WORK" apply -auto-approve -input=false -no-color \
   -var "bucket_name=$B2_BUCKET_NAME" -var "object_name=$OBJECT_NAME" \
@@ -187,9 +193,6 @@ data "b2_bucket_file" "verify" {
 output "versions" { value = data.b2_bucket_file.verify.file_versions }
 EOF
 export TF_CLI_CONFIG_FILE="$VERIFY/cli.tfrc"
-if ! terraform -chdir="$VERIFY" init -input=false -no-color >"$VERIFY/init.log" 2>&1; then
-  fail verify 'Terraform could not initialize the post-delete read'
-fi
 if terraform -chdir="$VERIFY" apply -auto-approve -input=false -no-color \
   -var "bucket_name=$B2_BUCKET_NAME" -var "object_name=$OBJECT_NAME" \
   >"$VERIFY/apply.log" 2>&1; then
