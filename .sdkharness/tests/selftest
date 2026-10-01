@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Self-test of the repository-owned contract boundary. It needs no simulator, no network, and
+# neither Terraform nor a built provider. Run: .sdkharness/tests/selftest
+#
+# What it pins: (1) a dispatcher turns a child that prints COULD-NOT-RUN and then exits nonzero
+# into FAIL, not into amber evidence; (2) a check run directly refuses a non-simulator target,
+# any non-loopback URL and any real credential; (3) no check runs `terraform init` (which would
+# contact the provider registry) and the generated CLI configuration allows no direct install;
+# (4) the health check never builds inside the checkout under test, whatever the working directory.
+set -u
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/tf-selftest.XXXXXX")" || exit 1
+trap 'rm -rf "$TMP"' EXIT
+PASS=0; FAIL=0
+ok() { PASS=$((PASS + 1)); printf '[PASS] %s\n' "$1"; }
+bad() { FAIL=$((FAIL + 1)); printf '[FAIL] %s\n' "$1"; }
+LOOP=http://127.0.0.1:9
+
+# --- (1) dispatcher contract with fixture children -------------------------------
+mkdir -p "$TMP/t/lib" "$TMP/t/conformance" "$TMP/t/resilience" "$TMP/provider"
+cp "$HERE"/run-conformance "$HERE"/run-resilience "$TMP/t/"
+cp "$HERE"/lib/* "$TMP/t/lib/"
+: > "$TMP/provider/terraform-provider-b2"; chmod +x "$TMP/provider/terraform-provider-b2"
+fixture() { # <path> <say line> <exit code>
+  printf '#!/usr/bin/env bash\nprintf "%%s\\n" %q\nexit %s\n' "$2" "$3" > "$1"; chmod +x "$1"
+}
+run_disp() { # <level> <scenario>
+  env -i PATH="$PATH" SDKHARNESS_TEST_LEVEL="$1" SDKHARNESS_SCENARIO="$2" \
+    SDKHARNESS_TERRAFORM_PROVIDER_DIR="$TMP/provider" \
+    SDKHARNESS_SIMULATOR_URL="$LOOP" SDKHARNESS_SIMULATOR_CONTROL_URL="$LOOP" \
+    "$TMP/t/run-$1" 2>/dev/null
+  printf '%s' "$?" > "$TMP/rc"
+}
+for spec in "conformance|CONFORMANCE terraform-provider-b2" "resilience|RESILIENCE terraform-provider-b2"; do
+  level="${spec%%|*}"; head="${spec#*|}"
+  fixture "$TMP/t/$level/fx.cnr_ok" "$head fx.cnr_ok @simulator: COULD-NOT-RUN (missing-runtime -- nothing to do)" 0
+  fixture "$TMP/t/$level/fx.cnr_bad" "$head fx.cnr_bad @simulator: COULD-NOT-RUN (missing-runtime -- nothing to do)" 3
+  out="$(run_disp "$level" fx.cnr_ok)"; rc="$(cat "$TMP/rc")"
+  case "$out" in *"	SKIP	"*) [ "$rc" = 0 ] && ok "$level: COULD-NOT-RUN with exit 0 is amber (SKIP)" || bad "$level: clean CNR exited $rc";; *) bad "$level: clean CNR not SKIP ($out)";; esac
+  out="$(run_disp "$level" fx.cnr_bad)"; rc="$(cat "$TMP/rc")"
+  case "$out" in *"	FAIL	"*"COULD-NOT-RUN exited 3"*) [ "$rc" = 1 ] && ok "$level: COULD-NOT-RUN with a nonzero exit is a FAIL" || bad "$level: CNR+nonzero exited $rc, want 1";; *) bad "$level: CNR+nonzero not FAIL ($out)";; esac
+done
+
+# --- (2) a check run directly refuses anything but the loopback simulator -------
+refuse() { # <label> <leaf> <expect> env...
+  local label="$1" leaf="$2" expect="$3"; shift 3
+  out="$(env -i PATH="$PATH" "$@" "$HERE/$leaf" 2>&1)"; rc=$?
+  case "$out" in *"$expect"*) [ "$rc" = 1 ] && ok "$label" || bad "$label (exit $rc)";; *) bad "$label ($out)";; esac
+}
+refuse "conformance leaf: CONFORMANCE_TARGET=staging is refused" conformance/bucket.crud "only the loopback simulator" CONFORMANCE_TARGET=staging CONFORMANCE_SIMULATOR_URL="$LOOP" B2_APPLICATION_KEY_ID=AKIAREAL B2_APPLICATION_KEY=realkey
+refuse "conformance leaf: CONFORMANCE_TARGET=production is refused" conformance/bucket.crud "only the loopback simulator" CONFORMANCE_TARGET=production CONFORMANCE_SIMULATOR_URL="$LOOP"
+refuse "conformance leaf: an external URL is refused" conformance/bucket.crud "must be a bare IPv4 loopback" CONFORMANCE_SIMULATOR_URL=https://api.backblaze.net
+refuse "resilience leaf: an external simulator URL is refused" resilience/upload.retry_408 "must be a bare IPv4 loopback" PYTHONPATH="$HERE/lib" RESILIENCE_SIMULATOR_URL=https://api.backblazeb2.com RESILIENCE_CONTROL_URL="$LOOP" SDKHARNESS_TERRAFORM_PROVIDER_DIR="$TMP/provider"
+refuse "health check: a real credential is refused" health-golden-path "only the simulator's fixed test credential" SDKHARNESS_TEST_LEVEL=health SDKHARNESS_SCENARIO=golden-path SDKHARNESS_SIMULATOR_URL="$LOOP" B2_APPLICATION_KEY_ID=AKIAREAL B2_APPLICATION_KEY=realkey B2_BUCKET_NAME=x
+
+# --- (3) static guarantees ---------------------------------------------------------
+if grep -nE "(tf|terraform)[^#]* init( |$)|\"init\"" "$HERE"/conformance/* "$HERE"/resilience/* "$HERE"/health-golden-path 2>/dev/null | grep -vE '^\S+:[0-9]+:\s*#' | grep -q .; then
+  bad "a check still runs terraform init"
+else
+  ok "no check runs terraform init (it would contact the provider registry)"
+fi
+if grep -nE "^\s*direct \{\}|\"  direct \{\}" "$HERE"/lib/* "$HERE"/health-golden-path >/dev/null 2>&1; then
+  bad "the generated CLI configuration still allows direct provider installation"
+else
+  ok "the generated CLI configuration has dev_overrides only (no direct install)"
+fi
+if grep -nE 'staging\)|https://api\.backblaze(b2)?\.(net|com)' "$HERE"/conformance/* >/dev/null 2>&1; then
+  bad "a conformance check still has a staging or production endpoint"
+else
+  ok "no conformance check names a staging or production endpoint"
+fi
+
+
+# --- (4) the health check never builds in the checkout under test ------------------
+# Run the real health leaf from inside a fake checkout, with stub tools, and observe where `make`
+# runs. The old leaf built in the working directory (the checkout) and so wrote the provider
+# executable into the tree under test.
+stubs="$TMP/stubs"; mkdir -p "$stubs" "$TMP/tmpdir"
+for t in terraform go jq; do printf '#!/bin/sh\nexit 1\n' > "$stubs/$t"; chmod +x "$stubs/$t"; done
+cat > "$stubs/make" <<'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$PWD" >> "$STUB_LOG.cwd"
+printf '%s\n' "$*" >> "$STUB_LOG.args"
+: > "$PWD/terraform-provider-b2"; chmod +x "$PWD/terraform-provider-b2"
+STUB
+chmod +x "$stubs/make"
+mkdir -p "$TMP/checkout/.sdkharness/tests" "$TMP/ready"; tree="$(cd "$TMP/checkout" && pwd -P)"   # physical path, as `pwd -P` reports it
+cp "$HERE/health-golden-path" "$tree/.sdkharness/tests/"
+: > "$TMP/ready/terraform-provider-b2"; chmod +x "$TMP/ready/terraform-provider-b2"
+tree_listing() { (cd "$tree" && find . | sort); }
+run_health() { # extra env... ; the working directory is the checkout, as in a careless direct run
+  (cd "$tree" && env -i PATH="$stubs:/usr/bin:/bin" TMPDIR="$TMP/tmpdir" STUB_LOG="$TMP/stub" \
+    SDKHARNESS_TEST_LEVEL=health SDKHARNESS_SCENARIO=golden-path SDKHARNESS_SIMULATOR_URL="$LOOP" \
+    B2_APPLICATION_KEY_ID=test-key-id B2_APPLICATION_KEY=test-key B2_BUCKET_NAME=bucket "$@" \
+    "$tree/.sdkharness/tests/health-golden-path" >/dev/null 2>&1)
+}
+rm -f "$TMP/stub.cwd" "$TMP/stub.args"; before="$(tree_listing)"
+run_health
+build_cwd="$(cat "$TMP/stub.cwd" 2>/dev/null)"; after="$(tree_listing)"
+if [ -n "$build_cwd" ] && [ "$build_cwd" != "$tree" ] && case "$build_cwd" in "$tree"/*) false ;; *) true ;; esac; then
+  ok "health: with no provider directory, make runs in a scratch copy, not in the checkout"
+else
+  bad "health: make ran in '$build_cwd' (the checkout is '$tree')"
+fi
+[ "$before" = "$after" ] && [ ! -e "$tree/terraform-provider-b2" ] \
+  && ok "health: the checkout under test is left byte-for-path unchanged by the build step" \
+  || bad "health: the build step wrote into the checkout ($(printf '%s\n' "$after" | grep -v '^\./\.sdkharness' | tr '\n' ' '))"
+grep -q '^build STATICX=0$' "$TMP/stub.args" 2>/dev/null \
+  && ok "health: the build forces STATICX=0" || bad "health: make was not invoked as 'make build STATICX=0' ($(cat "$TMP/stub.args" 2>/dev/null))"
+rm -f "$TMP/stub.cwd" "$TMP/stub.args"
+run_health SDKHARNESS_TERRAFORM_PROVIDER_DIR="$TMP/ready"
+[ ! -e "$TMP/stub.cwd" ] && ok "health: a supplied provider directory means nothing is built" || bad "health: built although SDKHARNESS_TERRAFORM_PROVIDER_DIR was supplied"
+if grep -nE '(make build|go build|go install|pip install|pip3 install)' "$HERE"/conformance/* "$HERE"/resilience/* "$HERE"/lib/* 2>/dev/null | grep -vE ':[0-9]+:\s*#' | grep -q .; then
+  bad "a conformance/resilience check or helper builds something"
+else
+  ok "no conformance/resilience check or helper builds anything (they require the supplied provider)"
+fi
+
+printf 'terraform-provider-b2 .sdkharness selftest: %d passed, %d failed\n' "$PASS" "$FAIL"
+[ "$FAIL" = 0 ]

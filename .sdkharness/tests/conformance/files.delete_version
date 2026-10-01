@@ -51,7 +51,7 @@ case "$-" in *x*) set +x ;; esac   # trace guard -- a credential must never be e
 
 SLUG="terraform-provider-b2"
 CAPABILITY="files.delete_version"
-TARGET="${CONFORMANCE_TARGET:-staging}"
+TARGET="${CONFORMANCE_TARGET:-simulator}"
 
 VERDICT="FAIL (harness -- the check ended without a verdict)"
 EXIT_CODE=1
@@ -134,13 +134,16 @@ tf() { terraform -chdir="$WORK" "$@" >"$WORK/last.out" 2>&1; }
 tf_trouble() { # <step>
   local txt
   txt="$(LC_ALL=C tr '[:upper:]' '[:lower:]' <"$WORK/last.out" 2>/dev/null)"
+  if sdkharness_tf_trouble_is_proxy_refusal "$txt"; then
+    fail "$1" "a non-loopback connection was attempted and refused by the network guard"
+  fi
   case "$txt" in
     *unauthorized*|*bad_auth_token*|*invalidauthtoken*|*expired_auth_token*|*"invalid authorization token"*|*not_authorized*|*"not authorized"*|*access_denied*|*accessdenied*|*"access denied"*|*forbidden*|*restrictedbucket*|*"invalid application key"*|*"bad auth token"*|*" 401"*|*" 403"*)
       amber unauthorized "B2 rejected the credential during $1" ;;
   esac
   case "$txt" in
     *"no such host"*|*"could not resolve"*|*"connection refused"*|*"network is unreachable"*|*"i/o timeout"*|*"timed out"*|*"dial tcp"*|*"name resolution"*|*"name or service not known"*|*"nodename nor servname"*|*gaierror*|*b2connectionerror*|*connectionerror*|*"max retries exceeded"*|*"failed to establish a new connection"*|*"connection aborted"*|*"connection reset"*|*b2requesttimeout*|*"failed to query available provider packages"*|*"could not connect"*|*"no route to host"*|*unknownhost*)
-      amber unreachable "neither the $TARGET realm nor the provider registry answered during $1" ;;
+      amber unreachable "the $TARGET realm did not answer during $1" ;;
   esac
   fail "$1" "$(first_error "$WORK/last.out")"
 }
@@ -152,18 +155,20 @@ assert() { # <output> <step> <detail>
 }
 
 # --- 1. which realm ---------------------------------------------------------
-case "$TARGET" in
-  staging)    ENDPOINT="https://api.backblaze.net" ;;
-  production) ENDPOINT="https://api.backblazeb2.com" ;;
-  simulator)
-    [ -n "${CONFORMANCE_SIMULATOR_URL:-}" ] \
-      || amber no-realm-option "CONFORMANCE_SIMULATOR_URL is unset"
-    ENDPOINT="$CONFORMANCE_SIMULATOR_URL"
-    # The simulator's fixed test credential, whatever the environment holds,
-    # so a real B2_* value can never be sent there.
-    export B2_APPLICATION_KEY_ID="test-key-id" B2_APPLICATION_KEY="test-key" ;;
-  *)          amber no-realm-option "the b2 provider's endpoint takes a realm URL; it ships no '$TARGET'" ;;
-esac
+# Only the loopback simulator is allowed: no staging or production mode and no
+# ambient credential. Run the dispatcher (run-conformance), which supplies the
+# validated simulator URL and the exact-revision provider directory.
+. "$(dirname "$0")/../lib/terraform-provider.sh"
+[ "$TARGET" = simulator ] || fail configuration "only the loopback simulator is allowed, not '$TARGET'"
+[ -n "${CONFORMANCE_SIMULATOR_URL:-}" ] \
+  || amber no-realm-option "CONFORMANCE_SIMULATOR_URL is unset"
+sdkharness_valid_loopback_origin "$CONFORMANCE_SIMULATOR_URL" \
+  || fail configuration "CONFORMANCE_SIMULATOR_URL must be a bare IPv4 loopback HTTP origin"
+ENDPOINT="$CONFORMANCE_SIMULATOR_URL"
+sdkharness_drop_ambient_b2_env
+# The simulator's fixed test credential, so a real B2_* value can never be sent there.
+export B2_APPLICATION_KEY_ID="test-key-id" B2_APPLICATION_KEY="test-key"
+sdkharness_tf_network_guard
 
 # --- 2. a credential the provider can actually read -------------------------
 if [ -z "${B2_APPLICATION_KEY_ID:-}" ] && [ -z "${B2_APPLICATION_KEY:-}" ] && [ -z "${B2_TEST_APPLICATION_KEY_ID:-}" ]; then
@@ -251,8 +256,10 @@ output "ok_one" { value = length(local.vers) == 1 }
 output "ok_survivor_is_older" { value = try(local.vers[0].file_id, "") == b2_bucket_file_version.v1.file_id }
 HCL
 
-# --- 5. install the published provider, then check our config against it -----
-tf init -input=false -no-color || tf_trouble "terraform init (installing the registry provider)"
+# --- 5. check our config against the exact-revision provider -----------------
+# No `terraform init`: dev_overrides needs no installation, and init would contact the
+# provider registry (and fall back to the published release) -- network the assertions
+# must not use.
 tf validate -no-color \
   || fail "terraform validate" "the configuration does not match the installed provider schema: $(first_error "$WORK/last.out")"
 

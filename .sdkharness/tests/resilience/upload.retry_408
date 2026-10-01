@@ -45,7 +45,7 @@ import time
 import urllib.request
 import uuid
 
-from exact_provider import write_cli_config
+from exact_provider import is_loopback_origin, network_guard_env, write_cli_config
 
 SLUG = "terraform-provider-b2"
 SCENARIO = "upload.retry_408"
@@ -233,6 +233,10 @@ class Tf:
     provider revision, and the simulator as the realm."""
 
     def __init__(self, scratch: str) -> None:
+        # Only the loopback simulator, only its fixed credential, and no other network.
+        for name in ("RESILIENCE_SIMULATOR_URL", "RESILIENCE_CONTROL_URL"):
+            if not is_loopback_origin(os.environ.get(name, "")):
+                raise Failure("configuration", f"{name} must be a bare IPv4 loopback HTTP origin")
         self.dir = scratch
         cfg = os.path.join(scratch, "cli.tfrc")
         write_cli_config(cfg)
@@ -243,6 +247,7 @@ class Tf:
                         TF_VAR_endpoint=os.environ["RESILIENCE_SIMULATOR_URL"],
                         TF_VAR_bucket_name=f"sdkharness-res-{uuid.uuid4().hex[:12]}",
                         TF_VAR_object_name=OBJECT_NAME)
+        self.env.update(network_guard_env())
         with open(os.path.join(scratch, "main.tf"), "w") as handle:
             handle.write(HCL)
 
@@ -300,16 +305,17 @@ def setup(stage: int = 0, payload: bytes = b"", **tfvars):
     """An initialized working directory and a first apply. There is no
     unreachable/unauthorized amber: the runner supplies the server and the
     credential, so either failing is a harness defect."""
+    for name in ("RESILIENCE_SIMULATOR_URL", "RESILIENCE_CONTROL_URL"):
+        if not is_loopback_origin(os.environ.get(name, "")):
+            raise Failure("configuration", f"{name} must be a bare IPv4 loopback HTTP origin")
     if shutil.which("terraform") is None:
         raise Amber("missing-runtime", "terraform is not on PATH")
     scratch = tempfile.mkdtemp(prefix="sdkharness-res-tf.")
     CLEANUP.append(scratch)
     tf = Tf(scratch)
     tf.payload(payload)
-    init = tf.run("init", "-input=false", "-no-color")
-    if init.returncode != 0:
-        error_note(init)
-        raise Amber("missing-runtime", "terraform init could not prepare the exact-revision provider")
+    # No `terraform init`: dev_overrides needs no installation, and init would contact the provider
+    # registry -- network the assertions must not use.
     tf.must_apply("setup apply", stage, **tfvars)
     return tf
 
