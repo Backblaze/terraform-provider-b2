@@ -44,10 +44,10 @@
 # REALM. The provider block's `endpoint` attribute (default B2_ENDPOINT) is
 # passed to the embedded b2sdk's authorize_account as its realm
 # (docs/sdks/terraform-provider-b2/card.md, "Auth model"), and b2sdk uses a
-# value it does not recognise verbatim as the realm URL. So @staging and
-# @production name their API URLs, and @simulator names
-# CONFORMANCE_SIMULATOR_URL, the harness's own server (bin/simulator/serve.mjs),
-# with its fixed test credential. Plain http:// is enough: the provider also
+# value it does not recognise verbatim as the realm URL. Only the simulator is
+# allowed: CONFORMANCE_SIMULATOR_URL, the harness's own server
+# (bin/simulator/serve.mjs), with its fixed test credential; there is no
+# staging or production mode. Plain http:// is enough: the provider also
 # accepts the http upload and download URLs that realm mints.
 set -uo pipefail
 case "$-" in *x*) set +x ;; esac   # trace guard -- a credential must never be echoed

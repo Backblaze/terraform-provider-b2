@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
+* Harden the repository-owned `.sdkharness` checks: conformance failures against the simulator (auth, unreachable, provider crash) are reported as failures rather than could-not-run, the health check proves the object is deleted directly against the simulator, and resilience checks refuse cleanly when run directly
+
 ## [0.14.0] - 2026-09-16
 
 ### Changed
