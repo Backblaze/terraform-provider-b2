@@ -126,8 +126,8 @@ rand_hex() {
 
 tf() { terraform -chdir="$WORK" "$@" >"$WORK/last.out" 2>&1; }
 
-# The environment's own errors, converted. An unreachable realm and a rejected
-# key are amber; anything else is the capability failing. The b2 provider makes
+# Classify a failed terraform step. Every failure is a FAIL; the category only
+# names what failed. The b2 provider makes
 # no B2 call of its own -- it shells out to an embedded b2sdk and re-raises that
 # exception through a Python traceback -- so what is matched here is b2sdk's
 # exception CLASSES and codes, never an HTTP status line the provider never
@@ -138,13 +138,15 @@ tf_trouble() { # <step>
   if sdkharness_tf_trouble_is_proxy_refusal "$txt"; then
     fail "$1" "a non-loopback connection was attempted and refused by the network guard"
   fi
+  # Only the loopback simulator is ever contacted, with its fixed credential, so a
+  # rejected credential, a refused or reset connection or a timeout is the
+  # simulator or the provider misbehaving (an auth, hang or crash regression),
+  # never a legitimate environment problem: FAIL, not COULD-NOT-RUN.
   case "$txt" in
     *unauthorized*|*bad_auth_token*|*invalidauthtoken*|*expired_auth_token*|*"invalid authorization token"*|*not_authorized*|*"not authorized"*|*access_denied*|*accessdenied*|*"access denied"*|*forbidden*|*restrictedbucket*|*"invalid application key"*|*"bad auth token"*|*" 401"*|*" 403"*)
-      amber unauthorized "B2 rejected the credential during $1" ;;
-  esac
-  case "$txt" in
+      fail "$1" "authorization failed against the simulator: $(first_error "$WORK/last.out")" ;;
     *"no such host"*|*"could not resolve"*|*"connection refused"*|*"network is unreachable"*|*"i/o timeout"*|*"timed out"*|*"dial tcp"*|*"name resolution"*|*"name or service not known"*|*"nodename nor servname"*|*gaierror*|*b2connectionerror*|*connectionerror*|*"max retries exceeded"*|*"failed to establish a new connection"*|*"connection aborted"*|*"connection reset"*|*b2requesttimeout*|*"failed to query available provider packages"*|*"could not connect"*|*"no route to host"*|*unknownhost*)
-      amber unreachable "the $TARGET realm did not answer during $1" ;;
+      fail "$1" "the simulator did not answer (unreachable, reset or timed out): $(first_error "$WORK/last.out")" ;;
   esac
   fail "$1" "$(first_error "$WORK/last.out")"
 }
@@ -162,7 +164,7 @@ assert() { # <output> <step> <detail>
 . "$(dirname "$0")/../lib/terraform-provider.sh"
 [ "$TARGET" = simulator ] || fail configuration "only the loopback simulator is allowed, not '$TARGET'"
 [ -n "${CONFORMANCE_SIMULATOR_URL:-}" ] \
-  || amber no-realm-option "CONFORMANCE_SIMULATOR_URL is unset"
+  || fail configuration "CONFORMANCE_SIMULATOR_URL is unset"
 sdkharness_valid_loopback_origin "$CONFORMANCE_SIMULATOR_URL" \
   || fail configuration "CONFORMANCE_SIMULATOR_URL must be a bare IPv4 loopback HTTP origin"
 ENDPOINT="$CONFORMANCE_SIMULATOR_URL"
@@ -173,16 +175,16 @@ sdkharness_tf_network_guard
 
 # --- 2. a credential the provider can actually read -------------------------
 if [ -z "${B2_APPLICATION_KEY_ID:-}" ] && [ -z "${B2_APPLICATION_KEY:-}" ] && [ -z "${B2_TEST_APPLICATION_KEY_ID:-}" ]; then
-  amber no-credential "B2_APPLICATION_KEY_ID / B2_APPLICATION_KEY unset"
+  fail configuration "B2_APPLICATION_KEY_ID / B2_APPLICATION_KEY unset"
 fi
 if [ -z "${B2_APPLICATION_KEY_ID:-}" ] || [ -z "${B2_APPLICATION_KEY:-}" ]; then
-  amber unauthorized "the provider authorizes from B2_APPLICATION_KEY_ID + B2_APPLICATION_KEY; only one of the pair is set"
+  fail configuration "the provider authorizes from B2_APPLICATION_KEY_ID + B2_APPLICATION_KEY; only one of the pair is set"
 fi
 
 # --- 3. runtimes ------------------------------------------------------------
 need terraform || amber missing-runtime "terraform is not on PATH"
-sha1_of /dev/null >/dev/null 2>&1 || amber missing-runtime "no sha1 tool (sha1sum / shasum / openssl) on PATH"
-need curl || amber missing-runtime "curl is not on PATH, so the share token cannot be exercised over HTTP"
+sha1_of /dev/null >/dev/null 2>&1 || fail setup "no sha1 tool (sha1sum / shasum / openssl) on PATH"
+need curl || fail setup "curl is not on PATH, so the share token cannot be exercised over HTTP"
 
 # --- 4. a scratch working directory this check owns -------------------------
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/sdkharness-conf-tf-nativeurl.XXXXXX")" \
@@ -190,7 +192,11 @@ WORK="$(mktemp -d "${TMPDIR:-/tmp}/sdkharness-conf-tf-nativeurl.XXXXXX")" \
 
 export TF_INPUT=0 TF_IN_AUTOMATION=1 CHECKPOINT_DISABLE=1
 unset TF_LOG TF_LOG_PATH TF_LOG_CORE TF_LOG_PROVIDER
-sdkharness_tf_cli_config "$WORK/cli.tfrc" || fail setup "exact-revision provider is unavailable"
+if ! sdkharness_tf_cli_config "$WORK/cli.tfrc"; then
+  # The provider BUILD is missing: the only other environment gap (beside terraform
+  # itself) that is COULD-NOT-RUN rather than FAIL.
+  amber missing-runtime "the exact-revision provider build (terraform-provider-b2 in SDKHARNESS_TERRAFORM_PROVIDER_DIR) is not available"
+fi
 export TF_CLI_CONFIG_FILE="$WORK/cli.tfrc"   # exact-revision dev override
 export TF_VAR_endpoint="$ENDPOINT"
 export TF_VAR_bucket_name="sdkharness-conf-$(rand_hex)"
@@ -305,7 +311,7 @@ if [ "$crc" != 0 ]; then
   ctxt="$(LC_ALL=C tr '[:upper:]' '[:lower:]' <"$WORK/curl.err" 2>/dev/null)"
   case "$ctxt" in
     *"could not resolve"*|*"couldn't resolve"*|*"connection refused"*|*"failed to connect"*|*"network is unreachable"*|*"timed out"*|*"no route to host"*)
-      amber unreachable "the $TARGET download host did not answer the share-token fetch" ;;
+      fail unreachable "the simulator download host did not answer the share-token fetch" ;;
   esac
   fail "native download" "curl exited $crc fetching the share token"
 fi

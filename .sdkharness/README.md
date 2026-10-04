@@ -13,6 +13,7 @@ orchestration, evidence retention, and fleet reporting.
   production mode.
 - **Only the simulator's fixed test credential** (`test-key-id` / `test-key`). Ambient
   `B2_*` variables are dropped before any check runs, so a real key cannot reach the provider.
+  The health check keeps only the fixed pair and `B2_BUCKET_NAME` and unsets every other `B2_*`.
 - **The exact-revision provider.** Terraform selects the supplied provider executable
   through `dev_overrides` (`SDKHARNESS_TERRAFORM_PROVIDER_DIR`), so a passing result
   cannot silently come from a previously published registry build. The CLI configuration
@@ -28,6 +29,13 @@ orchestration, evidence retention, and fleet reporting.
   scratch **copy** of the checkout (`make build STATICX=0`), before any assertion. That build
   may download Go modules and Python packages, so it is not covered by the guard above. For a
   fully offline run, build the provider yourself first (below) and pass the directory.
+- **What is `COULD-NOT-RUN` (`SKIP`), at every level.** Only a missing Terraform CLI or a missing
+  provider build (no executable in `SDKHARNESS_TERRAFORM_PROVIDER_DIR`; for the health check also
+  no `go`/`make` when it has to build) is amber, reason `missing-runtime`. Because a check only
+  runs against the simulator URL it was given, a rejected credential, an unreachable or reset
+  simulator, a timeout, a provider crash and a failed build are all a `FAIL`. Conformance,
+  resilience and health apply the same policy, including a missing `terraform` in health.
+  A missing check-owned tool (`python3`, `jq`, `curl`, a sha1 tool) is a `FAIL` (setup).
 - A check that reports `COULD-NOT-RUN` must exit 0; the dispatcher reports a nonzero exit
   after such a verdict as a `FAIL`, never as amber evidence.
 
@@ -35,7 +43,9 @@ orchestration, evidence retention, and fleet reporting.
 
 ## Prerequisites
 
-- Go as declared in `go.mod` (1.25.x), `make`, Terraform (CI uses 1.12.x), `python3`, `jq`.
+- Go as declared in `go.mod` (1.25.x), `make`, Terraform (any release that supports `dev_overrides`; the provider's own CI matrix
+  (`.github/workflows/ci.yml`) tests 1.13.* and 1.14.*, and the central SDK harness workflows run
+  these checks with 1.12.2), `python3`, `jq`.
 - To build the provider: Python 3.10+ with `python-bindings/requirements.txt` and
   `requirements-dev.txt` installed (the provider embeds a PyInstaller-built b2sdk binding).
   On Linux under CI interpreters such as `actions/setup-python`, pass `STATICX=0`: the
@@ -98,5 +108,6 @@ POST `{"accountId": ..., "bucketName": "sdkharness-healthcheck", "bucketType": "
 to `/b2api/v4/b2_create_bucket` with the returned `authorizationToken`).
 
 The leaf files under `tests/conformance/` and `tests/resilience/` are not entry points: run
-directly they refuse anything but the loopback simulator, but the dispatchers above are the
+directly they refuse anything but the loopback simulator (the resilience leaves find their helper
+module themselves, so a direct run prints a clean refusal rather than a Python import error), but the dispatchers above are the
 supported way to run them.
