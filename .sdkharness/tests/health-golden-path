@@ -52,8 +52,22 @@ fail() {
   exit 1
 }
 
-need() {
+# Same policy as the conformance and resilience levels: a missing Terraform CLI, or a missing
+# build tool when the provider has to be built, is COULD-NOT-RUN (SKIP, exit 0, reason
+# missing-runtime). Anything else that is wrong -- a failed build, auth, an unreachable simulator,
+# a provider crash -- is a FAIL.
+skip() {
+  VERDICT=SKIP
+  DETAIL="missing-runtime -- $1"
+  exit 0
+}
+
+need() { # tools the check itself needs: a missing one is a FAIL
   command -v "$1" >/dev/null 2>&1 || fail setup "$1 is not installed"
+}
+
+need_runtime() { # the Terraform CLI and the provider build tools: a missing one is SKIP
+  command -v "$1" >/dev/null 2>&1 || skip "$1 is not on PATH"
 }
 
 [ "${SDKHARNESS_TEST_LEVEL:-}" = "$LEVEL" ] || fail configuration 'unexpected test level'
@@ -67,9 +81,16 @@ need() {
 [ "$B2_APPLICATION_KEY_ID" = test-key-id ] && [ "$B2_APPLICATION_KEY" = test-key ] \
   || fail configuration "only the simulator's fixed test credential is accepted"
 
-need terraform
-need go
-need make
+# Drop every other ambient B2_* variable (B2_ENDPOINT, B2_BUCKET_ID, ...): only the fixed pair and
+# the bucket name reach the provider, whatever the caller's environment holds.
+for name in $(compgen -e); do
+  case "$name" in
+    B2_APPLICATION_KEY_ID|B2_APPLICATION_KEY|B2_BUCKET_NAME) ;;
+    B2_*) unset "$name" ;;
+  esac
+done
+
+need_runtime terraform
 need python3
 need jq
 
@@ -92,6 +113,8 @@ raise SystemExit(0 if valid else 1)
 # is installed. Nothing in the assertion phase (terraform apply/destroy) uses that network.
 PROVIDER_DIR="${SDKHARNESS_TERRAFORM_PROVIDER_DIR:-}"
 if [ -z "$PROVIDER_DIR" ]; then
+  need_runtime go
+  need_runtime make
   BUILD_SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/sdkharness-tf-provider-build.XXXXXX")" \
     || fail setup 'could not create the provider build directory'
   BUILD_LOG="$BUILD_SCRATCH/build.log"
@@ -210,6 +233,42 @@ data "b2_bucket_file" "verify" {
 output "versions" { value = data.b2_bucket_file.verify.file_versions }
 EOF
 export TF_CLI_CONFIG_FILE="$VERIFY/cli.tfrc"
+
+# Independent proof, not read from Terraform's error text: ask the simulator directly (fixed test
+# credential, loopback only) that the bucket STILL EXISTS and that the object is GONE from it. A
+# failed post-delete apply is only acceptable when this proof holds, because an error that merely
+# says "not found" could equally be the bucket data source failing.
+if ! PROOF="$(python3 - "$SDKHARNESS_SIMULATOR_URL" "$B2_BUCKET_NAME" "$OBJECT_NAME" <<'PY' 2>&1
+import base64, json, sys, urllib.request
+base, bucket_name, object_name = sys.argv[1].rstrip("/"), sys.argv[2], sys.argv[3]
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # loopback only, no proxy
+
+def call(path, body=None, token=None, basic=None):
+    req = urllib.request.Request(base + "/b2api/v4/" + path,
+                                 data=None if body is None else json.dumps(body).encode(), method="GET" if body is None else "POST")
+    if basic:
+        req.add_header("Authorization", "Basic " + base64.b64encode(basic.encode()).decode())
+    if token:
+        req.add_header("Authorization", token)
+    with opener.open(req, timeout=20) as resp:
+        return json.load(resp)
+
+auth = call("b2_authorize_account", basic="test-key-id:test-key")
+token, account = auth["authorizationToken"], auth["accountId"]
+buckets = call("b2_list_buckets", {"accountId": account, "bucketName": bucket_name}, token)["buckets"]
+if [b["bucketName"] for b in buckets] != [bucket_name]:
+    print("bucket-missing")
+    raise SystemExit(1)
+files = call("b2_list_file_names", {"bucketId": buckets[0]["bucketId"], "prefix": object_name, "maxFileCount": 10}, token)["files"]
+if any(f["fileName"] == object_name for f in files):
+    print("object-still-present")
+    raise SystemExit(1)
+print("ok")
+PY
+)"; then
+  fail verify "the simulator does not confirm the object is deleted while the bucket still exists ($(printf '%s' "$PROOF" | tail -1 | cut -c1-120))"
+fi
+
 if terraform -chdir="$VERIFY" apply -auto-approve -input=false -no-color \
   -var "bucket_name=$B2_BUCKET_NAME" -var "object_name=$OBJECT_NAME" \
   >"$VERIFY/apply.log" 2>&1; then
@@ -221,6 +280,8 @@ if terraform -chdir="$VERIFY" apply -auto-approve -input=false -no-color \
 elif ! grep -qiE 'not[_ ]?found|no such file|does not exist|404' "$VERIFY/apply.log"; then
   fail verify 'the post-delete read failed for a reason other than not-found'
 fi
+# Reaching here with a failed apply means: the simulator confirmed the bucket exists and the object
+# is gone, and the provider reported the missing object as not-found.
 
 VERDICT=PASS
 DETAIL=-

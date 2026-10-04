@@ -45,6 +45,10 @@ import time
 import urllib.request
 import uuid
 
+# Run directly (not through run-resilience, which sets PYTHONPATH) the helper module is
+# still found, so the loopback guard refuses cleanly instead of ModuleNotFoundError.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
+
 from exact_provider import is_loopback_origin, network_guard_env, write_cli_config
 
 SLUG = "terraform-provider-b2"
