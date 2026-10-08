@@ -144,8 +144,36 @@ jobs:
         with:
           name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/
+      - name: Run acceptance tests with Intel-Mac DNS retry
+        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' && matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64' }}
+        timeout-minutes: 120
+        run: |
+          max_attempts=3
+          for attempt in $(seq 1 "$max_attempts"); do
+            set +e
+            make testacc 2>&1 | tee testacc.log
+            status=${PIPESTATUS[0]}
+            set -e
+
+            if [ "$status" -eq 0 ]; then
+              exit 0
+            fi
+
+            if ! grep -Eqi 'UnknownHost|NameResolutionError|[Gg]etaddrinfo|nodename nor servname' testacc.log; then
+              exit "$status"
+            fi
+
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "::error::Acceptance tests still hit a DNS-resolution error after ${max_attempts} attempts."
+              exit "$status"
+            fi
+
+            delay=$((attempt * 15))
+            echo "Transient DNS-resolution failure; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})."
+            sleep "$delay"
+          done
       - name: Run acceptance tests
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
+        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' && !(matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64') }}
         timeout-minutes: 120
         run: |
           make testacc
