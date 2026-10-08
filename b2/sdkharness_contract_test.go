@@ -12,6 +12,7 @@ package b2
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -59,7 +60,10 @@ func TestSDKHarnessContract(t *testing.T) {
 		if statErr != nil {
 			t.Fatal(statErr)
 		}
-		if info.Mode()&0o111 == 0 {
+		// NTFS has no POSIX exec bit, so Mode()&0o111 is always 0 on Windows. The exec
+		// bit is a property of the git tree (100755), enforced by the Linux/macOS jobs;
+		// on Windows we assert only that the script exists.
+		if runtime.GOOS != "windows" && info.Mode()&0o111 == 0 {
 			t.Fatalf("%s is not executable", executable)
 		}
 	}

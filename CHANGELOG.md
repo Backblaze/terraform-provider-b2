@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Harden the repository-owned `.sdkharness` checks: conformance failures against the simulator (auth, unreachable, provider crash) are reported as failures rather than could-not-run, the health check proves the object is deleted directly against the simulator, and resilience checks refuse cleanly when run directly
 * Retry Intel-Mac acceptance tests after transient DNS-resolution failures, while still failing persistent DNS errors
 * Force LF line endings for the `.sdkharness` harness files so the repository-owned contract test passes under git autocrlf on Windows
+* Make the SDK harness contract test portable to Windows by skipping its POSIX executable-bit assertion while retaining the script existence check
 
 ## [0.14.0] - 2026-09-16
 
