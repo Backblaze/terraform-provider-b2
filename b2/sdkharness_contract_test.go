@@ -22,7 +22,8 @@ func TestSDKHarnessContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lines := strings.Split(strings.TrimSpace(string(contract)), "\n")
+	normalizedContract := strings.ReplaceAll(string(contract), "\r\n", "\n")
+	lines := strings.Split(strings.TrimSpace(normalizedContract), "\n")
 	if len(lines) != 32 || lines[0] != "test_level\tscenario\ttarget\texecutable" {
 		t.Fatalf("unexpected tests.tsv schema: %q", string(contract))
 	}
