@@ -1,0 +1,2 @@
+.sdkharness/tests.tsv text eol=lf
+.sdkharness/tests/** text eol=lf
