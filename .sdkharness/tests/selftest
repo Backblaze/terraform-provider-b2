@@ -116,5 +116,24 @@ else
   ok "no conformance/resilience check or helper builds anything (they require the supplied provider)"
 fi
 
+# --- (5) first_error names the exception, not the resource address ----------------
+# The b2 provider prints "b2_bucket.b[0]: Creating..." and "Error: <warning>" before the
+# traceback; the useful line is the exception at its end (v0.11.0: KeyError: 'capabilities').
+printf '%s\n' 'b2_bucket.b: Creating...' '' 'Error: PyInstaller/loader/pyimod02_importers.py:384: UserWarning: pkg_resources is deprecated' \
+  'Traceback (most recent call last):' "  File \"b2sdk/_internal/session.py\", line 126, in authorize_account" \
+  "KeyError: 'capabilities'" '' '  with b2_bucket.b,' > "$TMP/fe.keyerror"
+printf '%s\n' 'b2_bucket.b: Creating...' 'Error: Traceback (most recent call last):' \
+  'b2sdk.v2.exception.Unauthorized: bad_auth_token (key B2_APPLICATION_KEY_VALUE)' > "$TMP/fe.dotted"
+fe_bad=0
+for leaf in "$HERE"/conformance/*; do
+  fn="$(sed -n '/^first_error()/,/^}/p' "$leaf")"
+  [ -n "$fn" ] || { bad "first_error missing in $(basename "$leaf")"; fe_bad=1; continue; }
+  got="$(B2_APPLICATION_KEY=B2_APPLICATION_KEY_VALUE bash -c 'redact() { cat; }; '"$fn"'; first_error "$1"' _ "$TMP/fe.keyerror")"
+  [ "$got" = "KeyError: 'capabilities'" ] || { bad "$(basename "$leaf"): first_error gave '$got', want the KeyError line"; fe_bad=1; }
+  got="$(bash -c 'redact() { cat; }; '"$fn"'; first_error "$1"' _ "$TMP/fe.dotted")"
+  case "$got" in b2sdk.v2.exception.Unauthorized:*) ;; *) bad "$(basename "$leaf"): first_error gave '$got', want the dotted exception"; fe_bad=1;; esac
+done
+[ "$fe_bad" = 0 ] && ok "conformance: first_error returns the exception line, not the resource address, in every leaf"
+
 printf 'terraform-provider-b2 .sdkharness selftest: %d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" = 0 ]

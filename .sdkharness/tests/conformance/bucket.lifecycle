@@ -74,9 +74,11 @@ redact() {
 first_error() { # <file> -> one sanitised line
   local line
   # The b2 provider re-raises b2sdk's exceptions through a Python traceback, so
-  # the useful line is the dotted exception class at the END, not the
-  # "Error: Traceback (most recent call last):" at the start.
-  line="$(grep -m1 -E '^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+: ' "$1" 2>/dev/null | tr -d '\r\t')"
+  # the useful line is the exception at the END (b2sdk.v2.exception.Unauthorized:
+  # ..., KeyError: 'capabilities'), not the "Error: ..." diagnostic at the start.
+  # A Terraform resource address ("b2_bucket.b: Creating...") looks like a dotted
+  # class, so those lines are excluded.
+  line="$(grep -E '^([A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+|[A-Z][A-Za-z0-9_]+(Error|Exception|Exit)): ' "$1" 2>/dev/null | grep -v -E '^(data|module|b2_[a-z0-9_]+)\.' | tail -1 | tr -d '\r\t')"
   [ -n "$line" ] || line="$(grep -E '^Error: ' "$1" 2>/dev/null | grep -v -i 'traceback' | head -1 | tr -d '\r\t')"
   [ -n "$line" ] || line="$(grep -m1 -i 'error' "$1" 2>/dev/null | tr -d '\r\t')"
   [ -n "$line" ] || line="terraform exited non-zero with no Error line"
