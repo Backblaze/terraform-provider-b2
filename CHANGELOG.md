@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Retry Intel-Mac acceptance tests after transient DNS-resolution failures, while still failing persistent DNS errors
 * Force LF line endings for the `.sdkharness` harness files so the repository-owned contract test passes under git autocrlf on Windows
 * Make the SDK harness contract test portable to Windows by skipping its POSIX executable-bit assertion while retaining the script existence check
+* Make the `.sdkharness` conformance checks report the real exception (for example `KeyError: 'capabilities'`) instead of the Terraform resource address
 
 ## [0.14.0] - 2026-09-16
 
