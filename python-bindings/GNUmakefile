@@ -10,7 +10,8 @@ default: build
 .PHONY: deps format lint testacc clean build
 
 deps:
-	@pip install -r requirements-dev.txt
+	@python -m pip install --upgrade -r requirements-bootstrap.txt
+	@python -m pip install -r requirements-dev.txt
 
 format:
 	@ruff format ${DIR}
