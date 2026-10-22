@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-* Upgrade b2sdk to v2.13.1 to honor `Retry-After` on 5xx responses and retry 408 upload responses
+* Upgrade b2sdk to v2.13.2
+* `Retry-After` on 5xx responses and retry 408 upload responses are now honored
 
 ### Infrastructure
 * Harden the repository-owned `.sdkharness` checks: conformance failures against the simulator (auth, unreachable, provider crash) are reported as failures rather than could-not-run, the health check proves the object is deleted directly against the simulator, and resilience checks refuse cleanly when run directly
