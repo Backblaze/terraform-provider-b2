@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `Retry-After` on 5xx responses and retry 408 upload responses are now honored
 
 ### Infrastructure
+* Upgrade golang.org/x/net to v0.61.0, x/crypto to v0.58.0, x/mod to v0.42.0, x/text to v0.43.0, and the documentation tool's goldmark to v1.8.6, including required transitive updates
 * Upgrade the Go toolchain and CI/release builds to Go 1.26.10 to reject compromised eMudhra intermediate certificates (CVE-2026-111943)
 * Require certifi 2026.10.19 or newer and bootstrap pip 26.2.2 from a hash-verified wheel before installing Python dependencies to address the eMudhra CA compromise
 * Harden the repository-owned `.sdkharness` checks: conformance failures against the simulator (auth, unreachable, provider crash) are reported as failures rather than could-not-run, the health check proves the object is deleted directly against the simulator, and resilience checks refuse cleanly when run directly
