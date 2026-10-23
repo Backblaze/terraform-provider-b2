@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-10-23
+
 ### Fixed
 * Upgrade b2sdk to v2.13.2
 * `Retry-After` on 5xx responses and retry 408 upload responses are now honored
@@ -311,7 +313,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.2...v0.14.0
 [0.13.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.1...v0.13.2
 [0.13.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.0...v0.13.1
