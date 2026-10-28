@@ -1,0 +1,93 @@
+# AI code review and security review on every ready PR, following REVIEW.md. Findings are comments,
+# never approvals. Inert until a repo admin adds the ANTHROPIC_API_KEY secret; fork PRs never get it.
+name: AI review
+
+on:
+  pull_request:
+    branches: [master, release/*]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: code review
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Check that AI review is enabled
+        id: enabled
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: echo "enabled=$([ -n "$KEY" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        if: steps.enabled.outputs.enabled == 'true'
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # the reviewer diffs against the base branch and reads history
+      - uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
+        if: steps.enabled.outputs.enabled == 'true'
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            BASE: origin/${{ github.base_ref }}
+
+            Review this pull request. The PR branch is checked out in the working directory.
+            Follow REVIEW.md exactly (passes, severities, evidence, format, paths to skip), using AGENTS.md,
+            contributing/review-lessons.md, the linked issue and any intent/<slug>/ files as context.
+            Ask whether the change solves the problem it states, fits the provider, and breaks nothing else;
+            for a bug fix, check it addresses the root cause. Also flag lines in AGENTS.md or REVIEW.md that
+            this change makes stale.
+            If this is not the first review on the PR, read the existing review comments first: never repeat
+            a finding, and from round 3 review only the commits since the last review.
+
+            Post one inline comment per finding with mcp__github_inline_comment__create_inline_comment
+            (confirmed: true), starting with its severity (Important, Nit or Pre-existing) and pass. Then post
+            the summary with `gh pr comment`, starting with the count. Never approve or request changes.
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Read,Grep,Glob"
+
+  security:
+    name: security review
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check that AI review is enabled
+        id: enabled
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: echo "enabled=$([ -n "$KEY" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v5
+        if: steps.enabled.outputs.enabled == 'true'
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # main, 2026-02-11
+        if: steps.enabled.outputs.enabled == 'true'
+        with:
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          comment-pr: true
+          exclude-directories: docs,.changes,.claude/skills
+          custom-security-scan-instructions: |
+            This is a Terraform provider: Go (b2/) passes credentials and resource input as JSON on stdin to
+            embedded Python bindings (python-bindings/) that call b2sdk. Look for application keys, SSE-C
+            secrets (secret_b64) and event notification signing secrets (hmac_sha256_signing_secret) reaching
+            tflog calls, errors, warnings or non-Sensitive schema fields; credentials on a command line or in
+            the environment of child processes; and workflow changes that expose repository secrets to fork
+            or Dependabot PRs.

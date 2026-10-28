@@ -12,6 +12,16 @@ an update that re-sends stale state to B2, or state that the previous release ca
 leaking a secret into logs, errors or plan output, and by shipping a release binary with a vulnerable
 embedded dependency. A test that passes either way is also a failure: it claims coverage it does not give.
 
+## Depth by risk
+
+Match the depth to what a missed bug would cost. The change sets the depth, not the author.
+
+| Depth | When | What it means |
+| --- | --- | --- |
+| Quick | Markdown outside `docs/`, `*_test.go` only, `.changes/`, `intent/`, `examples/` | Compliance pass; check claims against the diff |
+| Standard | `b2/` schemas and CRUD, `python-bindings/b2_terraform/`, `.sdkharness/` | All passes, revert-to-fail check for each claimed fix |
+| Deep | `b2/client.go`, `b2/bindings.go`, `b2/convert.go`, `python-bindings/requirements*.txt`, `.github/workflows/`, `.goreleaser.yml`, release PRs | All passes plus the Security pass line by line; a person always reviews |
+
 ## Before the passes
 
 1. Read the linked issue and, if present, `intent/<slug>/spec.md` and `plan.md`.
@@ -23,6 +33,8 @@ embedded dependency. A test that passes either way is also a failure: it claims 
 
 Tag each finding with its pass.
 
+- **Intent**: the change solves the problem it states and fits the provider; for a bug fix, it fixes
+  the root cause, not one symptom.
 - **Bugs**: logic errors, nil dereferences, wrong type assertions on `schema.ResourceData`, error paths
   that leave a resource half-created in B2 but missing from state.
 - **Plan and state**: the same configuration plans empty after apply; `ForceNew` is reached only by
@@ -69,12 +81,34 @@ acceptance tests, no simulator), say so.
 
 ## Answering findings
 
-Every finding gets an answer before merge: fix it, or resolve the thread with a one-line reason (false
-positive, intentional, out of scope with an issue link). Do not resolve a thread silently.
+Every finding gets an answer before merge: fix it, or resolve the thread with a one-line reason. Start the
+reply with one of these labels so the reviewer's noise can be measured (`scripts/review-metrics.sh`):
+
+- `Fixed:` with the commit that fixes it.
+- `Wrong:` the finding is a false positive; say why.
+- `Intentional:` the behavior is deliberate; say why.
+- `Didn't matter:` real but not worth changing; say why, or link an issue.
+
+Do not resolve a thread silently. When the same finding comes back on more than one PR, fix it at the
+source in the same PR: a rule in `AGENTS.md`, a check in `make ci`, a hook or a lint rule, and a line in
+[contributing/review-lessons.md](contributing/review-lessons.md).
+
+## Skip
+
+Do not review or report on generated or vendored files: `docs/` (check only that it matches the schema),
+`CHANGELOG.md` and released `.changes/v*.md`, `go.sum`, `tools/go.sum`, and the playbook skills in
+`.claude/skills/`. Do not report what CI already enforces (formatting, vet, lint, license headers, docs
+drift, changelog presence) or style-only cleanups.
+
+## For the human approver
+
+An AI finding never approves and never fills a human slot. Before approving, read the evidence: the
+`make ci` output, the tests named as pinning the change, the acceptance tests run, and the reviewer's
+findings and their answers. If you cannot say what those checks would miss, review the code properly
+instead of approving. New commits after your approval need another look.
 
 ## Format
 
 Start with a count (`2 Important, 1 Nit, 0 Pre-existing`, or `No issues found`), then what you checked
 and against what (issue number, acceptance tests or simulator, commands run). Then a table sorted by
-severity: `Severity | File:Line | Pass: finding`. Do not report generated files (`docs/`, `CHANGELOG.md`)
-or what CI already enforces (formatting, vet, lint, headers).
+severity: `Severity | File:Line | Pass: finding`. When nothing needs fixing, say `No issues found` and stop.

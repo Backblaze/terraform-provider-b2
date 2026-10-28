@@ -37,6 +37,16 @@ private advisory. A draft advisory fixed by the pending release stays private th
 in `RELEASE_FIXES_ADVISORIES=GHSA-xxxx-xxxx-xxxx make release-check` so the gate reports it instead of
 holding, and publish the advisory right after the release is out (step 8).
 
+## Release candidates
+
+A release that carries a High-risk change (credentials or the bindings boundary, a new `ForceNew`, a
+state change, a b2sdk major bump, build or signing changes) ships a release candidate first. Tag the
+current `master` as `vX.Y.Z-rc.N` without batching the changelog; goreleaser marks it as a GitHub
+pre-release, and the Registry publishes it but `~>` and `>=` constraints do not select it, so only users
+who pin `version = "X.Y.Z-rc.N"` get it. Run it against real configurations for at least a few days,
+then release `vX.Y.Z` with the steps below. To roll back, users pin the previous version; never move or
+delete the tag.
+
 ## Steps
 
 1. Make sure `master` is green and every PR meant for the release has merged. Install dependencies with

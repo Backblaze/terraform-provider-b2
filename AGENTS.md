@@ -18,6 +18,7 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 - Docs: `make docs` regenerates `docs/` from schemas, `templates/` and `examples/`. Never hand-edit `docs/`.
 - Changelog entry: `make changelog-new` (changie). See [CONTRIBUTING.md](CONTRIBUTING.md#changelog-entries).
 - Release gate: `make release-check`. See [RELEASE.md](RELEASE.md#security-and-quality-gate).
+- Review metrics: `make review-metrics` (approvals, rounds, wait time, reverts, how findings were answered).
 
 ## Architecture
 
@@ -35,7 +36,7 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 | `.sdkharness/` | Contract checks run by the central SDK harness against the B2 simulator on loopback. See its README. |
 | `.changes/` | changie entries; `CHANGELOG.md` is generated from them. |
 | `intent/` | Per-change `intent.md`, `spec.md`, `plan.md` (see Workflow). |
-| `contributing/` | Contributor docs (kept out of `docs/`, which is generated and published): review lessons. |
+| `contributing/` | Contributor docs (kept out of `docs/`, which is generated and published): review lessons and reviewer evals. |
 
 A change to what is sent to B2 usually touches both sides: the Go input struct and schema, and the Python
 handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; only `make testacc` does.
@@ -105,6 +106,10 @@ is in [contributing/review-lessons.md](contributing/review-lessons.md).
 - Review: [REVIEW.md](REVIEW.md). Every finding gets fixed or resolved with a reason. Agents never approve
   or merge their own PRs, and a PR is not merged by its author without another maintainer's review.
 - The person directing an agent owns its PR: they count as one of its reviewers and fix what it breaks.
+- Keep PRs small and reversible; the blast radius sets the review depth ([REVIEW.md](REVIEW.md#depth-by-risk)).
+  If the direction looks wrong, say so early in the thread; closing a PR is cheap.
+- When review misses a bug, ask what context was missing and add it here, to a skill or to a check, and
+  add the case to [contributing/review-evals.md](contributing/review-evals.md).
 - Releases: [RELEASE.md](RELEASE.md). Security reports: [SECURITY.md](SECURITY.md).
 
 ## Verifying your work

@@ -10,7 +10,7 @@ BASE_REF?=origin/master
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint vulncheck test testacc clean build install docs docs-lint ci changelog-check changelog-new release-check
+.PHONY: _pybindings deps deps-check format lint vulncheck test testacc clean build install docs docs-lint ci changelog-check changelog-new release-check review-metrics
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -105,5 +105,9 @@ changelog-new:
 # Holds a release while solvable security or quality findings are open (see RELEASE.md).
 release-check:
 	@scripts/release-check.sh
+
+# Review health for merged PRs since SINCE (default: 90 days ago).
+review-metrics:
+	@scripts/review-metrics.sh $(SINCE)
 
 all: deps lint build testacc

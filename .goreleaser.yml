@@ -50,3 +50,5 @@ signs:
       - "${artifact}"
 changelog:
   disable: true
+release:
+  prerelease: auto  # a tag like v0.15.0-rc.1 publishes a pre-release (see RELEASE.md)

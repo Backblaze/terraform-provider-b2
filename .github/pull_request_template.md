@@ -33,3 +33,4 @@ state or B2 resources the previous release cannot read.
 - [ ] New or changed behavior is pinned by a test that fails when the change is reverted.
 - [ ] `AGENTS.md` is updated if this change makes it stale.
 - [ ] The description matches the final code.
+- [ ] The person who directed the agent has read Testing, Risk and How to revert and signs off on them.
