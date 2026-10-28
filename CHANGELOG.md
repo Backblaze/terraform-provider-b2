@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Unreleased entries live in [`.changes/unreleased/`](.changes/unreleased/) until the next release. Add one with `make changelog-new` (see [CONTRIBUTING.md](CONTRIBUTING.md#changelog-entries)).
+
 ## [0.14.1] - 2026-10-23
 
 ### Fixed
@@ -21,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Force LF line endings for the `.sdkharness` harness files so the repository-owned contract test passes under git autocrlf on Windows
 * Make the SDK harness contract test portable to Windows by skipping its POSIX executable-bit assertion while retaining the script existence check
 * Make the `.sdkharness` conformance checks report the real exception (for example `KeyError: 'capabilities'`) instead of the Terraform resource address
+
+[0.14.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.0...v0.14.1
 
 ## [0.14.0] - 2026-09-16
 
@@ -42,15 +46,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgrade `google.golang.org/grpc` to v1.83.2
 * Build Linux Python bindings on Debian bookworm, as Debian bullseye security packages are no longer available
 
+[0.14.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.2...v0.14.0
+
 ## [0.13.2] - 2026-07-27
 
 ### Infrastructure
 * Upgrade `google.golang.org/grpc` to v1.82.1 to address GHSA-hrxh-6v49-42gf
 
+[0.13.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.1...v0.13.2
+
 ## [0.13.1] - 2026-07-17
 
 ### Infrastructure
 * Upgrade `golang.org/x/crypto` to v0.52.0 to address CVE-2026-39829
+
+[0.13.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.0...v0.13.1
 
 ## [0.13.0] - 2026-06-29
 
@@ -69,10 +79,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgrade Go toolchain to 1.25.11 to address GO-2026-5039 and GO-2026-5037
 * Upgrade `golang.org/x/net` to v0.55.0 to address GO-2026-5026
 
+[0.13.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.12.1...v0.13.0
+
 ## [0.12.1] - 2026-02-21
 
 ### Fixed
 * Use B2 Native API v3 when using deprecated `bucket_id`
+
+[0.12.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.12.0...v0.12.1
 
 ## [0.12.0] - 2025-12-04
 
@@ -95,6 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Infrastructure
 * Upgrade pyinstaller to 6.17.0
 
+[0.12.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.11.0...v0.12.0
+
 ## [0.11.0] - 2025-10-27
 
 ### Added
@@ -116,6 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Fix an issue with missing `content_md5` in case the file has been uploaded as a large file
 
+[0.11.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.10.0...v0.11.0
+
 ## [0.10.0] - 2025-01-10
 
 ### Added
@@ -125,6 +143,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Replace deprecated macos-12 with macos-13
 * Use crazy-max/ghaction-import-gpg action as a replacement of deprecated paultyng/ghaction-import-gpg
 * Use Python 3.13 for embedded pybindings
+
+[0.10.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.9.0...v0.10.0
 
 ## [0.9.0] - 2024-10-20
 
@@ -139,21 +159,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Use macos-14 for ARM as macos-13-large is Intel
 * Clarified the purpose of the `endpoint`/`B2_ENDPOINT` configuration value
 
+[0.9.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.12...v0.9.0
+
 ## [0.8.12] - 2024-06-20
 
 ### Infrastructure
 * Fixed goreleaser v2 configuration
+
+[0.8.12]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.11...v0.8.12
 
 ## [0.8.11] - 2024-06-20
 
 ### Infrastructure
 * Fixed continuous delivery issue caused by goreleaser update
 
+[0.8.11]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.10...v0.8.11
+
 ## [0.8.10] - 2024-06-20
 
 ### Changed
 * Upgraded b2sdk from v1.18.0 to v2.4.1
 * Upgraded pyinstaller from v6.3.0 to v6.8.0
+
+[0.8.10]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.9...v0.8.10
 
 ## [0.8.9] - 2024-01-05
 
@@ -163,20 +191,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Fixed bucket update when is_file_lock_enabled is not set
 
+[0.8.9]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.8...v0.8.9
+
 ## [0.8.8] - 2023-12-28
 
 ### Changed
 * Upgraded pyinstaller to v6.3.0
+
+[0.8.8]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.7...v0.8.8
 
 ## [0.8.7] - 2023-12-27
 
 ### Changed
 * Upgraded github.com/hashicorp/terraform-plugin-sdk to v2.31.0
 
+[0.8.7]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.6...v0.8.7
+
 ## [0.8.6] - 2023-12-22
 
 ### Fixed
 * Fix arm64 builds
+
+[0.8.6]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.5...v0.8.6
 
 ## [0.8.5] - 2023-11-24
 
@@ -195,22 +231,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fix reconciliation of missing Bucket caused by the resource drift
 * Fix bucket cleanup after failed creation
 
+[0.8.5]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.4...v0.8.5
+
 ## [0.8.4] - 2023-03-13
 
 ### Infrastructure
 * Upgraded terraform-plugin-docs 0.5.1 -> 0.13.0
 * Upgraded golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd -> 0.7.0
 
+[0.8.4]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.3...v0.8.4
+
 ## [0.8.3] - 2023-02-20
 
 ### Infrastructure
 * Upgraded golang.org/x/net 0.5.0 -> 0.7.0
+
+[0.8.3]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.2...v0.8.3
 
 ## [0.8.2] - 2023-02-17
 
 ### Infrastructure
 * Upgraded goutils 1.1.0 -> 1.1.1 and aws to 1.33.0
 * Ensured that changelog validation only happens on pull requests
+
+[0.8.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.1...v0.8.2
 
 ## [0.8.1] - 2022-06-24
 
@@ -219,6 +263,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Fixed golangcli-lint breaking on Github
+
+[0.8.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.0...v0.8.1
 
 ## [0.8.0] - 2022-03-27
 
@@ -231,15 +277,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgraded b2sdk to 1.14.1, which allowed using improved API calls for listing files and making Python parts simpler
 * Upgraded PyInstaller to 4.10, which should help resolve some issues with running on Apple M1 silicon
 
+[0.8.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.1...v0.8.0
+
 ## [0.7.1] - 2021-10-14
 
 ### Changed
 * When a bucket that is in state no longer exists, warning is logged and the bucket is removed from state
 
+[0.7.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.0...v0.7.1
+
 ## [0.7.0] - 2021-09-24
 
 ### Fixed
 * Fix for static linking of Python bindings for Linux (CD uses python container)
+
+[0.7.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.6.1...v0.7.0
 
 ## [0.6.1] - 2021-09-01
 
@@ -247,12 +299,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * When deleting bucket that bucket no longer exists, error is silently ignored
 * Terraform 1.0.0 or later required
 
+[0.6.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.6.0...v0.6.1
+
 ## [0.6.0] - 2021-07-06
 
 ### Added
 * Support SSE-C encryption mode for files
 * Initial (experimental) support for Alpine Linux
 * Support for Apple M1 (arm64) architecture on Mac OS (for main plugin binary, Python bindings will still use Rosetta)
+
+[0.6.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.5.0...v0.6.0
 
 ## [0.5.0] - 2021-05-31
 
@@ -266,6 +322,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Upgraded b2sdk version to 1.8.0
 
+[0.5.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.4.0...v0.5.0
+
 ## [0.4.0] - 2021-04-08
 
 ### Added
@@ -273,6 +331,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Upgrade b2sdk version - fix for server response change regarding SSE
+
+[0.4.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.3.0...v0.4.0
 
 ## [0.3.0] - 2021-03-27
 
@@ -284,6 +344,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Better handling sensitive data in Terraform logs
 * Upgrade b2sdk version `>=1.4.0,<2.0.0`
 
+[0.3.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.1...v0.3.0
+
 ## [0.2.1] - 2021-02-11
 
 ### Changed
@@ -292,6 +354,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Append Terraform versions to the User-Agent
 * Fix the defaults for lifecycle rules #4
+
+[0.2.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.0...v0.2.1
 
 ## [0.2.0] - 2021-01-22
 
@@ -308,42 +372,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Extended `b2_application_key` data source
 * Improved python bindings
 
+[0.2.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.1.0...v0.2.0
+
 ## [0.1.0] - 2020-11-30
 
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...HEAD
-[0.14.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.0...v0.14.1
-[0.14.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.2...v0.14.0
-[0.13.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.1...v0.13.2
-[0.13.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.0...v0.13.1
-[0.13.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.12.1...v0.13.0
-[0.12.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.12.0...v0.12.1
-[0.12.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.11.0...v0.12.0
-[0.11.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.10.0...v0.11.0
-[0.10.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.9.0...v0.10.0
-[0.9.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.12...v0.9.0
-[0.8.12]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.11...v0.8.12
-[0.8.11]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.10...v0.8.11
-[0.8.10]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.9...v0.8.10
-[0.8.9]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.8...v0.8.9
-[0.8.8]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.7...v0.8.8
-[0.8.7]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.6...v0.8.7
-[0.8.6]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.5...v0.8.6
-[0.8.5]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.4...v0.8.5
-[0.8.4]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.3...v0.8.4
-[0.8.3]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.2...v0.8.3
-[0.8.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.1...v0.8.2
-[0.8.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.0...v0.8.1
-[0.8.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.1...v0.8.0
-[0.7.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.6.1...v0.7.0
-[0.6.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.6.0...v0.6.1
-[0.6.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.1...v0.3.0
-[0.2.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Backblaze/terraform-provider-b2/compare/240851d...v0.1.0

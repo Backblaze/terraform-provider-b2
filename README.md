@@ -66,6 +66,12 @@ export B2_TEST_APPLICATION_KEY_ID=your_app_key_id
 make testacc
 ```
 
+Contributing
+------------
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). `make ci` runs the local mirror of CI. Coding agents start from
+[AGENTS.md](AGENTS.md).
+
 Debugging
 ---------
 
