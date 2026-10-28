@@ -41,9 +41,11 @@ holding, and publish the advisory right after the release is out (step 8).
 
 A release that carries a High-risk change (credentials or the bindings boundary, a new `ForceNew`, a
 state change, a b2sdk major bump, build or signing changes) ships a release candidate first. Tag the
-current `master` as `vX.Y.Z-rc.N` without batching the changelog; goreleaser marks it as a GitHub
-pre-release, and the Registry publishes it but `~>` and `>=` constraints do not select it, so only users
-who pin `version = "X.Y.Z-rc.N"` get it. Run it against real configurations for at least a few days,
+current `master` as `vX.Y.Z-rc.N` without batching the changelog; the CD workflow publishes it as a
+GitHub pre-release whose notes point at `.changes/unreleased/`. Check whether the Registry lists it: if it
+does, `~>` and `>=` constraints still skip pre-release versions, so only users who pin
+`version = "X.Y.Z-rc.N"` get it; if it does not, testers install the binary from the GitHub release with a
+local filesystem mirror. Run it against real configurations for at least a few days,
 then release `vX.Y.Z` with the steps below. To roll back, users pin the previous version; never move or
 delete the tag.
 

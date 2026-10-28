@@ -84,10 +84,5 @@ jobs:
           claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           comment-pr: true
           exclude-directories: docs,.changes,.claude/skills
-          custom-security-scan-instructions: |
-            This is a Terraform provider: Go (b2/) passes credentials and resource input as JSON on stdin to
-            embedded Python bindings (python-bindings/) that call b2sdk. Look for application keys, SSE-C
-            secrets (secret_b64) and event notification signing secrets (hmac_sha256_signing_secret) reaching
-            tflog calls, errors, warnings or non-Sensitive schema fields; credentials on a command line or in
-            the environment of child processes; and workflow changes that expose repository secrets to fork
-            or Dependabot PRs.
+          run-every-commit: true  # the default skips every push after the first one
+          custom-security-scan-instructions: ${{ github.workspace }}/.github/security-review-instructions.txt  # a file path; the action changes directory
