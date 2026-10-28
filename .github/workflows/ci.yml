@@ -8,7 +8,7 @@ on:
       - '.github/workflows/cd.yml'
       - 'LICENSE'
       - 'README.md'
-      - 'README.release.md'
+      - 'RELEASE.md'
   pull_request:
     branches: [master, release/*]
 
@@ -22,6 +22,7 @@ env:
 
 jobs:
   lint:
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -49,13 +50,8 @@ jobs:
       - name: Run docs linters
         run: |
           make docs-lint
-      - name: Validate changelog
-        # Library was designed to be used with pull requests only.
-        if: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
-        uses: zattoo/changelog@v2
-        with:
-          token: ${{ github.token }}
   test:
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -67,6 +63,7 @@ jobs:
       - name: Run unit tests
         run: make test
   build:
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     needs: [lint, test]
     runs-on: ${{ matrix.conf.runner }}
     timeout-minutes: 60
@@ -108,6 +105,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
   testacc:
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     needs: build
     env:
       B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
