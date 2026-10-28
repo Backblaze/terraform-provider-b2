@@ -28,9 +28,11 @@ Tag each finding with its pass.
 - **Plan and state**: the same configuration plans empty after apply; `ForceNew` is reached only by
   changes the user made; omitted optional arguments send nothing; `Computed` values B2 owns are not
   diffed; import and read produce the same state as create; existing state keeps working (or a state
-  upgrade exists).
+  upgrade exists); data source variants of shared blocks are `Computed`.
 - **Bindings**: Go input structs, `convert.go` and the Python handler agree on field names and shapes;
   validation lives in Go; b2sdk is called the way its docs describe, and pins are released versions.
+- **Build**: changes to runners, Python setup, PyInstaller, staticx or goreleaser keep the release binary
+  static and runnable on older glibc and Alpine.
 - **Security**: new secrets are `Sensitive` and kept out of `tflog`, errors and warnings; credentials go to
   the bindings on stdin only; workflow changes keep secrets away from fork and Dependabot PRs.
 - **Compatibility**: removed or renamed arguments, new `ForceNew`, changed defaults and changed `Computed`
@@ -38,6 +40,9 @@ Tag each finding with its pass.
 - **Compliance**: the change matches the issue, `spec.md` and `plan.md`; the PR description matches the
   code; a `.changes/unreleased` entry exists and reads well for users; schema descriptions and `docs/`
   agree; `AGENTS.md` is updated when the change makes it stale.
+
+Past findings and the PRs they came from are in
+[contributing/review-lessons.md](contributing/review-lessons.md); check the diff against them.
 
 ## Severity
 

@@ -35,6 +35,7 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 | `.sdkharness/` | Contract checks run by the central SDK harness against the B2 simulator on loopback. See its README. |
 | `.changes/` | changie entries; `CHANGELOG.md` is generated from them. |
 | `intent/` | Per-change `intent.md`, `spec.md`, `plan.md` (see Workflow). |
+| `contributing/` | Contributor docs (kept out of `docs/`, which is generated and published): review lessons. |
 
 A change to what is sent to B2 usually touches both sides: the Go input struct and schema, and the Python
 handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; only `make testacc` does.
@@ -55,7 +56,8 @@ handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; 
 
 ## Things agents get wrong here
 
-Each line comes from fixes, follow-up commits or review on at least two PRs.
+Each line comes from fixes, follow-up commits or review on at least two PRs. The full list, with PR links,
+is in [contributing/review-lessons.md](contributing/review-lessons.md).
 
 1. **Missing changelog entry.** Every change outside Markdown and tests needs a `.changes/unreleased`
    entry, including CI and `.sdkharness` work (`Infrastructure`).
@@ -81,6 +83,15 @@ Each line comes from fixes, follow-up commits or review on at least two PRs.
 11. **`.sdkharness` safety.** Checks stay loopback-only and fail closed: no real endpoints, no ambient
     `B2_*` credentials, no `terraform init`, no build inside the checkout.
 12. **PR text that disagrees with code.** Re-read the description after the last commit.
+13. **Breaking existing configurations.** Keep deprecated arguments working and map them to the current
+    ones; a removed, renamed or re-typed argument needs a `Changed` entry with upgrade steps.
+14. **Resource and data source variants.** Shared blocks in `b2/templates.go` serve both; the data source
+    side needs `Computed: true` (`If(ds, ...)`) or it never gets the value.
+15. **Bindings style.** In `provider_tool.py`, raise `RuntimeError`, keep imports sorted, give helpers a
+    one-line docstring, drop leftover parameters, and comment code that depends on b2sdk internals.
+16. **Binary portability.** The bindings are frozen with PyInstaller and made static with staticx (Linux
+    uses `deadsnakes`, not `setup-python`) so the provider runs on older glibc and Alpine. Do not change
+    runners, Python setup or build tools without checking the binary still runs there.
 
 ## Workflow (AI-native SDLC)
 

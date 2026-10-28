@@ -55,7 +55,8 @@ metadata without an entry; a maintainer can apply the `-changelog` label when no
 ### Working with coding agents
 
 [AGENTS.md](AGENTS.md) is the map for coding agents (and a quick start for people). Larger changes start
-with an `intent.md` under [`intent/`](intent/README.md), and reviews follow [REVIEW.md](REVIEW.md).
+with an `intent.md` under [`intent/`](intent/README.md), and reviews follow [REVIEW.md](REVIEW.md). Past review findings are collected in
+[contributing/review-lessons.md](contributing/review-lessons.md).
 
 ## Submitting a pull request
 
