@@ -13,10 +13,13 @@ package b2
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
+	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -54,9 +57,15 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 
 	// Convert input struct to map for backward compatibility with Python bindings
 	inputMap := convertStructToMap(input)
+	schemaMap := c.getSchemaMap(name, op)
+	if schemaMap == nil {
+		// Should never happen
+		return fmt.Errorf("schema not found for resource: b2_%s", name)
+	}
 
+	sanitizer := logSanitizer{}
 	tflog.Debug(ctx, "Input for pybindings", map[string]interface{}{
-		"input": inputMap,
+		"input": sanitizer.sanitizeForLog(inputMap, schemaMap),
 	})
 
 	cmd := exec.Command(c.Exec, name, string(op))
@@ -79,7 +88,7 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if len(exitErr.Stderr) > 0 {
-				err := fmt.Errorf("%s", string(exitErr.Stderr))
+				err := fmt.Errorf("%s", sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKeyId, c.ApplicationKey))
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
 					"stderr": err,
 				})
@@ -100,14 +109,8 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 			return err
 		}
 
-		schemaMap := c.getSchemaMap(name, op)
-		if schemaMap == nil {
-			// Should never happen
-			return fmt.Errorf("schema not found for resource: b2_%s", name)
-		}
-
 		tflog.Debug(ctx, "Safe output from pybindings", map[string]interface{}{
-			"output": sanitizeOutput(output, schemaMap),
+			"output": sanitizer.sanitizeForLog(output, schemaMap),
 		})
 	}
 
@@ -158,18 +161,277 @@ func (c Client) getSchemaMap(name string, op Operation) map[string]*schema.Schem
 	return nil
 }
 
-func sanitizeOutput(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
-	safeOutput := map[string]interface{}{}
-	outputMap := convertStructToMap(output)
+type logSanitizer struct {
+	secrets []string
+}
 
-	// Sanitize sensitive fields
-	for k, v := range outputMap {
-		if s, ok := schemaMap[k]; ok && s.Sensitive {
-			safeOutput[k] = "***"
-		} else {
-			safeOutput[k] = v
+// sanitizeForLog copies inputs or outputs, recursively masking Sensitive schema
+// fields, signed_url, and custom_headers[].value. The last two are log-only masks
+// to preserve Terraform output compatibility. Schema-Sensitive strings are also
+// collected for redactText.
+func (s *logSanitizer) sanitizeForLog(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
+	outputMap, ok := output.(map[string]interface{})
+	if !ok {
+		outputMap = convertStructToMap(output)
+	}
+
+	return s.sanitizeMap(outputMap, schemaMap, "")
+}
+
+func logOnlySensitive(key, parentKey string) bool {
+	return key == "signed_url" || (parentKey == "custom_headers" && key == "value")
+}
+
+func (s *logSanitizer) sanitizeMap(values map[string]interface{}, schemaMap map[string]*schema.Schema, parentKey string) map[string]interface{} {
+	safeValues := make(map[string]interface{}, len(values))
+	for key, value := range values {
+		if logOnlySensitive(key, parentKey) {
+			safeValues[key] = maskLogOnly(value)
+			continue
+		}
+
+		if field, ok := schemaMap[key]; ok {
+			safeValues[key] = s.sanitizeSchemaValue(value, field, key)
+			continue
+		}
+
+		safeValues[key] = value
+	}
+
+	return safeValues
+}
+
+func (s *logSanitizer) sanitizeSchemaValue(value interface{}, field *schema.Schema, parentKey string) interface{} {
+	if field.Sensitive {
+		return s.mask(value)
+	}
+
+	switch field.Type {
+	case schema.TypeList, schema.TypeSet:
+		return s.sanitizeCollection(value, field.Elem, parentKey)
+	case schema.TypeMap:
+		return s.sanitizeMapValues(value, field.Elem, parentKey)
+	default:
+		return value
+	}
+}
+
+func (s *logSanitizer) sanitizeCollection(value interface{}, elem interface{}, parentKey string) interface{} {
+	var values []interface{}
+	switch typedValue := value.(type) {
+	case []interface{}:
+		values = typedValue
+	case *schema.Set:
+		values = typedValue.List()
+	default:
+		return value
+	}
+
+	safeValues := make([]interface{}, len(values))
+	for index, item := range values {
+		safeValues[index] = s.sanitizeElement(item, elem, parentKey)
+	}
+	return safeValues
+}
+
+func (s *logSanitizer) sanitizeMapValues(value interface{}, elem interface{}, parentKey string) interface{} {
+	switch values := value.(type) {
+	case map[string]interface{}:
+		safeValues := make(map[string]interface{}, len(values))
+		for key, item := range values {
+			safeValues[key] = s.sanitizeElement(item, elem, parentKey)
+		}
+		return safeValues
+	case map[string]string:
+		safeValues := make(map[string]interface{}, len(values))
+		for key, item := range values {
+			safeValues[key] = s.sanitizeElement(item, elem, parentKey)
+		}
+		return safeValues
+	default:
+		return value
+	}
+}
+
+func (s *logSanitizer) sanitizeElement(value interface{}, elem interface{}, parentKey string) interface{} {
+	switch field := elem.(type) {
+	case *schema.Resource:
+		if values, ok := value.(map[string]interface{}); ok {
+			return s.sanitizeMap(values, field.Schema, parentKey)
+		}
+	case *schema.Schema:
+		return s.sanitizeSchemaValue(value, field, parentKey)
+	}
+
+	return value
+}
+
+func (s *logSanitizer) mask(value interface{}) string {
+	switch value := value.(type) {
+	case string:
+		if value != "" {
+			s.secrets = append(s.secrets, value)
+		}
+	case []interface{}:
+		for _, item := range value {
+			s.mask(item)
+		}
+	case *schema.Set:
+		s.mask(value.List())
+	case map[string]interface{}:
+		for _, item := range value {
+			s.mask(item)
+		}
+	case map[string]string:
+		for _, item := range value {
+			s.mask(item)
+		}
+	}
+	return "***"
+}
+
+func maskLogOnly(_ interface{}) string {
+	return "***"
+}
+
+func pythonReprBody(value string, quote rune) string {
+	var body strings.Builder
+	for _, char := range value {
+		switch char {
+		case '\\':
+			body.WriteString(`\\`)
+		case quote:
+			body.WriteByte('\\')
+			body.WriteRune(char)
+		case '\t':
+			body.WriteString(`\t`)
+		case '\n':
+			body.WriteString(`\n`)
+		case '\r':
+			body.WriteString(`\r`)
+		default:
+			if unicode.IsPrint(char) {
+				body.WriteRune(char)
+			} else if char < 0x100 {
+				fmt.Fprintf(&body, `\x%02x`, char)
+			} else if char < 0x10000 {
+				fmt.Fprintf(&body, `\u%04x`, char)
+			} else {
+				fmt.Fprintf(&body, `\U%08x`, char)
+			}
+		}
+	}
+	return body.String()
+}
+
+func pythonJSONBody(value string, ensureASCII bool) string {
+	var body strings.Builder
+	for _, char := range value {
+		switch char {
+		case '"':
+			body.WriteString(`\"`)
+		case '\\':
+			body.WriteString(`\\`)
+		case '\n':
+			body.WriteString(`\n`)
+		case '\r':
+			body.WriteString(`\r`)
+		case '\t':
+			body.WriteString(`\t`)
+		case '\b':
+			body.WriteString(`\b`)
+		case '\f':
+			body.WriteString(`\f`)
+		default:
+			if char < 0x20 {
+				fmt.Fprintf(&body, `\u%04x`, char)
+			} else if ensureASCII && char > 0x7e {
+				if char < 0x10000 {
+					fmt.Fprintf(&body, `\u%04x`, char)
+				} else {
+					char -= 0x10000
+					fmt.Fprintf(&body, `\u%04x\u%04x`, 0xd800+(char>>10), 0xdc00+(char&0x3ff))
+				}
+			} else {
+				body.WriteRune(char)
+			}
+		}
+	}
+	return body.String()
+}
+
+func jsonUnicodeControlBody(value string) string {
+	var body strings.Builder
+	for _, char := range value {
+		switch char {
+		case '"':
+			body.WriteString(`\"`)
+		case '\\':
+			body.WriteString(`\\`)
+		default:
+			if char < 0x20 {
+				fmt.Fprintf(&body, `\u%04x`, char)
+			} else {
+				body.WriteRune(char)
+			}
+		}
+	}
+	return body.String()
+}
+
+// redactText masks the collected schema-Sensitive values and the provider
+// application key ID and key in their raw, Python repr, Python json.dumps and
+// Go JSON renderings, plus the HTTP Basic base64 form of the provider key pair.
+func (s *logSanitizer) redactText(text, applicationKeyID, applicationKey string) string {
+	secrets := append([]string{}, s.secrets...)
+	secrets = append(secrets, applicationKeyID, applicationKey)
+	if applicationKeyID != "" && applicationKey != "" {
+		secrets = append(secrets, base64.StdEncoding.EncodeToString([]byte(applicationKeyID+":"+applicationKey)))
+	}
+
+	variants := map[string]struct{}{}
+	for _, secret := range secrets {
+		if secret == "" {
+			continue
+		}
+		variants[secret] = struct{}{}
+		encoded, _ := json.Marshal(secret)
+		variants[string(encoded[1:len(encoded)-1])] = struct{}{}
+		variants[pythonReprBody(secret, '\'')] = struct{}{}
+		variants[pythonReprBody(secret, '"')] = struct{}{}
+		variants[pythonJSONBody(secret, true)] = struct{}{}
+		variants[pythonJSONBody(secret, false)] = struct{}{}
+		variants[jsonUnicodeControlBody(secret)] = struct{}{}
+	}
+
+	masked := make([]bool, len(text))
+	for value := range variants {
+		for start := 0; start < len(text); {
+			offset := strings.Index(text[start:], value)
+			if offset < 0 {
+				break
+			}
+			start += offset
+			for index := start; index < start+len(value); index++ {
+				masked[index] = true
+			}
+			start++
 		}
 	}
 
-	return safeOutput
+	var redacted strings.Builder
+	redacted.Grow(len(text))
+	for index := 0; index < len(text); {
+		if !masked[index] {
+			redacted.WriteByte(text[index])
+			index++
+			continue
+		}
+
+		redacted.WriteString("***")
+		for index < len(text) && masked[index] {
+			index++
+		}
+	}
+	return redacted.String()
 }

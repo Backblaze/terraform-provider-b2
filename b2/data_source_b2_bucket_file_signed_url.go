@@ -12,6 +12,7 @@ package b2
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -66,7 +67,7 @@ func dataSourceB2BucketFileSignedUrlRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output.SignedUrl)
+	d.SetId(bucketFileSignedURLID(input.BucketId, input.FileName, input.Duration))
 
 	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
@@ -74,4 +75,8 @@ func dataSourceB2BucketFileSignedUrlRead(ctx context.Context, d *schema.Resource
 	}
 
 	return nil
+}
+
+func bucketFileSignedURLID(bucketID, fileName string, duration int) string {
+	return fmt.Sprintf("%s/%s/%d", bucketID, fileName, duration)
 }
