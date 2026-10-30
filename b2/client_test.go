@@ -295,6 +295,80 @@ func TestLogSanitizerRedactsEscapedAndOverlappingValues(t *testing.T) {
 	}
 }
 
+func TestLogSanitizerRedactsPythonStringRenderings(t *testing.T) {
+	tests := []struct {
+		name   string
+		secret string
+		text   string
+		want   string
+	}{
+		{
+			name:   "control byte in repr",
+			secret: "ab\bcd",
+			text:   "Traceback: ValueError('ab\\x08cd')",
+			want:   "Traceback: ValueError('***')",
+		},
+		{
+			name:   "control byte in JSON ensure ASCII",
+			secret: "ab\bcd",
+			text:   `{"value":"ab\u0008cd"}`,
+			want:   `{"value":"***"}`,
+		},
+		{
+			name:   "control byte in Python JSON",
+			secret: "ab\bcd",
+			text:   `{"value":"ab\bcd"}`,
+			want:   `{"value":"***"}`,
+		},
+		{
+			name:   "non-ASCII in JSON ensure ASCII",
+			secret: "pässwörd",
+			text:   `{"value":"p\u00e4ssw\u00f6rd"}`,
+			want:   `{"value":"***"}`,
+		},
+		{
+			name:   "non-ASCII literal repr",
+			secret: "pässwörd",
+			text:   "Traceback: ValueError('pässwörd')",
+			want:   "Traceback: ValueError('***')",
+		},
+		{
+			name:   "non-printable non-ASCII repr",
+			secret: "a\u00a0b",
+			text:   "Traceback: ValueError('a\\xa0b')",
+			want:   "Traceback: ValueError('***')",
+		},
+		{
+			name:   "astral in JSON ensure ASCII",
+			secret: "key😀value",
+			text:   `{"value":"key\ud83d\ude00value"}`,
+			want:   `{"value":"***"}`,
+		},
+		{
+			name:   "single quote repr",
+			secret: `it's "x"`,
+			text:   `Traceback: ValueError('it\'s "x"')`,
+			want:   `Traceback: ValueError('***')`,
+		},
+		{
+			name:   "double quote repr",
+			secret: `it's "x"`,
+			text:   `Traceback: ValueError("it's \"x\"")`,
+			want:   `Traceback: ValueError("***")`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			sanitizer := logSanitizer{}
+			sanitizer.mask(tc.secret)
+			if got := sanitizer.redactText(tc.text, "", ""); got != tc.want {
+				t.Errorf("redacted error = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestLogSanitizerRedactsOverlappingAndAdjacentSecrets(t *testing.T) {
 	tests := []struct {
 		name    string

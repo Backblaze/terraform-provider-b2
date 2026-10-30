@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -167,7 +168,8 @@ type logSanitizer struct {
 // sanitizeForLog copies inputs or outputs, recursively masking Sensitive schema
 // fields, signed_url, and custom_headers[].value. The last two are log-only masks
 // to preserve Terraform output compatibility. Schema-Sensitive strings are also
-// collected for redacting binding error text.
+// collected for redactText, which covers raw, Python repr, Python json.dumps,
+// Go JSON, and HTTP Basic base64 renderings.
 func (s *logSanitizer) sanitizeForLog(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
 	outputMap, ok := output.(map[string]interface{})
 	if !ok {
@@ -293,6 +295,93 @@ func maskLogOnly(_ interface{}) string {
 	return "***"
 }
 
+func pythonReprBody(value string, quote rune) string {
+	var body strings.Builder
+	for _, char := range value {
+		switch char {
+		case '\\':
+			body.WriteString(`\\`)
+		case quote:
+			body.WriteByte('\\')
+			body.WriteRune(char)
+		case '\t':
+			body.WriteString(`\t`)
+		case '\n':
+			body.WriteString(`\n`)
+		case '\r':
+			body.WriteString(`\r`)
+		default:
+			if unicode.IsPrint(char) {
+				body.WriteRune(char)
+			} else if char < 0x100 {
+				fmt.Fprintf(&body, `\x%02x`, char)
+			} else if char < 0x10000 {
+				fmt.Fprintf(&body, `\u%04x`, char)
+			} else {
+				fmt.Fprintf(&body, `\U%08x`, char)
+			}
+		}
+	}
+	return body.String()
+}
+
+func pythonJSONBody(value string, ensureASCII bool) string {
+	var body strings.Builder
+	for _, char := range value {
+		switch char {
+		case '"':
+			body.WriteString(`\"`)
+		case '\\':
+			body.WriteString(`\\`)
+		case '\n':
+			body.WriteString(`\n`)
+		case '\r':
+			body.WriteString(`\r`)
+		case '\t':
+			body.WriteString(`\t`)
+		case '\b':
+			body.WriteString(`\b`)
+		case '\f':
+			body.WriteString(`\f`)
+		default:
+			if char < 0x20 {
+				fmt.Fprintf(&body, `\u%04x`, char)
+			} else if ensureASCII && char > 0x7e {
+				if char < 0x10000 {
+					fmt.Fprintf(&body, `\u%04x`, char)
+				} else {
+					char -= 0x10000
+					fmt.Fprintf(&body, `\u%04x\u%04x`, 0xd800+(char>>10), 0xdc00+(char&0x3ff))
+				}
+			} else {
+				body.WriteRune(char)
+			}
+		}
+	}
+	return body.String()
+}
+
+func jsonUnicodeControlBody(value string) string {
+	var body strings.Builder
+	for _, char := range value {
+		switch char {
+		case '"':
+			body.WriteString(`\"`)
+		case '\\':
+			body.WriteString(`\\`)
+		default:
+			if char < 0x20 {
+				fmt.Fprintf(&body, `\u%04x`, char)
+			} else {
+				body.WriteRune(char)
+			}
+		}
+	}
+	return body.String()
+}
+
+// redactText masks schema-sensitive inputs as raw, Python repr, Python
+// json.dumps, Go JSON, or HTTP Basic base64 renderings.
 func (s *logSanitizer) redactText(text, applicationKeyID, applicationKey string) string {
 	secrets := append([]string{}, s.secrets...)
 	secrets = append(secrets, applicationKeyID, applicationKey)
@@ -308,12 +397,11 @@ func (s *logSanitizer) redactText(text, applicationKeyID, applicationKey string)
 		variants[secret] = struct{}{}
 		encoded, _ := json.Marshal(secret)
 		variants[string(encoded[1:len(encoded)-1])] = struct{}{}
-		escaped := strings.ReplaceAll(secret, "\\", "\\\\")
-		escaped = strings.ReplaceAll(escaped, "\n", "\\n")
-		escaped = strings.ReplaceAll(escaped, "\r", "\\r")
-		escaped = strings.ReplaceAll(escaped, "\t", "\\t")
-		variants[escaped] = struct{}{}
-		variants[strings.ReplaceAll(escaped, "'", "\\'")] = struct{}{}
+		variants[pythonReprBody(secret, '\'')] = struct{}{}
+		variants[pythonReprBody(secret, '"')] = struct{}{}
+		variants[pythonJSONBody(secret, true)] = struct{}{}
+		variants[pythonJSONBody(secret, false)] = struct{}{}
+		variants[jsonUnicodeControlBody(secret)] = struct{}{}
 	}
 
 	masked := make([]bool, len(text))
