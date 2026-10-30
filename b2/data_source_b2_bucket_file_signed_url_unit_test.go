@@ -42,7 +42,7 @@ func TestDataSourceB2BucketFileSignedURLUsesNonCredentialID(t *testing.T) {
 	if strings.Contains(id, "Authorization") || strings.Contains(id, "https://") {
 		t.Fatalf("data source ID contains signed URL data: %q", id)
 	}
-	if want := bucketFileSignedURLID("bucket-123", "reports/file.txt", 3600); id != want {
+	if want := "bucket-123/reports/file.txt/3600"; id != want {
 		t.Fatalf("data source ID = %q, want %q", id, want)
 	}
 }
