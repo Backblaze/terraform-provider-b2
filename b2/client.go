@@ -54,9 +54,14 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 
 	// Convert input struct to map for backward compatibility with Python bindings
 	inputMap := convertStructToMap(input)
+	schemaMap := c.getSchemaMap(name, op)
+	if schemaMap == nil {
+		// Should never happen
+		return fmt.Errorf("schema not found for resource: b2_%s", name)
+	}
 
 	tflog.Debug(ctx, "Input for pybindings", map[string]interface{}{
-		"input": inputMap,
+		"input": sanitizeOutput(inputMap, schemaMap),
 	})
 
 	cmd := exec.Command(c.Exec, name, string(op))
@@ -98,12 +103,6 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 		err = json.Unmarshal(outputJson, output)
 		if err != nil {
 			return err
-		}
-
-		schemaMap := c.getSchemaMap(name, op)
-		if schemaMap == nil {
-			// Should never happen
-			return fmt.Errorf("schema not found for resource: b2_%s", name)
 		}
 
 		tflog.Debug(ctx, "Safe output from pybindings", map[string]interface{}{
@@ -158,18 +157,101 @@ func (c Client) getSchemaMap(name string, op Operation) map[string]*schema.Schem
 	return nil
 }
 
-func sanitizeOutput(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
-	safeOutput := map[string]interface{}{}
-	outputMap := convertStructToMap(output)
+// signed_url remains non-sensitive in the Terraform schema for compatibility,
+// but it is redacted from debug logs.
+var logOnlySensitiveKeys = map[string]struct{}{
+	"signed_url": {},
+}
 
-	// Sanitize sensitive fields
-	for k, v := range outputMap {
-		if s, ok := schemaMap[k]; ok && s.Sensitive {
-			safeOutput[k] = "***"
-		} else {
-			safeOutput[k] = v
-		}
+func sanitizeOutput(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
+	outputMap, ok := output.(map[string]interface{})
+	if !ok {
+		outputMap = convertStructToMap(output)
 	}
 
-	return safeOutput
+	return sanitizeMap(outputMap, schemaMap)
+}
+
+func sanitizeMap(values map[string]interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
+	safeValues := make(map[string]interface{}, len(values))
+	for key, value := range values {
+		if _, ok := logOnlySensitiveKeys[key]; ok {
+			safeValues[key] = "***"
+			continue
+		}
+
+		if field, ok := schemaMap[key]; ok {
+			safeValues[key] = sanitizeSchemaValue(value, field)
+			continue
+		}
+
+		safeValues[key] = value
+	}
+
+	return safeValues
+}
+
+func sanitizeSchemaValue(value interface{}, field *schema.Schema) interface{} {
+	if field.Sensitive {
+		return "***"
+	}
+
+	switch field.Type {
+	case schema.TypeList, schema.TypeSet:
+		return sanitizeCollection(value, field.Elem)
+	case schema.TypeMap:
+		return sanitizeMapValues(value, field.Elem)
+	default:
+		return value
+	}
+}
+
+func sanitizeCollection(value interface{}, elem interface{}) interface{} {
+	var values []interface{}
+	switch typedValue := value.(type) {
+	case []interface{}:
+		values = typedValue
+	case *schema.Set:
+		values = typedValue.List()
+	default:
+		return value
+	}
+
+	safeValues := make([]interface{}, len(values))
+	for index, item := range values {
+		safeValues[index] = sanitizeElement(item, elem)
+	}
+	return safeValues
+}
+
+func sanitizeMapValues(value interface{}, elem interface{}) interface{} {
+	switch values := value.(type) {
+	case map[string]interface{}:
+		safeValues := make(map[string]interface{}, len(values))
+		for key, item := range values {
+			safeValues[key] = sanitizeElement(item, elem)
+		}
+		return safeValues
+	case map[string]string:
+		safeValues := make(map[string]interface{}, len(values))
+		for key, item := range values {
+			safeValues[key] = sanitizeElement(item, elem)
+		}
+		return safeValues
+	default:
+		return value
+	}
+}
+
+func sanitizeElement(value interface{}, elem interface{}) interface{} {
+	switch field := elem.(type) {
+	case *schema.Resource:
+		if values, ok := value.(map[string]interface{}); ok {
+			return sanitizeMap(values, field.Schema)
+		}
+	case *schema.Schema:
+		return sanitizeSchemaValue(value, field)
+	}
+
+	return value
 }

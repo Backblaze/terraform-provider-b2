@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Redact sensitive values from debug logs and use a non-credential ID for the signed URL data source
+
 ## [0.14.1] - 2026-10-23
 
 ### Fixed
