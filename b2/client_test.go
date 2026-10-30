@@ -221,7 +221,7 @@ func TestApplyRedactsBindingStderr(t *testing.T) {
 			secrets:  []string{"sse-key-sentinel"},
 		},
 		{
-			name: "webhook headers and signing secret",
+			name: "webhook signing secret",
 			input: &BucketNotificationRulesInput{
 				BucketId: "bucket-123",
 				NotificationRules: []interface{}{
@@ -241,7 +241,7 @@ func TestApplyRedactsBindingStderr(t *testing.T) {
 				},
 			},
 			resource: resourceB2BucketNotificationRules(),
-			secrets:  []string{"hmac-secret-sentinel", "header-"},
+			secrets:  []string{"hmac-secret-sentinel"},
 		},
 	}
 	for _, tc := range cases {
@@ -289,8 +289,79 @@ func TestLogSanitizerRedactsEscapedAndOverlappingValues(t *testing.T) {
 		{`ValueError('single\'quote\nsecret')`, `ValueError('***')`},
 	}
 	for _, tc := range cases {
-		if got := sanitizer.redactText(tc.text); got != tc.want {
+		if got := sanitizer.redactText(tc.text, "", ""); got != tc.want {
 			t.Errorf("redacted error = %q, want %q", got, tc.want)
 		}
+	}
+}
+
+func TestLogSanitizerRedactsOverlappingAndAdjacentSecrets(t *testing.T) {
+	tests := []struct {
+		name    string
+		secrets []string
+		text    string
+		want    string
+	}{
+		{
+			name:    "overlap",
+			secrets: []string{"token", "oken-secret"},
+			text:    "x token-secret y",
+			want:    "x *** y",
+		},
+		{
+			name:    "adjacent",
+			secrets: []string{"aaa", "bbb"},
+			text:    "aaabbb",
+			want:    "***",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			sanitizer := logSanitizer{}
+			for _, secret := range tc.secrets {
+				sanitizer.mask(secret)
+			}
+			if got := sanitizer.redactText(tc.text, "", ""); got != tc.want {
+				t.Errorf("redacted error = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestLogSanitizerDoesNotUseLogOnlyValuesForStderr(t *testing.T) {
+	sanitizer := logSanitizer{}
+	safe := sanitizer.sanitizeForLog(map[string]interface{}{
+		"notification_rules": []interface{}{
+			map[string]interface{}{
+				"target_configuration": []interface{}{
+					map[string]interface{}{
+						"custom_headers": []interface{}{
+							map[string]interface{}{
+								"name":  "X-Webhook-Token",
+								"value": "1",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, resourceB2BucketNotificationRules().Schema)
+
+	rules := safe["notification_rules"].([]interface{})
+	target := rules[0].(map[string]interface{})["target_configuration"].([]interface{})
+	header := target[0].(map[string]interface{})["custom_headers"].([]interface{})[0].(map[string]interface{})
+	if got := header["value"]; got != "***" {
+		t.Fatalf("log-only header value = %q, want redacted", got)
+	}
+	if got := sanitizer.redactText("HTTP (400) at line 619", "", ""); got != "HTTP (400) at line 619" {
+		t.Errorf("redacted error = %q, want unchanged", got)
+	}
+}
+
+func TestLogSanitizerRedactsBasicAuth(t *testing.T) {
+	sanitizer := logSanitizer{}
+	if got := sanitizer.redactText("Authorization: Basic a2lkOnNlY3JldA==", "kid", "secret"); got != "Authorization: Basic ***" {
+		t.Errorf("redacted error = %q, want %q", got, "Authorization: Basic ***")
 	}
 }

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * **Breaking change:** Use a non-credential ID for the signed URL data source (`<bucket_id>/<file_name>/<duration>`). `id` no longer holds the signed URL; read `signed_url` instead. Redact sensitive values from debug logs
+* Error output from the Python bindings replaces known credential and sensitive input values with `***`; debug logs mask webhook custom header values
 
 ## [0.14.1] - 2026-10-23
 

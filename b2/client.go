@@ -13,11 +13,11 @@ package b2
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -87,7 +87,7 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if len(exitErr.Stderr) > 0 {
-				err := fmt.Errorf("%s", sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKey, c.ApplicationKeyId))
+				err := fmt.Errorf("%s", sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKeyId, c.ApplicationKey))
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
 					"stderr": err,
 				})
@@ -166,8 +166,8 @@ type logSanitizer struct {
 
 // sanitizeForLog copies inputs or outputs, recursively masking Sensitive schema
 // fields, signed_url, and custom_headers[].value. The last two are log-only masks
-// to preserve Terraform output compatibility. Masked strings are also collected
-// for redacting binding error text.
+// to preserve Terraform output compatibility. Schema-Sensitive strings are also
+// collected for redacting binding error text.
 func (s *logSanitizer) sanitizeForLog(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
 	outputMap, ok := output.(map[string]interface{})
 	if !ok {
@@ -185,7 +185,7 @@ func (s *logSanitizer) sanitizeMap(values map[string]interface{}, schemaMap map[
 	safeValues := make(map[string]interface{}, len(values))
 	for key, value := range values {
 		if logOnlySensitive(key, parentKey) {
-			safeValues[key] = s.mask(value)
+			safeValues[key] = maskLogOnly(value)
 			continue
 		}
 
@@ -289,10 +289,18 @@ func (s *logSanitizer) mask(value interface{}) string {
 	return "***"
 }
 
-func (s *logSanitizer) redactText(text string, additionalSecrets ...string) string {
-	secrets := append(append([]string{}, s.secrets...), additionalSecrets...)
+func maskLogOnly(_ interface{}) string {
+	return "***"
+}
+
+func (s *logSanitizer) redactText(text, applicationKeyID, applicationKey string) string {
+	secrets := append([]string{}, s.secrets...)
+	secrets = append(secrets, applicationKeyID, applicationKey)
+	if applicationKeyID != "" && applicationKey != "" {
+		secrets = append(secrets, base64.StdEncoding.EncodeToString([]byte(applicationKeyID+":"+applicationKey)))
+	}
+
 	variants := map[string]struct{}{}
-	pythonEscape := strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\r", "\\r", "\t", "\\t")
 	for _, secret := range secrets {
 		if secret == "" {
 			continue
@@ -300,20 +308,42 @@ func (s *logSanitizer) redactText(text string, additionalSecrets ...string) stri
 		variants[secret] = struct{}{}
 		encoded, _ := json.Marshal(secret)
 		variants[string(encoded[1:len(encoded)-1])] = struct{}{}
-		escaped := pythonEscape.Replace(secret)
+		escaped := strings.ReplaceAll(secret, "\\", "\\\\")
+		escaped = strings.ReplaceAll(escaped, "\n", "\\n")
+		escaped = strings.ReplaceAll(escaped, "\r", "\\r")
+		escaped = strings.ReplaceAll(escaped, "\t", "\\t")
 		variants[escaped] = struct{}{}
 		variants[strings.ReplaceAll(escaped, "'", "\\'")] = struct{}{}
 	}
 
-	// Replace longer values first so overlapping secrets are fully masked.
-	ordered := make([]string, 0, len(variants))
+	masked := make([]bool, len(text))
 	for value := range variants {
-		ordered = append(ordered, value)
+		for start := 0; start < len(text); {
+			offset := strings.Index(text[start:], value)
+			if offset < 0 {
+				break
+			}
+			start += offset
+			for index := start; index < start+len(value); index++ {
+				masked[index] = true
+			}
+			start++
+		}
 	}
-	sort.Slice(ordered, func(i, j int) bool { return len(ordered[i]) > len(ordered[j]) })
-	replacements := make([]string, 0, len(ordered)*2)
-	for _, value := range ordered {
-		replacements = append(replacements, value, "***")
+
+	var redacted strings.Builder
+	redacted.Grow(len(text))
+	for index := 0; index < len(text); {
+		if !masked[index] {
+			redacted.WriteByte(text[index])
+			index++
+			continue
+		}
+
+		redacted.WriteString("***")
+		for index < len(text) && masked[index] {
+			index++
+		}
 	}
-	return strings.NewReplacer(replacements...).Replace(text)
+	return redacted.String()
 }
