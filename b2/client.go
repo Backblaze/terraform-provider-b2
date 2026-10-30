@@ -168,8 +168,7 @@ type logSanitizer struct {
 // sanitizeForLog copies inputs or outputs, recursively masking Sensitive schema
 // fields, signed_url, and custom_headers[].value. The last two are log-only masks
 // to preserve Terraform output compatibility. Schema-Sensitive strings are also
-// collected for redactText, which covers raw, Python repr, Python json.dumps,
-// Go JSON, and HTTP Basic base64 renderings.
+// collected for redactText.
 func (s *logSanitizer) sanitizeForLog(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
 	outputMap, ok := output.(map[string]interface{})
 	if !ok {
@@ -380,8 +379,9 @@ func jsonUnicodeControlBody(value string) string {
 	return body.String()
 }
 
-// redactText masks schema-sensitive inputs as raw, Python repr, Python
-// json.dumps, Go JSON, or HTTP Basic base64 renderings.
+// redactText masks the collected schema-Sensitive values and the provider
+// application key ID and key in their raw, Python repr, Python json.dumps and
+// Go JSON renderings, plus the HTTP Basic base64 form of the provider key pair.
 func (s *logSanitizer) redactText(text, applicationKeyID, applicationKey string) string {
 	secrets := append([]string{}, s.secrets...)
 	secrets = append(secrets, applicationKeyID, applicationKey)
