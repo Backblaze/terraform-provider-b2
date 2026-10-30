@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-* Redact sensitive values from debug logs and use a non-credential ID for the signed URL data source
+### Changed
+* **Breaking change:** Use a non-credential ID for the signed URL data source (`<bucket_id>/<file_name>/<duration>`). `id` no longer holds the signed URL; read `signed_url` instead. Redact sensitive values from debug logs
 
 ## [0.14.1] - 2026-10-23
 

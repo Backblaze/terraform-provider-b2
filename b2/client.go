@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -60,8 +62,9 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 		return fmt.Errorf("schema not found for resource: b2_%s", name)
 	}
 
+	sanitizer := logSanitizer{}
 	tflog.Debug(ctx, "Input for pybindings", map[string]interface{}{
-		"input": sanitizeOutput(inputMap, schemaMap),
+		"input": sanitizer.sanitizeForLog(inputMap, schemaMap),
 	})
 
 	cmd := exec.Command(c.Exec, name, string(op))
@@ -84,7 +87,7 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if len(exitErr.Stderr) > 0 {
-				err := fmt.Errorf("%s", string(exitErr.Stderr))
+				err := fmt.Errorf("%s", sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKey, c.ApplicationKeyId))
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
 					"stderr": err,
 				})
@@ -106,7 +109,7 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 		}
 
 		tflog.Debug(ctx, "Safe output from pybindings", map[string]interface{}{
-			"output": sanitizeOutput(output, schemaMap),
+			"output": sanitizer.sanitizeForLog(output, schemaMap),
 		})
 	}
 
@@ -157,31 +160,37 @@ func (c Client) getSchemaMap(name string, op Operation) map[string]*schema.Schem
 	return nil
 }
 
-// signed_url remains non-sensitive in the Terraform schema for compatibility,
-// but it is redacted from debug logs.
-var logOnlySensitiveKeys = map[string]struct{}{
-	"signed_url": {},
+type logSanitizer struct {
+	secrets []string
 }
 
-func sanitizeOutput(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
+// sanitizeForLog copies inputs or outputs, recursively masking Sensitive schema
+// fields, signed_url, and custom_headers[].value. The last two are log-only masks
+// to preserve Terraform output compatibility. Masked strings are also collected
+// for redacting binding error text.
+func (s *logSanitizer) sanitizeForLog(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
 	outputMap, ok := output.(map[string]interface{})
 	if !ok {
 		outputMap = convertStructToMap(output)
 	}
 
-	return sanitizeMap(outputMap, schemaMap)
+	return s.sanitizeMap(outputMap, schemaMap, "")
 }
 
-func sanitizeMap(values map[string]interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
+func logOnlySensitive(key, parentKey string) bool {
+	return key == "signed_url" || (parentKey == "custom_headers" && key == "value")
+}
+
+func (s *logSanitizer) sanitizeMap(values map[string]interface{}, schemaMap map[string]*schema.Schema, parentKey string) map[string]interface{} {
 	safeValues := make(map[string]interface{}, len(values))
 	for key, value := range values {
-		if _, ok := logOnlySensitiveKeys[key]; ok {
-			safeValues[key] = "***"
+		if logOnlySensitive(key, parentKey) {
+			safeValues[key] = s.mask(value)
 			continue
 		}
 
 		if field, ok := schemaMap[key]; ok {
-			safeValues[key] = sanitizeSchemaValue(value, field)
+			safeValues[key] = s.sanitizeSchemaValue(value, field, key)
 			continue
 		}
 
@@ -191,22 +200,22 @@ func sanitizeMap(values map[string]interface{}, schemaMap map[string]*schema.Sch
 	return safeValues
 }
 
-func sanitizeSchemaValue(value interface{}, field *schema.Schema) interface{} {
+func (s *logSanitizer) sanitizeSchemaValue(value interface{}, field *schema.Schema, parentKey string) interface{} {
 	if field.Sensitive {
-		return "***"
+		return s.mask(value)
 	}
 
 	switch field.Type {
 	case schema.TypeList, schema.TypeSet:
-		return sanitizeCollection(value, field.Elem)
+		return s.sanitizeCollection(value, field.Elem, parentKey)
 	case schema.TypeMap:
-		return sanitizeMapValues(value, field.Elem)
+		return s.sanitizeMapValues(value, field.Elem, parentKey)
 	default:
 		return value
 	}
 }
 
-func sanitizeCollection(value interface{}, elem interface{}) interface{} {
+func (s *logSanitizer) sanitizeCollection(value interface{}, elem interface{}, parentKey string) interface{} {
 	var values []interface{}
 	switch typedValue := value.(type) {
 	case []interface{}:
@@ -219,23 +228,23 @@ func sanitizeCollection(value interface{}, elem interface{}) interface{} {
 
 	safeValues := make([]interface{}, len(values))
 	for index, item := range values {
-		safeValues[index] = sanitizeElement(item, elem)
+		safeValues[index] = s.sanitizeElement(item, elem, parentKey)
 	}
 	return safeValues
 }
 
-func sanitizeMapValues(value interface{}, elem interface{}) interface{} {
+func (s *logSanitizer) sanitizeMapValues(value interface{}, elem interface{}, parentKey string) interface{} {
 	switch values := value.(type) {
 	case map[string]interface{}:
 		safeValues := make(map[string]interface{}, len(values))
 		for key, item := range values {
-			safeValues[key] = sanitizeElement(item, elem)
+			safeValues[key] = s.sanitizeElement(item, elem, parentKey)
 		}
 		return safeValues
 	case map[string]string:
 		safeValues := make(map[string]interface{}, len(values))
 		for key, item := range values {
-			safeValues[key] = sanitizeElement(item, elem)
+			safeValues[key] = s.sanitizeElement(item, elem, parentKey)
 		}
 		return safeValues
 	default:
@@ -243,15 +252,68 @@ func sanitizeMapValues(value interface{}, elem interface{}) interface{} {
 	}
 }
 
-func sanitizeElement(value interface{}, elem interface{}) interface{} {
+func (s *logSanitizer) sanitizeElement(value interface{}, elem interface{}, parentKey string) interface{} {
 	switch field := elem.(type) {
 	case *schema.Resource:
 		if values, ok := value.(map[string]interface{}); ok {
-			return sanitizeMap(values, field.Schema)
+			return s.sanitizeMap(values, field.Schema, parentKey)
 		}
 	case *schema.Schema:
-		return sanitizeSchemaValue(value, field)
+		return s.sanitizeSchemaValue(value, field, parentKey)
 	}
 
 	return value
+}
+
+func (s *logSanitizer) mask(value interface{}) string {
+	switch value := value.(type) {
+	case string:
+		if value != "" {
+			s.secrets = append(s.secrets, value)
+		}
+	case []interface{}:
+		for _, item := range value {
+			s.mask(item)
+		}
+	case *schema.Set:
+		s.mask(value.List())
+	case map[string]interface{}:
+		for _, item := range value {
+			s.mask(item)
+		}
+	case map[string]string:
+		for _, item := range value {
+			s.mask(item)
+		}
+	}
+	return "***"
+}
+
+func (s *logSanitizer) redactText(text string, additionalSecrets ...string) string {
+	secrets := append(append([]string{}, s.secrets...), additionalSecrets...)
+	variants := map[string]struct{}{}
+	pythonEscape := strings.NewReplacer("\\", "\\\\", "\n", "\\n", "\r", "\\r", "\t", "\\t")
+	for _, secret := range secrets {
+		if secret == "" {
+			continue
+		}
+		variants[secret] = struct{}{}
+		encoded, _ := json.Marshal(secret)
+		variants[string(encoded[1:len(encoded)-1])] = struct{}{}
+		escaped := pythonEscape.Replace(secret)
+		variants[escaped] = struct{}{}
+		variants[strings.ReplaceAll(escaped, "'", "\\'")] = struct{}{}
+	}
+
+	// Replace longer values first so overlapping secrets are fully masked.
+	ordered := make([]string, 0, len(variants))
+	for value := range variants {
+		ordered = append(ordered, value)
+	}
+	sort.Slice(ordered, func(i, j int) bool { return len(ordered[i]) > len(ordered[j]) })
+	replacements := make([]string, 0, len(ordered)*2)
+	for _, value := range ordered {
+		replacements = append(replacements, value, "***")
+	}
+	return strings.NewReplacer(replacements...).Replace(text)
 }

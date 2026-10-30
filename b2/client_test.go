@@ -26,6 +26,10 @@ import (
 func init() {
 	switch os.Getenv("GO_WANT_B2_CLIENT_HELPER") {
 	case "notification-rules":
+		input, err := io.ReadAll(os.Stdin)
+		if err != nil || !bytes.Contains(input, []byte("Bearer custom-header-sentinel")) {
+			os.Exit(2)
+		}
 		_, _ = io.WriteString(os.Stdout, `{"bucketId":"bucket-123","notificationRules":[{"name":"rule","targetConfiguration":{"targetType":"webhook","customHeaders":[{"name":"X-Webhook-Token","value":"Bearer custom-header-sentinel"}]}}]}`)
 		os.Exit(0)
 	case "stderr":
@@ -38,7 +42,7 @@ func init() {
 	}
 }
 
-func TestSanitizeOutputRedactsSensitiveInputValues(t *testing.T) {
+func TestSanitizeForLogRedactsSensitiveInputValues(t *testing.T) {
 	schemaMap := resourceB2BucketFileVersion().Schema
 	schemaMap["top_secret"] = &schema.Schema{Type: schema.TypeString, Sensitive: true}
 
@@ -60,7 +64,8 @@ func TestSanitizeOutputRedactsSensitiveInputValues(t *testing.T) {
 		},
 	}
 
-	safe := sanitizeOutput(input, schemaMap)
+	sanitizer := logSanitizer{}
+	safe := sanitizer.sanitizeForLog(input, schemaMap)
 	if got := safe["top_secret"]; got != "***" {
 		t.Fatalf("top-level sensitive value = %#v, want redacted", got)
 	}
@@ -78,8 +83,9 @@ func TestSanitizeOutputRedactsSensitiveInputValues(t *testing.T) {
 	}
 }
 
-func TestSanitizeOutputRedactsSignedURL(t *testing.T) {
-	safe := sanitizeOutput(map[string]interface{}{
+func TestSanitizeForLogRedactsSignedURL(t *testing.T) {
+	sanitizer := logSanitizer{}
+	safe := sanitizer.sanitizeForLog(map[string]interface{}{
 		"bucket_id":  "bucket-123",
 		"file_name":  "reports/file.txt",
 		"signed_url": "https://example.invalid/file?Authorization=bearer-credential",
@@ -264,5 +270,27 @@ func TestApplyRedactsBindingStderr(t *testing.T) {
 				t.Error("binding error must retain non-sensitive context and be logged")
 			}
 		})
+	}
+}
+
+func TestLogSanitizerRedactsEscapedAndOverlappingValues(t *testing.T) {
+	sanitizer := logSanitizer{}
+	sanitizer.mask("secret")
+	sanitizer.mask("secret-with-suffix")
+	sanitizer.mask("Bearer header-\"quoted\"\nsentinel")
+	sanitizer.mask("single'quote\nsecret")
+	cases := []struct {
+		text string
+		want string
+	}{
+		{"failure: secret-with-suffix", "failure: ***"},
+		{`{"value":"Bearer header-\"quoted\"\nsentinel"}`, `{"value":"***"}`},
+		{`InvalidHeader('Bearer header-"quoted"\nsentinel')`, `InvalidHeader('***')`},
+		{`ValueError('single\'quote\nsecret')`, `ValueError('***')`},
+	}
+	for _, tc := range cases {
+		if got := sanitizer.redactText(tc.text); got != tc.want {
+			t.Errorf("redacted error = %q, want %q", got, tc.want)
+		}
 	}
 }
