@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* `is_file_lock_enabled` on `b2_bucket`: enabling File Lock on an existing bucket now updates it in place instead of forcing a new bucket; only disabling it forces replacement
+
 ## [0.14.1] - 2026-10-23
 
 ### Fixed
