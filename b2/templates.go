@@ -264,7 +264,7 @@ func getFileLockConfigurationElem(ds bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"is_file_lock_enabled": {
-				Description: "If present, the boolean value specifies whether bucket is File Lock-enabled.",
+				Description: "If present, the boolean value specifies whether bucket is File Lock-enabled. File Lock can be enabled on an existing bucket, but it cannot be disabled: changing this from `true` to `false` forces creation of a new bucket.",
 				Type:        schema.TypeBool,
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),
@@ -272,7 +272,6 @@ func getFileLockConfigurationElem(ds bool) *schema.Resource {
 					nil,
 					func() (any, error) { return false, nil },
 				),
-				ForceNew: true,
 			},
 			"default_retention": {
 				Description: "Default retention settings for files uploaded to this bucket",

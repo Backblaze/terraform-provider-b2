@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Detect `b2_bucket_file_version` source content changes when a B2 checksum and readable local source are available, and replace the file version when they differ.
 * Default omitted `duration` in `b2_bucket_file_signed_url` to 86400 seconds (one day) instead of sending zero seconds
 * Length-validation errors now report the field's length instead of its value.
+* `is_file_lock_enabled` on `b2_bucket`: enabling File Lock on an existing bucket now updates it in place instead of forcing a new bucket; only disabling it forces replacement
 
 ### Changed
 * SSE-C key changes are detected using a computed SHA-256 `key_fingerprint`; raw `secret_b64` is cleared from resource state. Once a fingerprint exists, changing the key or key ID replaces the file version. Legacy state without a fingerprint is not automatically replaced and cannot detect rotations until a deliberate replacement establishes a baseline. On upgrade, review `terraform plan`; confirm the local source is available before using `terraform apply -replace=<resource address>` to opt in. Consider `create_before_destroy` to upload the replacement before deleting the old version. Treat existing state backups and saved plans as sensitive.

@@ -50,6 +50,11 @@ func resourceB2Bucket() *schema.Resource {
 			customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
 				return len(d.GetChangedKeysPrefix("")) > 0
 			}),
+			// b2_update_bucket can enable File Lock on an existing bucket, but
+			// it can never be disabled, so only turning it off needs a new bucket.
+			customdiff.ForceNewIfChange("file_lock_configuration.0.is_file_lock_enabled", func(ctx context.Context, old, new, meta interface{}) bool {
+				return old.(bool) && !new.(bool)
+			}),
 		),
 
 		Schema: map[string]*schema.Schema{
