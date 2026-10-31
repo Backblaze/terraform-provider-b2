@@ -67,7 +67,7 @@ Optional:
 Optional:
 
 - `default_retention` (Block List, Max: 1) Default retention settings for files uploaded to this bucket. (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention))
-- `is_file_lock_enabled` (Boolean) If present, the boolean value specifies whether bucket is File Lock-enabled. Defaults to `false`. **Modifying this attribute will force creation of a new resource.**
+- `is_file_lock_enabled` (Boolean) If present, the boolean value specifies whether bucket is File Lock-enabled. File Lock can be enabled on an existing bucket, but it cannot be disabled: changing this from `true` to `false` forces creation of a new bucket. Defaults to `false`.
 
 <a id="nestedblock--file_lock_configuration--default_retention"></a>
 ### Nested Schema for `file_lock_configuration.default_retention`
