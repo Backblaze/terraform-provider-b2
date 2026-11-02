@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Breaking change:** Use a non-credential ID for the signed URL data source (`<bucket_id>/<file_name>/<duration>`). `id` no longer holds the signed URL; read `signed_url` instead.
 * Debug logs mask sensitive values, signed URLs and webhook custom header values. Error output from the Python bindings replaces known credential and sensitive input values with `***`.
 
+### Infrastructure
+* Remove the `auth.clock_expiry` resilience check from the repository-owned `.sdkharness` registry: no provider operation outlives its own authorization, because every operation runs as a fresh process with in-memory account info
+
 ## [0.14.1] - 2026-10-23
 
 ### Fixed
