@@ -35,6 +35,12 @@ func init() {
 	case "stderr":
 		_, _ = io.Copy(os.Stderr, os.Stdin)
 		os.Exit(1)
+	case "stderr-traceback":
+		_, _ = io.WriteString(os.Stderr, "Traceback (most recent call last):\n  File \"provider_tool.py\", line 622, in run_command\n    return command()\nb2sdk.exception.Unauthorized: unauthorized\n")
+		os.Exit(1)
+	case "stderr-plain":
+		_, _ = io.WriteString(os.Stderr, "plain bindings failure\n")
+		os.Exit(1)
 	}
 	if os.Getenv("GO_WANT_B2_SIGNED_URL_HELPER") == "1" {
 		_, _ = io.WriteString(os.Stdout, `{"bucketId":"bucket-123","fileName":"reports/file.txt","duration":3600,"signedUrl":"https://example.invalid/file?Authorization=bearer-credential"}`)
@@ -268,6 +274,54 @@ func TestApplyRedactsBindingStderr(t *testing.T) {
 			}
 			if !strings.Contains(err.Error(), "bucket-123") || !strings.Contains(logs.String(), "Error in pybindings") {
 				t.Error("binding error must retain non-sensitive context and be logged")
+			}
+		})
+	}
+}
+
+func TestApplyReturnsBindingsErrorText(t *testing.T) {
+	tests := []struct {
+		name   string
+		helper string
+		want   string
+	}{
+		{
+			name:   "traceback",
+			helper: "stderr-traceback",
+			want:   "b2_bucket_file_version resource_create failed: b2sdk.exception.Unauthorized: unauthorized",
+		},
+		{
+			name:   "plain stderr",
+			helper: "stderr-plain",
+			want:   "b2_bucket_file_version resource_create failed: plain bindings failure",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GO_WANT_B2_CLIENT_HELPER", tc.helper)
+			client := Client{
+				Exec: os.Args[0],
+				ResourcesMap: map[string]*schema.Resource{
+					"b2_bucket_file_version": resourceB2BucketFileVersion(),
+				},
+			}
+
+			err := client.Apply(context.Background(), OpResourceCreate, &BucketFileVersionInput{BucketId: "bucket-123"}, nil)
+			if err == nil {
+				t.Fatal("expected a binding error")
+			}
+			if got := err.Error(); got != tc.want {
+				t.Errorf("binding error = %q, want %q", got, tc.want)
+			}
+			if strings.Contains(err.Error(), "Traceback (most recent call last):") {
+				t.Error("binding error contains the Python traceback")
+			}
+			if !strings.Contains(err.Error(), "b2_") || !strings.Contains(err.Error(), " failed:") {
+				t.Error("binding error does not name the failed operation")
+			}
+			if !strings.HasSuffix(err.Error(), "unauthorized") && tc.name == "traceback" {
+				t.Error("binding error does not end with the reported error")
 			}
 		})
 	}

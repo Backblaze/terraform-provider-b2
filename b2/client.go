@@ -88,7 +88,8 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if len(exitErr.Stderr) > 0 {
-				err := fmt.Errorf("%s", sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKeyId, c.ApplicationKey))
+				text := sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKeyId, c.ApplicationKey)
+				err := fmt.Errorf("b2_%s %s failed: %s", name, op, bindingsErrorText(text))
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
 					"stderr": err,
 				})
@@ -115,6 +116,25 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 	}
 
 	return nil
+}
+
+// bindingsErrorText reduces the stderr of the Python bindings to the error they
+// report. An unhandled exception is printed as a traceback; its last line is the
+// exception itself (for example "...Unauthorized: unauthorized"), which is the
+// only part that is useful in a Terraform error. Other output is returned as is.
+func bindingsErrorText(stderr string) string {
+	text := strings.TrimSpace(stderr)
+	if !strings.Contains(text, "Traceback (most recent call last):") {
+		return text
+	}
+	lines := strings.Split(text, "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" && !strings.HasPrefix(line, "[PYI-") {
+			return line
+		}
+	}
+	return text
 }
 
 // Populate fills the Terraform ResourceData with values from the typed output.
