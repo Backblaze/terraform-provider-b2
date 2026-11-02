@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -59,7 +60,9 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 		"input": inputMap,
 	})
 
-	cmd := exec.Command(c.Exec, name, string(op))
+	cmd := exec.CommandContext(ctx, c.Exec, name, string(op))
+	// A grandchild process that keeps stdout open must not block Apply after the context is cancelled
+	cmd.WaitDelay = 5 * time.Second
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("B2_USER_AGENT_APPEND=%s", c.UserAgentAppend))
 

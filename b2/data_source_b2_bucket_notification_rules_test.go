@@ -35,7 +35,7 @@ func TestAccDataSourceB2BucketNotificationRules_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", resourceName, "bucket_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", parentResourceName, "bucket_id"),
-					resource.TestCheckResourceAttrPair(dataSourceName, "notification_rules", resourceName, "notification_rules"),
+					resource.TestCheckResourceAttrPair(dataSourceName, "notification_rules.#", resourceName, "notification_rules.#"),
 				),
 			},
 		},

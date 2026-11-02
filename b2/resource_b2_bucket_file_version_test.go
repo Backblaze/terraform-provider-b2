@@ -11,6 +11,7 @@
 package b2
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -341,4 +342,22 @@ resource "b2_bucket_file_version" "test" {
   }
 }
 `, bucketName, tempFile)
+}
+
+// When the file version no longer exists the bindings return None, which run() turns into an object
+// that holds only _sha1. That must remove the resource from state instead of failing every refresh.
+func TestResourceB2BucketFileVersionReadRemovesDeletedFileFromState(t *testing.T) {
+	exec := stubBindings(t, `printf '{"_sha1":"da39a3ee5e6b4b0d3255bfef95601890afd80709"}'`)
+	client := stubClient(t, exec)
+
+	res := resourceB2BucketFileVersion()
+	d := res.TestResourceData()
+	d.SetId("4_zdeleted_out_of_band")
+
+	if diags := resourceB2BucketFileVersionRead(context.Background(), d, client); diags.HasError() {
+		t.Fatal(diags)
+	}
+	if d.Id() != "" {
+		t.Errorf("a file version that no longer exists must be dropped from state, but the ID is still %q", d.Id())
+	}
 }
