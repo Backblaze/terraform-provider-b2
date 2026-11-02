@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* `b2_application_key`: widening or narrowing `bucket_ids` (or changing the deprecated `bucket_id`) now forces replacement of the key, as documented. Previously the plan-time diff was suppressed by the `bucket_id`/`bucket_ids` value the provider mirrors into state, so OpenTofu reported "No changes" while the key silently kept its old scope
+
 ## [0.14.1] - 2026-10-23
 
 ### Fixed
