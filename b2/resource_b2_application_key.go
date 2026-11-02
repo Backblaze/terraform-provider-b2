@@ -58,10 +58,7 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ConflictsWith: []string{"bucket_id"},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					// Suppress diff if bucket_id is set in config (backward compatibility)
-					if _, ok := d.GetOk("bucket_id"); ok {
-						return true
-					}
-					return false
+					return configAttrIsSet(d, "bucket_id")
 				},
 			},
 			"name_prefix": {
@@ -109,15 +106,25 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ConflictsWith: []string{"bucket_ids"},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					// Suppress diff if bucket_ids is set (bucket_id is auto-populated from bucket_ids)
-					if _, ok := d.GetOk("bucket_ids"); ok {
-						return true
-					}
-					return false
+					return configAttrIsSet(d, "bucket_ids")
 				},
 				Deprecated: "This argument is deprecated in favor of 'bucket_ids' argument",
 			},
 		},
 	}
+}
+
+// configAttrIsSet reports whether the given attribute is explicitly set in the
+// configuration that is being planned. Unlike d.GetOk, this reads only the
+// config, not the merged state, so values that the provider itself wrote into
+// state (e.g. the bucket_id mirrored from bucket_ids) cannot suppress a diff.
+func configAttrIsSet(d *schema.ResourceData, attr string) bool {
+	raw := d.GetRawConfig()
+	if raw.IsNull() || !raw.Type().HasAttribute(attr) {
+		return false
+	}
+	v := raw.GetAttr(attr)
+	return v.IsKnown() && !v.IsNull()
 }
 
 func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
