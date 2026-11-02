@@ -13,6 +13,7 @@ package b2
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -155,6 +156,15 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	err := client.Apply(ctx, OpResourceRead, &input, &output)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if output.FileId == "" && !d.IsNewResource() {
+		// The bindings print null for a file version that no longer exists
+		tflog.Warn(ctx, "File version not found, possible resource drift", map[string]interface{}{
+			"file_id": d.Id(),
+		})
+		d.SetId("")
+		return nil
 	}
 
 	// These fields are not returned by the API but are needed for the resource

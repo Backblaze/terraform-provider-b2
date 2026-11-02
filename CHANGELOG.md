@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Stop the bindings process when the operation context is cancelled
+* `b2_bucket_file_version`: remove the resource from state when the file version was deleted outside Terraform
+* `b2_bucket`: destroying a bucket that no longer exists no longer fails
+
 ### Infrastructure
 * Remove the `auth.clock_expiry` resilience check from the repository-owned `.sdkharness` registry: no provider operation outlives its own authorization, because every operation runs as a fresh process with in-memory account info
 

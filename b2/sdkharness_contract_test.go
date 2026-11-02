@@ -68,3 +68,54 @@ func TestSDKHarnessContract(t *testing.T) {
 		}
 	}
 }
+
+// The row-count test above breaks whenever a scenario is added. This one checks the shape of the
+// contract instead: every row is well formed, scenarios are unique within a level, and every
+// executable the contract names exists and is runnable.
+func TestSDKHarnessContractRowsAreConsistent(t *testing.T) {
+	root := filepath.Join("..", ".sdkharness")
+	contract, err := os.ReadFile(filepath.Join(root, "tests.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(strings.ReplaceAll(string(contract), "\r\n", "\n")), "\n")
+	if lines[0] != "test_level\tscenario\ttarget\texecutable" {
+		t.Fatalf("unexpected tests.tsv header: %q", lines[0])
+	}
+	byLevel := map[string][][]string{}
+	for _, line := range lines[1:] {
+		fields := strings.Split(line, "\t")
+		if len(fields) != 4 {
+			t.Fatalf("row does not have 4 columns: %q", line)
+		}
+		for _, f := range fields {
+			if strings.TrimSpace(f) == "" || f != strings.TrimSpace(f) {
+				t.Fatalf("empty or padded field in row: %q", line)
+			}
+		}
+		byLevel[fields[0]] = append(byLevel[fields[0]], fields)
+	}
+	for _, level := range []string{"conformance", "health", "resilience"} {
+		if len(byLevel[level]) == 0 {
+			t.Errorf("no rows for test level %q", level)
+		}
+	}
+	for level, rows := range byLevel {
+		seen := map[string]bool{}
+		for _, fields := range rows {
+			scenario, executable := fields[1], fields[3]
+			if seen[scenario] {
+				t.Errorf("duplicate %s scenario: %s", level, scenario)
+			}
+			seen[scenario] = true
+			info, statErr := os.Stat(filepath.Join("..", filepath.FromSlash(executable)))
+			if statErr != nil {
+				t.Errorf("%s/%s: executable %s: %v", level, scenario, executable, statErr)
+				continue
+			}
+			if runtime.GOOS != "windows" && info.Mode()&0o111 == 0 {
+				t.Errorf("%s/%s: %s is not executable", level, scenario, executable)
+			}
+		}
+	}
+}
