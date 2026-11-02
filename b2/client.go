@@ -89,11 +89,10 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if len(exitErr.Stderr) > 0 {
 				text := sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKeyId, c.ApplicationKey)
-				err := fmt.Errorf("b2_%s %s failed: %s", name, op, bindingsErrorText(text))
 				tflog.Error(ctx, "Error in pybindings", map[string]interface{}{
-					"stderr": err,
+					"stderr": text,
 				})
-				return err
+				return fmt.Errorf("b2_%s %s failed: %s", name, op, bindingsErrorText(text))
 			}
 			return fmt.Errorf("failed to execute")
 		} else {

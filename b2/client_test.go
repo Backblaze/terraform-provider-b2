@@ -327,6 +327,38 @@ func TestApplyReturnsBindingsErrorText(t *testing.T) {
 	}
 }
 
+func TestApplyLogsFullRedactedBindingTraceback(t *testing.T) {
+	var logs bytes.Buffer
+	ctx := tflogtest.RootLogger(context.Background(), &logs)
+	t.Setenv("GO_WANT_B2_CLIENT_HELPER", "stderr-traceback")
+	client := Client{
+		Exec: os.Args[0],
+		ResourcesMap: map[string]*schema.Resource{
+			"b2_bucket_file_version": resourceB2BucketFileVersion(),
+		},
+	}
+
+	err := client.Apply(ctx, OpResourceCreate, &BucketFileVersionInput{BucketId: "bucket-123"}, nil)
+	if err == nil {
+		t.Fatal("expected a binding error")
+	}
+	if got, want := err.Error(), "b2_bucket_file_version resource_create failed: b2sdk.exception.Unauthorized: unauthorized"; got != want {
+		t.Errorf("binding error = %q, want %q", got, want)
+	}
+	if strings.Contains(err.Error(), "Traceback (most recent call last):") {
+		t.Error("binding error contains the Python traceback")
+	}
+	for _, text := range []string{
+		"Traceback (most recent call last):",
+		`File \"provider_tool.py\", line 622, in run_command`,
+		"b2sdk.exception.Unauthorized: unauthorized",
+	} {
+		if !strings.Contains(logs.String(), text) {
+			t.Errorf("debug log does not contain %q: %s", text, logs.String())
+		}
+	}
+}
+
 func TestLogSanitizerRedactsEscapedAndOverlappingValues(t *testing.T) {
 	sanitizer := logSanitizer{}
 	sanitizer.mask("secret")
