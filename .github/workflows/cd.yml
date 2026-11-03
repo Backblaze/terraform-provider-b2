@@ -137,8 +137,11 @@ jobs:
           # Strip the prefix 'v'
           version=${tag:1}
           echo "version=$version" >> $GITHUB_OUTPUT
+          # A release candidate (vX.Y.Z-rc.N) has no changelog section yet; see RELEASE.md.
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> $GITHUB_OUTPUT; else echo "prerelease=false" >> $GITHUB_OUTPUT; fi
       - name: Read the Changelog
         id: read-changelog
+        if: steps.version.outputs.prerelease == 'false'
         uses: mindsers/changelog-reader-action@v2
         with:
           version: ${{ steps.version.outputs.version }}
@@ -159,6 +162,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.version }}
-          body: ${{ steps.read-changelog.outputs.changes }}
+          body: ${{ steps.version.outputs.prerelease == 'true' && format('Release candidate for v{0}. Changes are in [`.changes/unreleased/`](https://github.com/{1}/tree/{2}/.changes/unreleased).', steps.version.outputs.version, github.repository, github.ref_name) || steps.read-changelog.outputs.changes }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}

@@ -60,3 +60,6 @@ venv/
 # Local tooling
 .memsearch/
 .worktrees/
+
+# Claude Code (shared settings, hooks and skills are committed)
+.claude/settings.local.json

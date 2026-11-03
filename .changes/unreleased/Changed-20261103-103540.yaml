@@ -1,0 +1,3 @@
+kind: Changed
+body: '**Breaking change:** Use a non-credential ID for the signed URL data source (`<bucket_id>/<file_name>/<duration>`). `id` no longer holds the signed URL; read `signed_url` instead.'
+time: 2026-11-03T10:35:40.878652-05:00
