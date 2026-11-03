@@ -18,7 +18,6 @@ health	golden-path	simulator	./.sdkharness/tests/health-golden-path
 resilience	api.backoff_503	simulator	./.sdkharness/tests/run-resilience
 resilience	api.retry_after_429	simulator	./.sdkharness/tests/run-resilience
 resilience	api.retry_after_503	simulator	./.sdkharness/tests/run-resilience
-resilience	auth.clock_expiry	simulator	./.sdkharness/tests/run-resilience
 resilience	auth.expired_401	simulator	./.sdkharness/tests/run-resilience
 resilience	part.retry_503	simulator	./.sdkharness/tests/run-resilience
 resilience	upload.cap_exceeded_403	simulator	./.sdkharness/tests/run-resilience

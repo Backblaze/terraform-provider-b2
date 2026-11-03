@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: 'Remove the `auth.clock_expiry` resilience check from the repository-owned `.sdkharness` registry: no provider operation outlives its own authorization, because every operation runs as a fresh process with in-memory account info'
+time: 2026-11-03T10:35:51.859712-05:00
