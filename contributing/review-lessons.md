@@ -24,7 +24,8 @@ When a review teaches something new, add it here in the same PR, with the PR lin
   the `If(ds, ...)` pattern already in that file.
 - Put validators in `b2/validators.go`, not inline in a template (#17).
 - Data sources that always produce a new value (signed URLs) re-read on every plan; keep their `id` stable
-  so Terraform sees the same object (#31).
+  so Terraform sees the same object (#31), and never put a credential such as the signed URL itself in
+  `id` (#178).
 - Perpetual diffs and re-uploads found after release: `revision` drift (#146), `bucket_info` key case
   (#151), B2-added `file_info` keys on a `ForceNew` map (#153), lifecycle rule order (#154), the SSE
   default re-sent from state (#157). Each needed an acceptance step that re-plans the same configuration.
