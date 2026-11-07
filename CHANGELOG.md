@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Redact sensitive values from debug logs and returned Python bindings errors, and redact signed URLs and webhook custom header values from debug logs. Debug logs retain the full redacted bindings stderr; only the returned Terraform error is reduced.
 
 ### Infrastructure
+* Upgrade phx-class-registry to v6, replacing the deprecated `values()` call with `classes()`
 * Remove the `auth.clock_expiry` resilience check from the repository-owned `.sdkharness` registry: no provider operation outlives its own authorization, because every operation runs as a fresh process with in-memory account info
 
 ## [0.14.1] - 2026-10-23
