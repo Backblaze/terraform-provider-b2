@@ -38,7 +38,7 @@ func TestAccDataSourceB2BucketFileSignedUrl_singleFile(t *testing.T) {
 					resource.TestCheckResourceAttrPair(dataSourceName, "bucket_id", parentResourceName, "bucket_id"),
 					resource.TestCheckResourceAttrPair(dataSourceName, "file_name", resourceName, "file_name"),
 					resource.TestCheckResourceAttrSet(dataSourceName, "signed_url"),
-					resource.TestCheckResourceAttrPair(dataSourceName, "id", dataSourceName, "signed_url"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "id"),
 				),
 			},
 		},

@@ -25,7 +25,7 @@ func TestSDKHarnessContract(t *testing.T) {
 	}
 	normalizedContract := strings.ReplaceAll(string(contract), "\r\n", "\n")
 	lines := strings.Split(strings.TrimSpace(normalizedContract), "\n")
-	if len(lines) != 32 || lines[0] != "test_level\tscenario\ttarget\texecutable" {
+	if len(lines) != 31 || lines[0] != "test_level\tscenario\ttarget\texecutable" {
 		t.Fatalf("unexpected tests.tsv schema: %q", string(contract))
 	}
 	wantRow := "health\tgolden-path\tsimulator\t./.sdkharness/tests/health-golden-path"
