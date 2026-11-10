@@ -5,13 +5,15 @@ Written from the reference check, bin/resilience/b2-sdk-python/upload.retry_503.
 The contract is bin/resilience/README.md; the question is the upload.stall row of
 bin/resilience/scenarios.tsv.
 
-Fault   wire b2_upload_file stall ms=60000 (count 1), armed after the bucket exists
-Needs   request-timeout: a client timeout short enough to beat the 60 s stall. The provider offers
-        no timeout option (UNSETTLED below), so the check puts the tool in front of the stall
-        anyway and lets the journal say which case holds:
+Fault   wire b2_upload_file stall ms=130000 (count 1), armed after the bucket exists
+Needs   request-timeout: a client timeout short enough to beat the stall. The provider offers
+        no timeout option (UNSETTLED below), but the frozen b2sdk it wraps (b2sdk==2.13.2, pinned in
+        python-bindings/requirements.txt) abandons an upload request after B2Http.TIMEOUT_FOR_UPLOAD = 128 s
+        (b2sdk/_internal/b2http.py), so the check stalls for 130 s, just above that timeout, and lets the
+        journal say which case holds:
         - the stalled request was abandoned (a second b2_upload_file on a new uploadUrlId): the
           question WAS asked, and the recovery path and end state decide PASS or FAIL;
-        - the stalled request was waited out (one b2_upload_file, the apply >= 60 s): the tool's
+        - the stalled request was waited out (one b2_upload_file, the apply >= 130 s): the tool's
           own timeout outlasts the stall, so it could not be put in front of it --
           no-client-option, with that observation;
         - the apply failed: a tool that timed out and did not recover has FAILed
@@ -59,9 +61,9 @@ SLUG = "terraform-provider-b2"
 SCENARIO = "upload.stall"
 OBJECT_NAME = "res/stall.txt"
 ARM_PATH = "/wire-faults"
-FAULT = {'on': 'b2_upload_file', 'kind': 'stall', 'ms': 60000, 'count': 1}
+FAULT = {'on': 'b2_upload_file', 'kind': 'stall', 'ms': 130000, 'count': 1}
 FAULTED = lambda e: e["endpoint"] == "b2_upload_file" and e["fault"] == "stall"
-STALL_S = 60.0
+STALL_S = 130.0
 UNSETTLED = (
     "the provider block's whole surface is application_key_id, application_key and endpoint "
     "(docs/sdks/terraform-provider-b2/card.md: b2/provider.go:92-112, docs/index.md:42-44; the installed "
@@ -414,10 +416,11 @@ def run() -> None:
     if not later:
         if elapsed < STALL_S:
             raise Failure("journal", f"one b2_upload_file and a {elapsed:.2f} s apply: the stall did not hold")
-        note("unconfirmed, not absent: the frozen b2sdk's own request timeout outlasted the 60 s stall -- the "
+        note("unconfirmed, not absent: the frozen b2sdk's own request timeout outlasted the 130 s stall -- the "
              "stalled request was answered on its original URL -- and the provider exposes no way to shorten it. "
-             "Which timeout b2sdk 2.13.0 passes per request is a b2-sdk-python card question "
-             "(docs/sdks/b2-sdk-python/upload.stall reports the same gap)")
+             "b2sdk 2.13.2 (python-bindings/requirements.txt) abandons an upload request after "
+             "B2Http.TIMEOUT_FOR_UPLOAD = 128 s, so a 130 s stall is expected to be abandoned; if it was waited out, "
+             "the pinned b2sdk's timeout changed and this stall must be raised above it (up to the simulator's 300 s)")
         raise Amber("no-client-option", UNSETTLED)
     uploaded_or_fail(tf, proc, payload)
     read_back(tf, payload, most=2)
