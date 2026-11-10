@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
+* The repository-owned `upload.stall` resilience check now stalls the upload for 130 s instead of 60 s, just above the 128 s upload timeout of the pinned b2sdk, so the client abandons the stalled request, gets a new upload URL and retries
+
 ## [0.15.0] - 2026-11-06
 
 ### Changed
