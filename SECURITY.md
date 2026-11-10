@@ -4,13 +4,13 @@ Security-response owner: Backblaze Security. Repository maintainers triage repor
 
 ## Supported Versions
 
-The latest minor release line (currently `0.14.x`) is supported. Earlier releases are not patched in
+The latest minor release line (currently `0.15.x`) is supported. Earlier releases are not patched in
 place; upgrade to the newest `v0.x` release in the [Terraform Registry](https://registry.terraform.io/providers/Backblaze/b2/latest)
 to receive fixes. See [`RELEASE.md`](RELEASE.md).
 
 | Version | Supported |
 |---|---|
-| Latest minor (`0.14.x`) | Yes |
+| Latest minor (`0.15.x`) | Yes |
 | Older releases | No |
 
 ## Reporting a Vulnerability

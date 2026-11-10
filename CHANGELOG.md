@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Unreleased entries live in [`.changes/unreleased/`](.changes/unreleased/) until the next release. Add one with `make changelog-new` (see [CONTRIBUTING.md](CONTRIBUTING.md#changelog-entries)).
 
+## [0.15.0] - 2026-11-06
+
+### Changed
+* **Breaking change:** The `id` of `b2_bucket_file_signed_url` no longer holds the signed URL; read `signed_url` instead. Its non-credential ID is `<bucket_id>/<file_name>/<duration>`.
+* A failed call to the Python bindings now returns the operation and the reported error (for example `unauthorized`) instead of the helper's full Python traceback.
+
+### Fixed
+* Redact sensitive values from debug logs and returned Python bindings errors, and redact signed URLs and webhook custom header values from debug logs. Debug logs retain the full redacted bindings stderr; only the returned Terraform error is reduced.
+
+### Infrastructure
+* Remove the `auth.clock_expiry` resilience check from the repository-owned `.sdkharness` registry: no provider operation outlives its own authorization, because every operation runs as a fresh process with in-memory account info
+
+[0.15.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...v0.15.0
+
 ## [0.14.1] - 2026-10-23
 
 ### Fixed

@@ -1,3 +1,0 @@
-kind: Fixed
-body: Redact sensitive values from debug logs and returned Python bindings errors, and redact signed URLs and webhook custom header values from debug logs. Debug logs retain the full redacted bindings stderr; only the returned Terraform error is reduced.
-time: 2026-11-03T10:35:50.549915-05:00
