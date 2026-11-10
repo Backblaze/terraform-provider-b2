@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * A failed call to the Python bindings now returns the operation and the reported error (for example `unauthorized`) instead of the helper's full Python traceback.
 
 ### Fixed
+* Changing `b2_application_key` `bucket_ids` now replaces the key instead of being silently ignored by `tofu apply`. Configs whose `bucket_ids` already diverge from the planned state will plan a replacement of the key (a new application key) on upgrade.
 * Redact sensitive values from debug logs and returned Python bindings errors, and redact signed URLs and webhook custom header values from debug logs. Debug logs retain the full redacted bindings stderr; only the returned Terraform error is reduced.
 
 ### Infrastructure
