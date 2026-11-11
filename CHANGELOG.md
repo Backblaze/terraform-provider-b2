@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * `is_file_lock_enabled` on `b2_bucket`: enabling File Lock on an existing bucket now updates it in place instead of forcing a new bucket; only disabling it forces replacement
+
+## [0.15.0] - 2026-11-06
+
 ### Changed
-* **Breaking change:** Use a non-credential ID for the signed URL data source (`<bucket_id>/<file_name>/<duration>`). `id` no longer holds the signed URL; read `signed_url` instead.
+* **Breaking change:** The `id` of `b2_bucket_file_signed_url` no longer holds the signed URL; read `signed_url` instead. Its non-credential ID is `<bucket_id>/<file_name>/<duration>`.
 * A failed call to the Python bindings now returns the operation and the reported error (for example `unauthorized`) instead of the helper's full Python traceback.
 
 ### Fixed
