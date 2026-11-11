@@ -11,7 +11,6 @@
 package b2
 
 import (
-	"bufio"
 	"embed"
 	"io"
 	"log"
@@ -57,29 +56,9 @@ func GetBindings() (string, error) {
 	defer func() { _ = destinationFile.Close() }()
 
 	destinationPath := filepath.ToSlash(destinationFile.Name())
-	reader := bufio.NewReader(sourceFile)
-	buf := make([]byte, 2048)
 
-	for {
-		_, err := reader.Read(buf)
-
-		if err != nil {
-			if err != io.EOF {
-				return destinationPath, err
-			}
-
-			_, err = destinationFile.Seek(0, 0)
-			if err != nil {
-				return destinationPath, err
-			}
-
-			break
-		}
-
-		_, err = destinationFile.Write(buf)
-		if err != nil {
-			return destinationPath, err
-		}
+	if _, err := io.Copy(destinationFile, sourceFile); err != nil {
+		return destinationPath, err
 	}
 
 	if err := destinationFile.Close(); err != nil {
