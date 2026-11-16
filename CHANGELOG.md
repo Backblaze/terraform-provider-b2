@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure
+* Pin GitHub Actions to full commit SHAs with the exact release in a comment.
+
 ## [0.15.0] - 2026-11-06
 
 ### Changed
