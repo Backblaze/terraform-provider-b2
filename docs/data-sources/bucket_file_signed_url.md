@@ -25,4 +25,4 @@ B2 signed URL for a bucket file data source.
 ### Read-Only
 
 - `id` (String) `<bucket_id>/<file_name>/<duration>`; not the URL. Use `signed_url` for the signed URL.
-- `signed_url` (String) The signed URL for the given file.
+- `signed_url` (String) The signed URL for the given file contains an embedded download authorization token. Treat it as sensitive and keep it out of logs and outputs. Terraform stores it in plaintext state, so treat the state as sensitive.
