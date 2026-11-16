@@ -288,7 +288,10 @@ class Bucket(Command):
             default_server_side_encryption=default_server_side_encryption,
             lifecycle_rules=lifecycle_rules,
         )
-        params.pop('is_file_lock_enabled', None)  # this can only be set during bucket creation
+        # File Lock can be enabled on an existing bucket, but never disabled
+        # (turning it off forces a new bucket in the plan), so only send true.
+        if not params.get('is_file_lock_enabled'):
+            params.pop('is_file_lock_enabled', None)
         self.api.session.update_bucket(**params)
         bucket = self.api.get_bucket_by_id(bucket_id)
         return self._postprocess(bucket, config_cors_rules=cors_rules)

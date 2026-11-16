@@ -35,9 +35,16 @@ func resourceB2Bucket() *schema.Resource {
 		// The API bumps the revision on every change. Mark it as computed
 		// whenever any other field changes so terraform stores the new value
 		// instead of reporting it as drift on the next plan.
-		CustomizeDiff: customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-			return len(d.GetChangedKeysPrefix("")) > 0
-		}),
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				return len(d.GetChangedKeysPrefix("")) > 0
+			}),
+			// b2_update_bucket can enable File Lock on an existing bucket, but
+			// it can never be disabled, so only turning it off needs a new bucket.
+			customdiff.ForceNewIfChange("file_lock_configuration.0.is_file_lock_enabled", func(ctx context.Context, old, new, meta interface{}) bool {
+				return old.(bool) && !new.(bool)
+			}),
+		),
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
