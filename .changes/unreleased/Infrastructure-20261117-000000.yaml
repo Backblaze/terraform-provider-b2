@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Assemble release notes with Changie and prepare releases through reviewed release branches.
+time: 2026-11-17T00:00:00Z

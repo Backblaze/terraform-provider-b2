@@ -139,9 +139,9 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
       - name: Read the Changelog
         id: read-changelog
-        uses: mindsers/changelog-reader-action@v2
-        with:
-          version: ${{ steps.version.outputs.version }}
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash scripts/release-notes.sh "$RELEASE_TAG" > release-notes.md
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
@@ -159,6 +159,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.version }}
-          body: ${{ steps.read-changelog.outputs.changes }}
+          body_path: release-notes.md
           draft: false
           prerelease: false

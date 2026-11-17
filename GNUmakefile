@@ -3,6 +3,7 @@ NAMESPACE=backblaze
 NAME=b2
 BINARY=terraform-provider-${NAME}
 VERSION=$(shell git describe --tags --abbrev=0 | cut -c2-)
+CHANGIE=go run github.com/miniscruff/changie@v1.24.0
 OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: build
@@ -79,3 +80,16 @@ docs-lint: build
 		(echo; echo "Unexpected difference in docs. Run 'make docs' command or revert any changes in the schema."; exit 1)
 
 all: deps lint build testacc
+
+.PHONY: changelog-new changelog-check release-tests release-health
+changelog-new:
+	@$(CHANGIE) new
+
+changelog-check:
+	@bash scripts/changelog-check.sh $${BASE_REF:-origin/master}
+
+release-tests:
+	@python3 -m unittest discover -s scripts -p 'test_release*.py' -v
+
+release-health: release-tests
+	@bash scripts/release-health.sh

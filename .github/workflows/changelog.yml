@@ -1,0 +1,28 @@
+name: Changelog
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Check change fragment and release branch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_REF: ${{ github.head_ref }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: bash scripts/changelog-check.sh "$BASE_SHA"
+      - name: Check assembled changelog
+        run: |
+          go run github.com/miniscruff/changie@v1.24.0 merge --dry-run > "$RUNNER_TEMP/changelog.md"
+          diff -u CHANGELOG.md "$RUNNER_TEMP/changelog.md"
+          go run github.com/miniscruff/changie@v1.24.0 batch auto --dry-run > /dev/null

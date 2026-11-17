@@ -8,7 +8,6 @@ on:
       - '.github/workflows/cd.yml'
       - 'LICENSE'
       - 'README.md'
-      - 'README.release.md'
   pull_request:
     branches: [master, release/*]
 
@@ -49,12 +48,6 @@ jobs:
       - name: Run docs linters
         run: |
           make docs-lint
-      - name: Validate changelog
-        # Library was designed to be used with pull requests only.
-        if: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
-        uses: zattoo/changelog@v2
-        with:
-          token: ${{ github.token }}
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -66,6 +59,8 @@ jobs:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Run unit tests
         run: make test
+      - name: Test release tooling
+        run: python3 -m unittest discover -s scripts -p 'test_release*.py' -v
   build:
     needs: [lint, test]
     runs-on: ${{ matrix.conf.runner }}
