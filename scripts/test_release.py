@@ -67,6 +67,7 @@ class ReleaseTests(unittest.TestCase):
         self.git("config", "user.email", "fixture@example.invalid")
         (self.root / ".changie.yaml").write_text("changesDir: .changes\n")
         (self.root / "CHANGELOG.md").write_text("# Changelog\n")
+        (self.root / "provider.go").write_text("package fixture\n")
         self.git("add", ".")
         self.git("commit", "-qm", "base")
         base = self.git("rev-parse", "HEAD")
@@ -79,6 +80,11 @@ class ReleaseTests(unittest.TestCase):
                                            PR_HEAD_REF="feature/example").returncode, 0)
         self.assertEqual(self.run_script("changelog-check.sh", base,
                                         PR_HEAD_REF="release/v1.2.3").returncode, 0)
+        (self.root / "provider.go").unlink()
+        self.git("add", "-u")
+        self.git("commit", "-qm", "unexpected source deletion")
+        self.assertNotEqual(self.run_script("changelog-check.sh", base,
+                                           PR_HEAD_REF="release/v1.2.3").returncode, 0)
 
 
 if __name__ == "__main__":
