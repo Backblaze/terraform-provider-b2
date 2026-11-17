@@ -1,7 +1,6 @@
 """Release authorization tests use synthetic data and disposable signing keys."""
 
 import importlib.util
-import json
 import os
 import re
 from pathlib import Path

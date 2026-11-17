@@ -9,7 +9,6 @@ on:
       - 'LICENSE'
       - 'README.md'
   pull_request:
-    branches: [master, release/*]
 
 defaults:
   run:
