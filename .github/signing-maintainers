@@ -1,0 +1,5 @@
+# GitHub accounts authorized to sign release tags after key enrollment.
+# Reviewed changes to this file change the signing policy.
+goanpeca
+ffumero2003
+sophiecarreras

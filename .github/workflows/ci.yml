@@ -15,6 +15,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 env:
   PYTHON_DEFAULT_VERSION: '3.13'
   GO_DEFAULT_VERSION: '1.26.10'
@@ -22,15 +25,16 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    # The release's CPython image is compatible with staticx; setup-python's
+    # Linux interpreter has DT_RUNPATH and cannot be wrapped by staticx.
+    container: python:3.13-bookworm
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-        uses: deadsnakes/action@v3.2.0  # staticx doesn't work with python installed by setup-python action
-        with:
-          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Linux packaging dependencies
+        run: apt-get update && apt-get install -y --no-install-recommends scons patchelf libnss3-dev unzip
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
@@ -42,7 +46,7 @@ jobs:
       - name: Run linters
         run: |
           make lint
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_wrapper: false
       - name: Run docs linters
@@ -52,9 +56,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Run unit tests
@@ -64,6 +68,7 @@ jobs:
   build:
     needs: [lint, test]
     runs-on: ${{ matrix.conf.runner }}
+    container: ${{ matrix.conf.os == 'linux' && 'python:3.13-bookworm' || '' }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -74,19 +79,17 @@ jobs:
           - { runner: macos-15, os: darwin, arch: arm64 }
           - { runner: windows-2022, os: windows, arch: amd64 }
     steps:
-      - uses: actions/checkout@v5
-      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Linux packaging dependencies
         if: matrix.conf.os == 'linux'
-        uses: deadsnakes/action@v3.2.0  # staticx doesn't work with python installed by setup-python action
-        with:
-          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+        run: apt-get update && apt-get install -y --no-install-recommends scons patchelf libnss3-dev
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
         if: matrix.conf.os != 'linux'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
@@ -96,7 +99,7 @@ jobs:
         run: |
           make build
       - name: Upload python bindings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
@@ -122,20 +125,20 @@ jobs:
           # for Windows, the latest terraform is enough for ACC tests
           - { runner: windows-2022, os: windows, arch: amd64, terraform: '1.14.*' }
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         name: Set up Terraform ${{ matrix.conf.terraform }}
         with:
           terraform_version: ${{ matrix.conf.terraform }}
           terraform_wrapper: false
       - name: Download python bindings for given OS
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/

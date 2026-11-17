@@ -64,11 +64,27 @@ Keep a Changelog kinds. Check the proposed version rather than relying solely on
 
 ## Tagging and publication
 
-An authorized maintainer creates and pushes the release tag on that exact commit.
+An authorized maintainer creates and pushes a signed release tag on that exact commit:
+
+```sh
+git tag -s vX.Y.Z "$release_sha" -m "vX.Y.Z"
+git verify-tag vX.Y.Z
+# Push only after the approved release checks are complete:
+git push origin vX.Y.Z
+```
+
+For SSH signing, configure `gpg.format=ssh`, `user.signingkey`, and a local
+`gpg.ssh.allowedSignersFile` before these commands. GPG and SSH tag signatures are
+supported. Tag-signing keys and the Registry checksum-signing key have separate roles.
+
 Do not tag until the release checks and approvals are complete. A pushed `v*` tag
 starts `.github/workflows/cd.yml`, which builds the five platform targets and
 publishes the signed Registry artifacts. It uses the assembled Changie notes as
-the GitHub Release body. Do not create a separate manual release first.
+the GitHub Release body through `gh release create`; GoReleaser creates the archives
+and checksum signature but does not publish. The workflow uploads all artifacts to
+a draft, then publishes it. An upload failure leaves the draft for maintainer
+inspection; do not overwrite an already published release on retry. Do not create
+a separate manual release first.
 
 After publication, verify the GitHub Release, all five ZIPs, SHA256SUMS and its GPG
 signature, and the Terraform Registry version. Confirm the signature against the
@@ -77,3 +93,68 @@ installation have been verified. Merging a release PR alone does not ship it.
 
 Never move or replace a published tag or artifact. Fix a failed published release
 with a new version. Keep release signing material out of logs and local fixtures.
+
+## Required repository setup and gates
+
+- Require the changelog check and human approval on `master`. Restrict `v*` tag
+  creation to release maintainers through a repository ruleset. Workflow code alone
+  cannot prevent someone with workflow-write permissions from removing its gates.
+- Use the version milestone on the release PR. The tag gate requires the tag commit
+  to be on `master` and to equal the merge commit of a same-repository
+  `release/vX.Y.Z` PR to `master` with the matching milestone. Do not tag a later tip.
+- **Before enforcing signatures:** each account in `.github/signing-maintainers`
+  (`goanpeca`, `ffumero2003`, `sophiecarreras`) must create a GPG or SSH signing key
+  and register it on GitHub. Review the enrolled keys through an independent channel,
+  then set repository variable `ENFORCE_SIGNED_TAGS=true`. Until then, missing keys,
+  unsigned tags and failed verification produce a warning rather than block. This
+  is a staged rollout, not an enforced signature policy yet.
+- At verification time the gate downloads each account's `.gpg` and `.keys` over
+  HTTPS into an isolated keyring/allowed-signers file and runs `git verify-tag`.
+  GitHub account/key control is the trust anchor, not a pinned fingerprint. The
+  `.keys` endpoint includes public SSH authentication keys: maintainers must review
+  which keys are published there, since those keys are also accepted for signing.
+  Unavailable key sources fail verification; they never establish a valid signature.
+- Configure `RELEASE_SECURITY_TOKEN` with read access to code-scanning, Dependabot,
+  secret-scanning alerts and private repository advisories. Some advisory APIs may
+  require an administrator-authorized token. Keep it limited to the gate job. The
+  gate blocks on open medium/high/critical or unknown severity, all open secret
+  alerts, or any unreadable source. It prints counts only. No findings are silently
+  waived for lack of a patch. Review/dismiss findings through the approved private
+  process; do not disclose advisory details in public release PRs. Run
+  `make release-check` with `gh` authenticated for those read permissions; never
+  put a token value in shell history.
+- Keep `GPG_PRIVATE_KEY` and `PASSPHRASE` for the already-enrolled Registry signing key.
+  Optionally set public variable `REGISTRY_GPG_FINGERPRINT` to its verified full
+  fingerprint; a mismatch blocks import. The publishing job imports exactly one
+  secret key in a mode-0700 temporary GnuPG home, sets owner trust, and passes its
+  public fingerprint and a mode-0600 passphrase file to GoReleaser. An always-run
+  step removes the keyring and passphrase before the GitHub release is created.
+  Never reuse tag-verification fixtures or newly generated keys for Registry signing.
+- The Registry flow remains GPG-signed SHA256SUMS; no OIDC token replaces that signature.
+  The workflow requests no `id-token: write` permission because there is no OIDC
+  exchange in this publishing path. Tag verification and security gates complete
+  before any signing secrets are made available.
+
+For a non-publishing packaging rehearsal, supply the five real platform binding
+executables under `python-bindings/dist/`, then run
+`goreleaser release --snapshot --clean --skip=publish -p 1`. The `-p 1` is required:
+the existing Go embed hooks reuse `b2/py-terraform-provider-b2` between targets.
+A smoke test with marked binding fixtures checks archive/checksum layout only and
+cannot replace the real platform builds. Use a disposable test key and passphrase
+file for snapshot signing, never the Registry key. To rehearse without any key,
+add `--skip=publish,sign` instead. The offline signing test also verifies a detached
+checksum signature with a disposable key.
+
+## Action and platform maintenance
+
+All actions are pinned to full commit SHAs with version comments. Review updates
+before changing pins. The community GPG importer and release/changelog actions are
+replaced by in-workflow GnuPG, `gh`, `awk`, and repository checks. Official GitHub
+actions and the upstream HashiCorp/GoReleaser vendor actions remain; repository-level
+allowlist settings still require administrator confirmation.
+
+Linux CI uses the same official CPython bookworm image as CD, so staticx keeps
+testing the shipping packaging path. macOS and Windows use `actions/setup-python`.
+Do not disable staticx merely to make setup-python's Linux interpreter pass. The
+existing macOS runner labels still require organization runner availability; fix
+that independently rather than bypassing platform builds during a release.
