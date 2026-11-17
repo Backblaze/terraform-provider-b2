@@ -40,9 +40,13 @@ Keep a Changelog kinds. Check the proposed version rather than relying solely on
    go run github.com/miniscruff/changie@v1.24.0 merge
    ```
 
-   If that version already has assembled candidate notes, update the untagged
-   candidate using Changie's batch options instead of creating a duplicate version.
-   Never rewrite notes for a published version. Review the release date.
+   The imported v0.15.0 section is an untagged candidate. If the chosen version
+   already has candidate notes, first generate the new entries with
+   `changie batch vX.Y.Z --dry-run` into a temporary file. Review and incorporate
+   those entries into `.changes/vX.Y.Z.md`, preserving its existing entries and
+   comparison link, remove only the incorporated fragments, then run `changie merge`.
+   Do not use `batch --force` to append: it overwrites the version file. Never
+   rewrite notes for a published version. Review the release date.
    Update the `[Unreleased]` comparison in `.changes/header.tpl.md` to compare
    the new release tag with `HEAD`, then run `changie merge` again.
 4. The release PR may change only `CHANGELOG.md` and `.changes/`. Commit as
