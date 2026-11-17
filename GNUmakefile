@@ -7,7 +7,7 @@ OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint vulncheck test testacc clean build install docs docs-lint
+.PHONY: _pybindings deps deps-check format lint vulncheck test test-known-defects testacc clean build install docs docs-lint
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -49,6 +49,15 @@ vulncheck:
 test:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@go test ./... -v -count 1 -skip '^TestAcc' $(TESTARGS)
+
+# Runs only the tests for defects that are still present (build tag "knowndefect"). It is expected to fail
+# until those defects are fixed, and it is not part of `make test`. It runs with -race (one test needs it).
+# A test needs a non-empty embedded binary, so an empty placeholder is filled for the run and emptied again.
+test-known-defects:
+	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
+	@filled=; if ! test -s b2/py-terraform-provider-b2; then head -c 5000 /dev/urandom > b2/py-terraform-provider-b2; filled=1; fi; \
+	go test ./... -race -tags knowndefect -run '^TestKnownDefect_' -v -count 1 $(TESTARGS); status=$$?; \
+	if test -n "$$filled"; then : > b2/py-terraform-provider-b2; fi; exit $$status
 
 testacc: _pybindings
 	@cp python-bindings/dist/py-terraform-provider-b2 b2/
