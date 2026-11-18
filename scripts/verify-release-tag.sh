@@ -16,8 +16,26 @@ verify() (
   while read -r user rest; do
     case "$user" in ''|\#*) continue ;; esac
     [[ "$user" =~ ^[A-Za-z0-9-]+$ ]] || exit 1
+    # The API's empty list distinguishes SSH-only enrollment from an unreadable
+    # or non-key response at the account's .gpg URL.
     curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --max-time 30 --retry 2 \
-      "https://github.com/$user.gpg" > "$scratch/public.gpg" 2>/dev/null || exit 1
+      "https://api.github.com/users/$user/gpg_keys?per_page=100" > "$scratch/gpg-index.json" 2>/dev/null || exit 1
+    gpg_count=$(python3 - "$scratch/gpg-index.json" <<'PY'
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    keys = json.load(source)
+if not isinstance(keys, list) or any(not isinstance(key, dict) for key in keys):
+    sys.exit(1)
+print(len(keys))
+PY
+    ) || exit 1
+    : > "$scratch/public.gpg"
+    if [ "$gpg_count" -gt 0 ]; then
+      curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --max-time 30 --retry 2 \
+        "https://github.com/$user.gpg" > "$scratch/public.gpg" 2>/dev/null || exit 1
+      test -s "$scratch/public.gpg" || exit 1
+    fi
     curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --max-time 30 --retry 2 \
       "https://api.github.com/users/$user/ssh_signing_keys?per_page=100" > "$scratch/ssh-signing.json" 2>/dev/null || exit 1
     python3 - "$scratch/ssh-signing.json" > "$scratch/public.keys" <<'PY' || exit 1

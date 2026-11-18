@@ -116,6 +116,9 @@ with a new version. Keep release signing material out of logs and local fixtures
 - At verification time the gate downloads each account's `.gpg` and the public
   `/users/{username}/ssh_signing_keys` API over
   HTTPS into an isolated keyring/allowed-signers file and runs `git verify-tag`.
+  It first checks `/users/{username}/gpg_keys`; an empty list permits SSH-only
+  enrollment without fetching an absent GPG export. Unexpected or unreadable
+  responses still hold verification.
   GitHub account/key control is the trust anchor, not a pinned fingerprint. The
   SSH key must be registered as a **Signing Key**, not just an authentication key.
   Allowed SSH keys are constrained to the `git` namespace and accept any tagger
