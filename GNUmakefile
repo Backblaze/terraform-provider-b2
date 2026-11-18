@@ -81,7 +81,7 @@ docs-lint: build
 
 all: deps lint build testacc
 
-.PHONY: changelog-new changelog-check release-tests release-health
+.PHONY: changelog-new changelog-check release-tests release-health release-check
 changelog-new:
 	@$(CHANGIE) new
 
@@ -93,3 +93,6 @@ release-tests:
 
 release-health: release-tests
 	@bash scripts/release-health.sh
+
+release-check: release-health
+	@python3 scripts/release-gate.py security --repo Backblaze/terraform-provider-b2

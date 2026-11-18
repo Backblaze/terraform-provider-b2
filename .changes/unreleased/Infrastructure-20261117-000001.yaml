@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Gate release provenance and security checks, verify maintainer tag signatures, and isolate Registry checksum signing.
+time: 2026-11-17T00:00:01Z

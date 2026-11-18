@@ -147,7 +147,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.root / "release-notes.md").exists())
         self.assertEqual((runner_temp / "release-notes.md").read_text(), "\n### Fixed\n* Example.\n")
-        self.assertIn("body_path: ${{ runner.temp }}/release-notes.md", workflow)
+        self.assertIn('--notes-file "$RUNNER_TEMP/release-notes.md"', workflow)
 
     def test_changelog_workflow_preserves_dependabot_exemption(self):
         workflow = (SCRIPTS.parent / ".github/workflows/changelog.yml").read_text()

@@ -1,4 +1,6 @@
 version: 2
+release:
+  disable: true # gh creates the release only after all artifacts and signatures exist.
 before:
   hooks:
     - go mod download
@@ -42,6 +44,10 @@ signs:
       # if you are using this in a GitHub action or some other automated pipeline, you
       # need to pass the batch flag to indicate its not interactive.
       - "--batch"
+      - "--pinentry-mode"
+      - "loopback"
+      - "--passphrase-file"
+      - "{{ .Env.GPG_PASSPHRASE_FILE }}"
       - "--local-user"
       - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
       - "--output"

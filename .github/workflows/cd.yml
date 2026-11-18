@@ -11,10 +11,48 @@ defaults:
 env:
   PYTHON_DEFAULT_VERSION: '3.13'
   GO_DEFAULT_VERSION: '1.26.10'
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: read
 
 jobs:
+  verify-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify merged release PR, milestone, and notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 scripts/release-gate.py provenance --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
+          bash scripts/release-notes.sh "$RELEASE_TAG" > /dev/null
+      - name: Verify maintainer tag signature
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          ENFORCE_SIGNED_TAGS: ${{ vars.ENFORCE_SIGNED_TAGS || 'false' }}
+        run: bash scripts/verify-release-tag.sh "$RELEASE_TAG"
+  security-gate:
+    needs: verify-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Hold on findings or unreadable sources
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_SECURITY_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN" || { echo 'Security read token is required; release held'; exit 1; }
+          python3 scripts/release-gate.py security --repo "$GITHUB_REPOSITORY"
   build-pybindings:
+    needs: [verify-release, security-gate]
     runs-on: ${{ matrix.conf.runner }}
     timeout-minutes: 60
     strategy:
@@ -26,10 +64,8 @@ jobs:
           - { runner: macos-15-intel, os: darwin, arch: amd64 }
           - { runner: macos-15, os: darwin, arch: arm64 }
           - { runner: windows-2022, os: windows, arch: amd64 }
-    outputs:
-      version: ${{ steps.build.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Start a Docker container (linux-arm64)
         if: matrix.conf.os == 'linux' && matrix.conf.arch == 'arm64'
         run: |
@@ -50,32 +86,42 @@ jobs:
               /bin/bash -c "sleep infinity"
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (darwin, windows)
         if: matrix.conf.os != 'linux'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Define command wrapper (linux)
         if: matrix.conf.os == 'linux'
         run: |
           # We'll define a 'run' command that will run our commands in the container.
-          echo '#!/bin/bash' > run
-          # shellcheck disable=SC2016 # The wrapper expands its arguments at execution time.
-          echo 'command="$*"; docker exec --workdir /work/python-bindings builder /bin/bash -c "$command"' >> run
+          cat > run <<'WRAPPER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec docker exec --workdir /work/python-bindings builder "$@"
+          WRAPPER
           chmod +x run
           sudo mv run /usr/local/bin/run
       - name: Define command wrapper (darwin)
         if: matrix.conf.os == 'darwin'
         run: |
           # MacOS wrapper just runs commands in python-bindings directory
-          echo '#!/bin/bash' > run
-          echo 'pushd python-bindings; "$@"; popd' >> run
+          cat > run <<'WRAPPER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          cd python-bindings
+          exec "$@"
+          WRAPPER
           chmod +x run
           sudo mv run /usr/local/bin/run
       - name: Define command wrapper (windows)
         if: matrix.conf.os == 'windows'
         run: |
           # Windows wrapper just runs commands in python-bindings directory
-          echo '#!/bin/bash' > run
-          echo 'pushd python-bindings; "$@"; popd' >> run
+          cat > run <<'WRAPPER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          cd python-bindings
+          exec "$@"
+          WRAPPER
           chmod +x run
           mv run /usr/bin/run
       - name: Install system dependencies (linux)
@@ -94,31 +140,34 @@ jobs:
         run: |
           sudo chmod -R a+r python-bindings
       - name: Upload Python bindings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
           if-no-files-found: error
           retention-days: 1
   build-and-deploy:
-    needs: [build-pybindings]
+    needs: [verify-release, security-gate, build-pybindings]
+    permissions:
+      contents: write
     env:
       NOPYBINDINGS: 1  # do not build python bindings
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
         run: |
           make deps
       - name: Download python bindings for all OSes
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           path: python-bindings/dist/artifacts/
       - name: Postprocess python bindings
@@ -129,14 +178,6 @@ jobs:
           mv artifacts/py-terraform-provider-b2-darwin-amd64/py-terraform-provider-b2 py-terraform-provider-b2-darwin-amd64
           mv artifacts/py-terraform-provider-b2-darwin-arm64/py-terraform-provider-b2 py-terraform-provider-b2-darwin-arm64
           mv artifacts/py-terraform-provider-b2-windows-amd64/py-terraform-provider-b2 py-terraform-provider-b2-windows-amd64
-      - name: Set release version output
-        id: version
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          # Strip the prefix 'v'
-          version=${RELEASE_TAG#v}
-          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Read the Changelog
         id: read-changelog
         env:
@@ -144,21 +185,67 @@ jobs:
         run: bash scripts/release-notes.sh "$RELEASE_TAG" > "$RUNNER_TEMP/release-notes.md"
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
+        env:
+          REGISTRY_GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          REGISTRY_GPG_PASSPHRASE: ${{ secrets.PASSPHRASE }}
+          EXPECTED_FINGERPRINT: ${{ vars.REGISTRY_GPG_FINGERPRINT }}
+        run: |
+          set +x
+          set -euo pipefail
+          umask 077
+          GNUPGHOME=$(mktemp -d "$RUNNER_TEMP/release-gnupg.XXXXXX")
+          export GNUPGHOME
+          # Publish the cleanup path before import, including for failed imports.
+          printf 'GNUPGHOME=%s\n' "$GNUPGHOME" >> "$GITHUB_ENV"
+          test -n "$REGISTRY_GPG_PRIVATE_KEY" || { echo 'Registry signing key is missing'; exit 1; }
+          if ! printf '%s' "$REGISTRY_GPG_PRIVATE_KEY" | gpg --batch --quiet --import > /dev/null 2> "$GNUPGHOME/import.err"; then
+            echo 'Registry signing key import failed'
+            exit 1
+          fi
+          fingerprints=$(gpg --batch --with-colons --list-secret-keys 2>/dev/null | awk -F: '$1 == "sec" { primary=1; next } primary && $1 == "fpr" { print $10; primary=0 }')
+          test "$(printf '%s\n' "$fingerprints" | grep -c .)" -eq 1 || { echo 'Exactly one Registry signing key is required'; exit 1; }
+          fingerprint=$fingerprints
+          if [ -n "$EXPECTED_FINGERPRINT" ] && [ "$fingerprint" != "$EXPECTED_FINGERPRINT" ]; then
+            echo 'Registry signing key fingerprint does not match policy'
+            exit 1
+          fi
+          printf '%s:6:\n' "$fingerprint" | gpg --batch --import-ownertrust > /dev/null 2>&1
+          printf '%s' "$REGISTRY_GPG_PASSPHRASE" > "$GNUPGHOME/passphrase"
+          printf 'GPG_PASSPHRASE_FILE=%s/passphrase\n' "$GNUPGHOME" >> "$GITHUB_ENV"
+          printf 'fingerprint=%s\n' "$fingerprint" >> "$GITHUB_OUTPUT"
+      - name: Build archives and sign SHA256SUMS
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
-      - name: Create GitHub release
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: '~> v2'
+          version: v2.20.2
           args: release --clean -p 1
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-      - name: Update GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: v${{ steps.version.outputs.version }}
-          body_path: ${{ runner.temp }}/release-notes.md
-          draft: false
-          prerelease: false
+      - name: Remove signing material
+        if: always()
+        run: |
+          case "${GNUPGHOME:-}" in
+            "$RUNNER_TEMP"/release-gnupg.*)
+              gpgconf --homedir "$GNUPGHOME" --kill all > /dev/null 2>&1 || true
+              rm -rf -- "$GNUPGHOME"
+              ;;
+          esac
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          archives=(dist/*.zip)
+          checksums=(dist/*_SHA256SUMS)
+          signatures=(dist/*_SHA256SUMS.sig)
+          test "${#archives[@]}" -eq 5
+          test "${#checksums[@]}" -eq 1
+          test "${#signatures[@]}" -eq 1
+          flags=(--draft)
+          if [[ "$RELEASE_TAG" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" "${archives[@]}" "${checksums[@]}" "${signatures[@]}" \
+            --verify-tag --title "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md" "${flags[@]}"
+          # Publish only after gh has uploaded every Registry artifact.
+          gh release edit "$RELEASE_TAG" --draft=false
