@@ -64,6 +64,11 @@ jobs:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Run unit tests
         run: make test
+      - name: Install GoReleaser for offline packaging tests
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
+        with:
+          version: v2.20.2
+          install-only: true
       - name: Test release tooling
         run: python3 -m unittest discover -s scripts -p 'test_release*.py' -v
   build:
@@ -81,6 +86,9 @@ jobs:
           - { runner: windows-2022, os: windows, arch: amd64 }
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Trust checkout in Linux build container
+        if: matrix.conf.os == 'linux'
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install Linux packaging dependencies
         if: matrix.conf.os == 'linux'
         run: apt-get update && apt-get install -y --no-install-recommends scons patchelf libnss3-dev

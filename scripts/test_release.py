@@ -1,6 +1,7 @@
 """Offline release workflow contract tests; no production keys or API writes."""
 
 import os
+import json
 import re
 from pathlib import Path
 import subprocess
@@ -147,7 +148,27 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.root / "release-notes.md").exists())
         self.assertEqual((runner_temp / "release-notes.md").read_text(), "\n### Fixed\n* Example.\n")
-        self.assertIn("body_path: ${{ runner.temp }}/release-notes.md", workflow)
+        # PR #202 publishes with gh rather than softprops; exercise that real
+        # shell step and inspect the stable CLI boundary without publishing.
+        bindir = self.root / "bin"
+        bindir.mkdir()
+        gh = bindir / "gh"
+        gh.write_text("#!/usr/bin/env python3\nimport json,os,sys\nwith open(os.environ['CALL_LOG'], 'a') as log: log.write(json.dumps(sys.argv[1:]) + '\\n')\n")
+        gh.chmod(0o755)
+        dist = self.root / "dist"
+        dist.mkdir()
+        for name in ["a.zip", "b.zip", "c.zip", "d.zip", "e.zip", "fixture_SHA256SUMS", "fixture_SHA256SUMS.sig"]:
+            (dist / name).touch()
+        publish = workflow.split("      - name: Publish GitHub release\n", 1)[1]
+        command = "\n".join(line[10:] for line in publish.split("        run: |\n", 1)[1].splitlines() if line.startswith("          "))
+        calls = self.root / "calls.jsonl"
+        result = subprocess.run(["bash", "-c", command], cwd=self.root,
+                                env={**os.environ, "RELEASE_TAG": "v1.2.3", "RUNNER_TEMP": str(runner_temp),
+                                     "CALL_LOG": str(calls), "PATH": str(bindir) + os.pathsep + os.environ["PATH"]},
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        create = next(args for args in map(json.loads, calls.read_text().splitlines()) if args[:2] == ["release", "create"])
+        self.assertEqual(create[create.index("--notes-file") + 1], str(runner_temp / "release-notes.md"))
 
     def test_changelog_workflow_preserves_dependabot_exemption(self):
         workflow = (SCRIPTS.parent / ".github/workflows/changelog.yml").read_text()

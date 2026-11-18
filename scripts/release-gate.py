@@ -28,7 +28,7 @@ def blocking_count(source, rows):
         if source == "secrets":
             count += 1
             continue
-        if source == "advisories" and row.get("state") in ("published", "closed", "withdrawn"):
+        if source == "advisories" and row.get("state") in ("closed", "withdrawn"):
             continue
         if source == "code":
             severity = (row.get("rule") or {}).get("security_severity_level")

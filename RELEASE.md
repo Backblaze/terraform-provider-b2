@@ -27,7 +27,8 @@ Keep a Changelog kinds. Check the proposed version rather than relying solely on
 1. Create a `vX.Y.Z` milestone. Put every intended public issue and PR in it. Track
    unpublished security work privately; never copy private findings into the milestone.
 2. Confirm all intended changes have merged and review deferred items explicitly.
-   Run `make release-health` locally. It checks release-tool tests, generated notes,
+   Install GoReleaser 2.20.2, GnuPG and OpenSSH, then run `make release-health`
+   locally. It checks release-tool tests, generated notes,
    Go unit tests and vet without publishing. Also run `make lint`, `make docs-lint`,
    and live acceptance tests with the documented test account before release.
 3. Start from up-to-date public `origin/master`:
@@ -112,16 +113,20 @@ with a new version. Keep release signing material out of logs and local fixtures
   then set repository variable `ENFORCE_SIGNED_TAGS=true`. Until then, missing keys,
   unsigned tags and failed verification produce a warning rather than block. This
   is a staged rollout, not an enforced signature policy yet.
-- At verification time the gate downloads each account's `.gpg` and `.keys` over
+- At verification time the gate downloads each account's `.gpg` and the public
+  `/users/{username}/ssh_signing_keys` API over
   HTTPS into an isolated keyring/allowed-signers file and runs `git verify-tag`.
   GitHub account/key control is the trust anchor, not a pinned fingerprint. The
-  `.keys` endpoint includes public SSH authentication keys: maintainers must review
-  which keys are published there, since those keys are also accepted for signing.
+  SSH key must be registered as a **Signing Key**, not just an authentication key.
+  Allowed SSH keys are constrained to the `git` namespace and accept any tagger
+  email; the enrolled key establishes authorization. Hardware-backed SSH signing
+  keys are supported. SSH authentication keys are not enrolled for signing.
   Unavailable key sources fail verification; they never establish a valid signature.
 - Configure `RELEASE_SECURITY_TOKEN` with read access to code-scanning, Dependabot,
   secret-scanning alerts and private repository advisories. Some advisory APIs may
   require an administrator-authorized token. Keep it limited to the gate job. The
-  gate blocks on open medium/high/critical or unknown severity, all open secret
+  gate blocks on open medium/high/critical or unknown severity, including published
+  advisories unless closed or withdrawn, all open secret
   alerts, or any unreadable source. It prints counts only. No findings are silently
   waived for lack of a patch. Review/dismiss findings through the approved private
   process; do not disclose advisory details in public release PRs. Run
@@ -146,8 +151,9 @@ the existing Go embed hooks reuse `b2/py-terraform-provider-b2` between targets.
 A smoke test with marked binding fixtures checks archive/checksum layout only and
 cannot replace the real platform builds. Use a disposable test key and passphrase
 file for snapshot signing, never the Registry key. To rehearse without any key,
-add `--skip=publish,sign` instead. The offline signing test also verifies a detached
-checksum signature with a disposable key.
+add `--skip=publish,sign` instead. The offline signing tests also build all five
+archives with marked binding fixtures, verify their checksums, and verify the
+detached checksum signature with a disposable key. They do not publish anything.
 
 ## Action and platform maintenance
 

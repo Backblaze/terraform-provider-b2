@@ -243,9 +243,9 @@ jobs:
           test "${#archives[@]}" -eq 5
           test "${#checksums[@]}" -eq 1
           test "${#signatures[@]}" -eq 1
-          flags=()
-          if [[ "$RELEASE_TAG" == *-* ]]; then flags=(--prerelease); fi
+          flags=(--draft)
+          if [[ "$RELEASE_TAG" == *-* ]]; then flags+=(--prerelease); fi
           gh release create "$RELEASE_TAG" "${archives[@]}" "${checksums[@]}" "${signatures[@]}" \
-            --verify-tag --title "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md" --draft "${flags[@]}"
+            --verify-tag --title "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md" "${flags[@]}"
           # Publish only after gh has uploaded every Registry artifact.
           gh release edit "$RELEASE_TAG" --draft=false

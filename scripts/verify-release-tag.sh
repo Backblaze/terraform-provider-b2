@@ -19,13 +19,32 @@ verify() (
     curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --max-time 30 --retry 2 \
       "https://github.com/$user.gpg" > "$scratch/public.gpg" 2>/dev/null || exit 1
     curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 --max-time 30 --retry 2 \
-      "https://github.com/$user.keys" > "$scratch/public.keys" 2>/dev/null || exit 1
+      "https://api.github.com/users/$user/ssh_signing_keys?per_page=100" > "$scratch/ssh-signing.json" 2>/dev/null || exit 1
+    python3 - "$scratch/ssh-signing.json" > "$scratch/public.keys" <<'PY' || exit 1
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    keys = json.load(source)
+if not isinstance(keys, list):
+    sys.exit(1)
+for row in keys:
+    if not isinstance(row, dict) or not isinstance(row.get("key"), str):
+        sys.exit(1)
+    key = row["key"]
+    if "\n" in key or "\r" in key or len(key.split()) < 2:
+        sys.exit(1)
+    print(key)
+PY
     if [ ! -s "$scratch/public.gpg" ] && [ ! -s "$scratch/public.keys" ]; then exit 1; fi
     if [ -s "$scratch/public.gpg" ]; then
       gpg --batch --quiet --import "$scratch/public.gpg" >/dev/null 2>&1 || exit 1
     fi
     while read -r kind key _comment; do
-      case "$kind" in ssh-*|ecdsa-*) printf '%s %s %s\n' "$user" "$kind" "$key" >> "$scratch/allowed-signers" ;; '') ;; *) exit 1 ;; esac
+      # Trust the enrolled key for Git's namespace, independently of tagger email.
+      case "$kind" in
+        ssh-*|ecdsa-*|sk-ssh-*|sk-ecdsa-*) printf '* namespaces="git" %s %s\n' "$kind" "$key" >> "$scratch/allowed-signers" ;;
+        *) continue ;;
+      esac
     done < "$scratch/public.keys"
     count=$((count + 1))
   done < .github/signing-maintainers

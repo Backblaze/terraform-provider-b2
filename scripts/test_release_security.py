@@ -1,6 +1,8 @@
 """Release authorization tests use synthetic data and disposable signing keys."""
 
 import importlib.util
+import base64
+import json
 import os
 import re
 from pathlib import Path
@@ -35,8 +37,32 @@ class SecurityTests(unittest.TestCase):
             {"state": "published", "severity": "critical"},
             {"state": "draft", "severity": "medium"},
             {"state": "triage", "severity": None},
-        ]), 2)
+            {"state": "closed", "severity": "critical"},
+            {"state": "withdrawn", "severity": "critical"},
+        ]), 3)
         self.assertEqual(self.gate.blocking_count("secrets", [{"secret": "not-logged"}]), 1)
+
+    def test_publishing_jobs_require_both_release_gates(self):
+        workflow = (SCRIPTS.parent / ".github/workflows/cd.yml").read_text()
+        jobs = {}
+        current = None
+        for line in workflow.splitlines():
+            job = re.fullmatch(r"  ([\w-]+):", line)
+            if job:
+                current = job[1]
+                jobs[current] = []
+            elif current:
+                jobs[current].append(line)
+        publishers = []
+        for name, lines in jobs.items():
+            active = [line for line in lines if not line.lstrip().startswith("#")]
+            if not any(re.search(r"\bgh release (?:create|upload|edit)\b", line) for line in active):
+                continue
+            publishers.append(name)
+            needs = next((line for line in active if line.startswith("    needs:")), "")
+            dependencies = set(re.findall(r"[\w-]+", needs.partition(":")[2]))
+            self.assertTrue({"verify-release", "security-gate"} <= dependencies, name)
+        self.assertEqual(publishers, ["build-and-deploy"])
 
     def test_unreadable_security_source_is_not_clean(self):
         from unittest.mock import patch
@@ -89,14 +115,20 @@ class SigningTests(unittest.TestCase):
         self.bin = self.root / "bin"
         self.bin.mkdir()
         curl = self.bin / "curl"
-        curl.write_text("#!/bin/sh\ncase \"$*\" in *.gpg*) cat \"$FIXTURE_GPG\" ;; *.keys*) cat \"$FIXTURE_SSH\" ;; *) exit 1 ;; esac\n")
+        curl.write_text("#!/bin/sh\ncase \"$*\" in *ssh_signing_keys*) cat \"$FIXTURE_SSH_SIGNING\" ;; *.gpg*) cat \"$FIXTURE_GPG\" ;; *.keys*) cat \"$FIXTURE_SSH\" ;; *) exit 1 ;; esac\n")
         curl.chmod(0o755)
         self.gpg = self.root / "public.gpg"
         self.ssh = self.root / "public.keys"
+        self.ssh_signing = self.root / "signing-keys.json"
+        self.ssh_signing.write_text("[]")
         self.gpg.touch()
         self.ssh.touch()
         self.env.update(PATH=str(self.bin) + os.pathsep + os.environ["PATH"],
-                        FIXTURE_GPG=str(self.gpg), FIXTURE_SSH=str(self.ssh))
+                        FIXTURE_GPG=str(self.gpg), FIXTURE_SSH=str(self.ssh),
+                        FIXTURE_SSH_SIGNING=str(self.ssh_signing))
+
+    def enroll_ssh(self, key):
+        self.ssh_signing.write_text(json.dumps([{"key": key.strip()}]))
 
     def command(self, *args):
         return subprocess.run(args, cwd=self.root, env=self.env, check=True,
@@ -127,7 +159,7 @@ class SigningTests(unittest.TestCase):
     def test_enrolled_ssh_signer_passes(self):
         private = self.root / "fixture-ssh"
         self.command("ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(private))
-        self.ssh.write_text(private.with_suffix(".pub").read_text())
+        self.enroll_ssh(private.with_suffix(".pub").read_text())
         self.command("git", "-c", "gpg.format=ssh", "-c", "user.signingkey=" + str(private),
                      "tag", "-s", "v1.2.3", "-m", "fixture")
         result = self.verify("true")
@@ -138,9 +170,31 @@ class SigningTests(unittest.TestCase):
         self.command("ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(private))
         other = self.root / "other-ssh"
         self.command("ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(other))
-        self.ssh.write_text(other.with_suffix(".pub").read_text())
+        self.enroll_ssh(other.with_suffix(".pub").read_text())
         self.command("git", "-c", "gpg.format=ssh", "-c", "user.signingkey=" + str(private),
                      "tag", "-s", "v1.2.3", "-m", "fixture")
+        self.assertNotEqual(self.verify("true").returncode, 0)
+
+    def test_authentication_key_is_not_enrolled_for_signing(self):
+        private = self.root / "auth-only"
+        self.command("ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(private))
+        self.ssh.write_text(private.with_suffix(".pub").read_text())
+        self.command("git", "-c", "gpg.format=ssh", "-c", "user.signingkey=" + str(private),
+                     "tag", "-s", "v1.2.3", "-m", "fixture")
+        self.assertNotEqual(self.verify("true").returncode, 0)
+
+    def test_hardware_ssh_key_does_not_block_enrolled_gpg_signer(self):
+        kind = b"sk-ssh-ed25519@openssh.com"
+        fields = (kind, b"x" * 32, b"ssh:")
+        blob = b"".join(len(field).to_bytes(4, "big") + field for field in fields)
+        public = kind.decode() + " " + base64.b64encode(blob).decode()
+        self.enroll_ssh(public)
+        self.ssh.write_text(public + "\n")
+        self.test_enrolled_gpg_signer_passes()
+
+    def test_signing_key_source_failure_holds(self):
+        self.command("git", "tag", "-a", "v1.2.3", "-m", "fixture")
+        (self.bin / "curl").write_text("#!/bin/sh\nexit 22\n")
         self.assertNotEqual(self.verify("true").returncode, 0)
 
     def workflow_script(self, name):
