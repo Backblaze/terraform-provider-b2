@@ -22,7 +22,9 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    # Pinned: the staticx Python build installs from the deadsnakes PPA, which has
+    # no release for ubuntu-latest (26.04 "resolute"); noble (24.04) is supported.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
@@ -96,7 +98,7 @@ jobs:
       fail-fast: false
       matrix:
         conf:
-          - { runner: ubuntu-latest, os: linux, arch: amd64 }
+          - { runner: ubuntu-24.04, os: linux, arch: amd64 }  # deadsnakes PPA has no ubuntu-latest (26.04) release
           - { runner: macos-14-large, os: darwin, arch: amd64 }
           - { runner: macos-14, os: darwin, arch: arm64 }
           - { runner: windows-2022, os: windows, arch: amd64 }
