@@ -23,8 +23,8 @@ jobs:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
           - { runner: ubuntu-latest, os: linux, arch: arm64 }
-          - { runner: macos-14-large, os: darwin, arch: amd64 }
-          - { runner: macos-14, os: darwin, arch: arm64 }
+          - { runner: macos-15-intel, os: darwin, arch: amd64 }
+          - { runner: macos-15, os: darwin, arch: arm64 }
           - { runner: windows-2022, os: windows, arch: amd64 }
     outputs:
       version: ${{ steps.build.outputs.version }}
@@ -58,6 +58,7 @@ jobs:
         run: |
           # We'll define a 'run' command that will run our commands in the container.
           echo '#!/bin/bash' > run
+          # shellcheck disable=SC2016 # The wrapper expands its arguments at execution time.
           echo 'command="$*"; docker exec --workdir /work/python-bindings builder /bin/bash -c "$command"' >> run
           chmod +x run
           sudo mv run /usr/local/bin/run
@@ -105,8 +106,6 @@ jobs:
       NOPYBINDINGS: 1  # do not build python bindings
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    outputs:
-      upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -132,16 +131,17 @@ jobs:
           mv artifacts/py-terraform-provider-b2-windows-amd64/py-terraform-provider-b2 py-terraform-provider-b2-windows-amd64
       - name: Set release version output
         id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          tag=${{ github.ref_name }}
           # Strip the prefix 'v'
-          version=${tag:1}
-          echo "version=$version" >> $GITHUB_OUTPUT
+          version=${RELEASE_TAG#v}
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Read the Changelog
         id: read-changelog
-        uses: mindsers/changelog-reader-action@v2
-        with:
-          version: ${{ steps.version.outputs.version }}
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash scripts/release-notes.sh "$RELEASE_TAG" > "$RUNNER_TEMP/release-notes.md"
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
@@ -159,6 +159,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.version }}
-          body: ${{ steps.read-changelog.outputs.changes }}
+          body_path: ${{ runner.temp }}/release-notes.md
           draft: false
           prerelease: false
