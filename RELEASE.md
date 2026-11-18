@@ -12,7 +12,7 @@ edit `CHANGELOG.md` directly. Existing history is in `.changes/vX.Y.Z.md`, and
 `changie merge` assembles it with `.changes/header.tpl.md`.
 
 The PR check requires a fragment for every change, matching the previous action's
-default all-files scope. A maintainer may apply `-changelog` to waive presence;
+default all-files scope and Dependabot exemption. A maintainer may apply `-changelog` to waive presence;
 that does not waive the release-branch rule or generation checks. The previous
 action also validated Markdown headings and package.json versions; the replacement
 uses Changie's own assembly and versioned notes instead of Node package checks.
@@ -43,6 +43,8 @@ Keep a Changelog kinds. Check the proposed version rather than relying solely on
    If that version already has assembled candidate notes, update the untagged
    candidate using Changie's batch options instead of creating a duplicate version.
    Never rewrite notes for a published version. Review the release date.
+   Update the `[Unreleased]` comparison in `.changes/header.tpl.md` to compare
+   the new release tag with `HEAD`, then run `changie merge` again.
 4. The release PR may change only `CHANGELOG.md` and `.changes/`. Commit as
    `chore(release): vX.Y.Z`, push the release branch, and open a PR to `master` with
    Context, Changes and Verification. Assign the milestone and obtain maintainer

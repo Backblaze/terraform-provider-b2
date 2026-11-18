@@ -6,6 +6,7 @@ permissions:
   contents: read
 jobs:
   changelog:
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -22,7 +23,4 @@ jobs:
           PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: bash scripts/changelog-check.sh "$BASE_SHA"
       - name: Check assembled changelog
-        run: |
-          go run github.com/miniscruff/changie@v1.24.0 merge --dry-run > "$RUNNER_TEMP/changelog.md"
-          diff -u CHANGELOG.md "$RUNNER_TEMP/changelog.md"
-          go run github.com/miniscruff/changie@v1.24.0 batch auto --dry-run > /dev/null
+        run: bash scripts/changelog-validate.sh

@@ -7,3 +7,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 Unreleased entries live in [`.changes/unreleased/`](.changes/unreleased/). Add one with `make changelog-new`.
+
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...HEAD

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Unreleased entries live in [`.changes/unreleased/`](.changes/unreleased/). Add one with `make changelog-new`.
 
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...HEAD
+
 ## [0.15.0] - 2026-11-06
 
 ### Changed
@@ -19,6 +21,8 @@ Unreleased entries live in [`.changes/unreleased/`](.changes/unreleased/). Add o
 
 ### Infrastructure
 * Remove the `auth.clock_expiry` resilience check from the repository-owned `.sdkharness` registry: no provider operation outlives its own authorization, because every operation runs as a fresh process with in-memory account info
+
+[0.15.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...v0.15.0
 
 ## [0.14.1] - 2026-10-23
 

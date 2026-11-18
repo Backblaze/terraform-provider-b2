@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Validate release preparation paths, comparison links, and health checks; use supported macOS runners.
+time: 2026-11-18T00:00:00Z
