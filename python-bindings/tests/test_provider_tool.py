@@ -13,10 +13,9 @@
 
 import io
 import json
-import traceback
 
 import pytest
-from b2sdk.v3.exception import FileNotPresent
+from b2sdk.v3.exception import BucketIdNotFound, FileNotPresent
 
 from b2_terraform import provider_tool
 from b2_terraform.provider_tool import B2Provider, Bucket, BucketFiles, BucketFileVersion
@@ -39,7 +38,7 @@ def upload(tool, bucket_id, file_name, data=b'hello'):
     return bucket.upload_bytes(data, file_name)
 
 
-@pytest.mark.known_defect
+@pytest.mark.known_defect(raises=TypeError, match='list indices must be integers')
 def test_C11_default_retention_mode_none_creates_bucket(tool):
     """C11: default_retention mode 'none' (allowed by the Go schema) must not crash the python layer."""
     file_lock = [
@@ -54,7 +53,7 @@ def test_C11_default_retention_mode_none_creates_bucket(tool):
     assert result['bucketId'], 'bucket was not created'
 
 
-@pytest.mark.known_defect
+@pytest.mark.known_defect(raises=BucketIdNotFound, match='not found')
 def test_C13_delete_of_already_deleted_bucket_succeeds(tool):
     """C13: destroy of a bucket that is already gone must be a no-op, not an error."""
     bucket = make_bucket(tool, 'bucket-c13')
@@ -63,7 +62,7 @@ def test_C13_delete_of_already_deleted_bucket_succeeds(tool):
     Bucket(tool).resource_delete(bucket_id=bucket['bucketId'])  # must not raise
 
 
-@pytest.mark.known_defect
+@pytest.mark.known_defect(raises=FileNotPresent, match='File not present')
 def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeypatch):
     """C4: refresh must tolerate a file version deleted outside Terraform (return an empty result).
 
@@ -89,7 +88,9 @@ def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeyp
     assert not result, f'expected an empty result for a missing file version, got {result!r}'
 
 
-@pytest.mark.known_defect
+@pytest.mark.known_defect(
+    raises=AssertionError, match='C39: non-recursive listing returned nested files'
+)
 def test_C39_non_recursive_listing_does_not_return_nested_files(tool):
     """C39: a non-recursive listing must not return files from sub-folders (one per folder today)."""
     bucket = make_bucket(tool, 'bucket-c39')
@@ -101,11 +102,13 @@ def test_C39_non_recursive_listing_does_not_return_nested_files(tool):
     )
 
     names = sorted(v['fileName'] for v in result['fileVersions'])
+    # retention first: a listing that returns nothing must fail here and not look like the known defect
+    assert 'top.txt' in names, f'C39: the top-level file is missing from the listing: {names}'
     nested = [n for n in names if n.count('/') > 1 or (n.count('/') == 1 and not n.endswith('/'))]
-    assert not nested, f'non-recursive listing returned nested files: {names}'
+    assert not nested, f'C39: non-recursive listing returned nested files: {names}'
 
 
-@pytest.mark.known_defect
+@pytest.mark.known_defect(raises=AssertionError, match='C36: the surfaced error text')
 def test_C36_failed_rollback_names_the_leftover_bucket(tool, monkeypatch):
     """C36: if updating retention fails and the rollback delete also fails, the error must name the
     bucket left behind so the user can clean it up."""
@@ -130,14 +133,14 @@ def test_C36_failed_rollback_names_the_leftover_bucket(tool, monkeypatch):
     with pytest.raises(Exception) as excinfo:
         make_bucket(tool, 'bucket-c36', file_lock)
 
-    report = ''.join(traceback.format_exception(excinfo.value))
-    assert 'retention update failed' in report, 'the original error was lost'
-    assert 'bucket-c36' in str(excinfo.value), (
-        'the surfaced error does not name the bucket that is left behind: ' + str(excinfo.value)
+    surfaced = str(excinfo.value)
+    assert 'retention update failed' in surfaced and 'bucket-c36' in surfaced, (
+        'C36: the surfaced error text must carry both the original failure ("retention update failed") '
+        f'and the name of the bucket left behind ("bucket-c36"), got: {surfaced!r}'
     )
 
 
-@pytest.mark.known_defect
+@pytest.mark.known_defect(raises=AssertionError, match='C16: input was altered')
 def test_C16_stdin_is_read_as_utf8_whatever_the_locale(monkeypatch):
     """C16: Go writes UTF-8 to stdin; on Windows the python child decoded it with the locale code
     page. Simulate a cp1252 locale and check that non-ASCII input arrives intact."""
@@ -154,4 +157,4 @@ def test_C16_stdin_is_read_as_utf8_whatever_the_locale(monkeypatch):
 
     assert status == 0, f'run_command returned {status}'
     assert seen, 'the command did not receive any input'
-    assert json.loads(seen[0]) == payload, f'input was altered on the way in: {seen[0]!r}'
+    assert json.loads(seen[0]) == payload, f'C16: input was altered on the way in: {seen[0]!r}'

@@ -28,19 +28,28 @@ import (
 // checks are text heuristics: they pin the shape of the files they read, so adjust them with the fix.
 
 // C25: CI must run Python unit tests, and must not stay green when the acceptance secrets are missing.
-// The expected shape of the secrets check (a step comparing the secret to the empty string and ending in `exit 1`) is an
-// assumption; adjust it to the chosen implementation.
+// The checks parse ci.yml and inspect executable `run` steps (comments and step names do not count; see the
+// fixtures in ci_workflow_check_test.go). A secrets guard is accepted when a step fails with `exit 1` for each
+// of B2_TEST_APPLICATION_KEY and B2_TEST_APPLICATION_KEY_ID being empty: an `if:` on the step or a shell guard
+// inside its script. Adjust ciWorkflowFailsOnMissingKeys if the fix uses another form.
 func TestKnownDefect_C25_CIRunsPythonTestsAndFailsWithoutSecrets(t *testing.T) {
 	ci := readRepoFile(t, ".github", "workflows", "ci.yml")
 	t.Run("python unit tests run in CI", func(t *testing.T) {
-		if !strings.Contains(ci, "pytest") {
-			t.Error("C25: ci.yml never runs Python tests (no pytest); python-bindings only gets ruff")
+		ok, err := ciWorkflowRunsPythonTests(ci)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Error("C25: no executable ci.yml step runs Python tests (pytest); python-bindings only gets ruff")
 		}
 	})
 	t.Run("missing acceptance secrets fail loudly", func(t *testing.T) {
-		missing := regexp.MustCompile(`(?s)B2_TEST_APPLICATION_KEY(_ID)?\s*==\s*''.*?exit 1`)
-		if !missing.MatchString(ci) {
-			t.Error("C25: testacc steps are skipped when B2_TEST_APPLICATION_KEY(_ID) are absent and the job is still green; no step fails on missing secrets")
+		ok, err := ciWorkflowFailsOnMissingKeys(ci)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Error("C25: no executable ci.yml step fails (exit 1) when B2_TEST_APPLICATION_KEY or B2_TEST_APPLICATION_KEY_ID is missing; testacc is skipped and the job stays green")
 		}
 	})
 }

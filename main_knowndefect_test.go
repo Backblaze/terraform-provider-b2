@@ -47,7 +47,16 @@ func TestKnownDefect_C38_DebugModeAdvertisesProviderAddress(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd.Env = os.Environ()
+	// The child extracts its python bindings into TMPDIR and is killed below, so it cannot clean up after
+	// itself: give it a test-owned directory that is removed afterwards. It is made with os.MkdirTemp, not
+	// t.TempDir, because the child's unix socket lives there and the long t.TempDir path exceeds the socket
+	// path limit on macOS.
+	childTmp, err := os.MkdirTemp("", "c38")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(childTmp) })
+	cmd.Env = append(os.Environ(), "TMPDIR="+childTmp)
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}

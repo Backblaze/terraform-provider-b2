@@ -13,18 +13,20 @@
 package b2
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -66,18 +68,67 @@ func TestKnownDefect_C3_SignedUrlOmittedDurationIsNotZero(t *testing.T) {
 	}
 }
 
-// C8: cancelling the context must stop the python child process.
+// C8: cancelling the context must stop the python child process and make Apply return a cancellation error.
+// The test does not depend on timing: the fake child announces that it has started (its pid, written to a
+// file) and then stays alive until it is killed; the timeouts below are only failure bounds for a hang.
 func TestKnownDefect_C8_ApplyStopsChildOnContextCancel(t *testing.T) {
-	client := newFakeClient(t, `exec sleep 2`)
-	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	if runtime.GOOS == "windows" {
+		t.Skip("the fake child is an /bin/sh script")
+	}
+	const bound = 10 * time.Second
+	pidFile := filepath.Join(t.TempDir(), "child.pid")
+	client := newFakeClient(t, fmt.Sprintf(`echo $$ > %q.tmp; mv %q.tmp %q; exec sleep 300`, pidFile, pidFile, pidFile))
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	start := time.Now()
-	err := client.Apply(ctx, OpDataSourceRead, &AccountInfoInput{}, nil)
-	elapsed := time.Since(start)
+	done := make(chan error, 1)
+	go func() { done <- client.Apply(ctx, OpDataSourceRead, &AccountInfoInput{}, nil) }()
 
-	if elapsed > time.Second {
-		t.Errorf("C8: Apply kept running %v after the context was cancelled at 200ms (err=%v)", elapsed, err)
+	// wait until the child is really running (or Apply gave up before starting it)
+	var pid int
+	deadline := time.After(bound)
+	for pid == 0 {
+		select {
+		case err := <-done:
+			t.Fatalf("C8: Apply returned (err=%v) before the child process started", err)
+		case <-deadline:
+			t.Fatalf("C8: the child process did not start within %v", bound)
+		case <-time.After(10 * time.Millisecond):
+			if raw, err := os.ReadFile(pidFile); err == nil {
+				pid, _ = strconv.Atoi(strings.TrimSpace(string(raw)))
+			}
+		}
+	}
+	childAlive := func() bool {
+		proc, err := os.FindProcess(pid)
+		return err == nil && proc.Signal(syscall.Signal(0)) == nil
+	}
+	t.Cleanup(func() { // never leave the sleeping child behind, whatever the outcome
+		if proc, err := os.FindProcess(pid); err == nil {
+			_ = proc.Kill()
+		}
+	})
+
+	cancel()
+
+	var err error
+	select {
+	case err = <-done:
+	case <-time.After(bound):
+		t.Fatalf("C8: Apply did not return within %v after the context was cancelled; the child (pid %d) keeps running", bound, pid)
+	}
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("C8: Apply returned %v after cancellation, want an error wrapping context.Canceled", err)
+	}
+	exited := false
+	for end := time.Now().Add(bound); time.Now().Before(end); time.Sleep(10 * time.Millisecond) {
+		if !childAlive() {
+			exited = true
+			break
+		}
+	}
+	if !exited {
+		t.Errorf("C8: the child process (pid %d) is still running after Apply returned", pid)
 	}
 }
 
@@ -138,7 +189,16 @@ func TestKnownDefect_C15_FileVersionContentChangeProducesDiff(t *testing.T) {
 		"bucket_id": "b1", "file_name": "f.txt", "source": source,
 	})
 
-	// the content changes on disk; path and every config attribute stay the same
+	// control: the same state, config and path with the original content must plan no change at all
+	control, err := res.Diff(context.Background(), state, cfg, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if control != nil && (!control.Empty() || control.RequiresNew()) {
+		t.Fatalf("control: unchanged content already produces a diff (requires new=%v): %v", control.RequiresNew(), control)
+	}
+
+	// only the content changes on disk; path and every config attribute stay the same
 	if err := os.WriteFile(source, []byte("hello, changed content"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +208,10 @@ func TestKnownDefect_C15_FileVersionContentChangeProducesDiff(t *testing.T) {
 		t.Fatal(err)
 	}
 	if diff == nil || diff.Empty() {
-		t.Error("C15: changing the content of the source file yields no diff, so the new content is never uploaded")
+		t.Fatal("C15: changing the content of the source file yields no diff, so the new content is never uploaded")
+	}
+	if !diff.RequiresNew() {
+		t.Errorf("C15: the content change does not require replacement (the new content would not be uploaded): %v", diff)
 	}
 }
 
@@ -175,65 +238,137 @@ func TestKnownDefect_C19_ApplyNonExecutableBindingsGivesActionableError(t *testi
 	}
 }
 
-// embeddedBindings returns the embedded file. It skips when that is the empty placeholder used by
-// `make test`; `make test-known-defects` fills the placeholder with bytes for the duration of the run.
-func embeddedBindings(t *testing.T) []byte {
-	t.Helper()
-	data, err := content.ReadFile("py-terraform-provider-b2")
+// C2: the extracted file must be byte-identical to the embedded one (no stale bytes appended). The defect
+// shows only when the embedded size is not a multiple of the 2048-byte copy buffer, so the test does not use
+// whatever binary happens to be embedded in this build: it copies bindings.go into a scratch module next to a
+// deterministic 5000-byte fixture, and runs a nested test that extracts it in a fresh process (so the cached
+// extraction path is empty and GetBindings must do the extraction itself).
+func TestKnownDefect_C2_GetBindingsExtractsExactBytes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("spawns a nested go test")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("not exercised on Windows")
+	}
+	scratch := t.TempDir()
+	pkg := filepath.Join(scratch, "b2")
+	if err := os.MkdirAll(pkg, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	src, err := os.ReadFile("bindings.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(data) == 0 {
-		t.Skip("embedded py-terraform-provider-b2 is the empty placeholder; fill it with bytes or build the real binary")
+	fixture := make([]byte, 5000) // 5000 = 2*2048 + 904: the last block is partial
+	for i := range fixture {
+		fixture[i] = byte(i*7 + i/251 + 1)
 	}
-	return data
-}
+	for name, data := range map[string][]byte{
+		"bindings.go":              src,
+		"py-terraform-provider-b2": fixture,
+		"go.mod":                   []byte("module scratchbindings\n\ngo 1.21\n"),
+		"extract_test.go": []byte(`package b2
 
-// C2: the extracted file must be byte-identical to the embedded one (no stale bytes appended). The embedded
-// size must not be a multiple of the 2048-byte copy buffer for the defect to show.
-func TestKnownDefect_C2_GetBindingsExtractsExactBytes(t *testing.T) {
-	want := embeddedBindings(t)
+import (
+	"bytes"
+	"os"
+	"testing"
+)
+
+func TestExtractedBindingsEqualFixture(t *testing.T) {
+	want, err := os.ReadFile("py-terraform-provider-b2")
+	if err != nil || len(want) != 5000 {
+		t.Fatalf("bad fixture: %d bytes, err=%v", len(want), err)
+	}
 	path, err := GetBindings()
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove(path)
 	got, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(got, want) {
-		t.Errorf("C2: extracted binary has %d bytes, embedded has %d", len(got), len(want))
+		t.Errorf("extracted binary has %d bytes, embedded fixture has %d", len(got), len(want))
+	}
+}
+`),
+	} {
+		dir := pkg
+		if name == "go.mod" {
+			dir = scratch
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tmp := t.TempDir() // the nested process extracts here, away from the real temp dir
+	cmd := exec.Command("go", "test", "-count=1", "-run", "^TestExtractedBindingsEqualFixture$", "./b2")
+	cmd.Dir = scratch
+	cmd.Env = append(os.Environ(), "TMPDIR="+tmp)
+	out, err := cmd.CombinedOutput()
+	switch {
+	case err == nil:
+	case strings.Contains(string(out), "--- FAIL: TestExtractedBindingsEqualFixture"):
+		t.Errorf("C2: GetBindings does not extract the embedded bytes exactly (nested go test):\n%s", out)
+	default:
+		t.Fatalf("nested go test could not run: %v\n%s", err, out)
 	}
 }
 
-// C9: concurrent first use of GetBindings must be race-free. This only fails under the race detector;
-// `make test-known-defects` runs with -race. When fixed, add -race to the default suite or keep this test
-// in a job that runs with -race, because a plain run passes either way.
+// C9: concurrent first use of GetBindings must be race-free and every caller must get the same working
+// result. The race part only fails under the race detector; `make test-known-defects` runs with -race. When
+// fixed, add -race to the default suite or keep this test in a job that runs with -race, because the data race
+// is invisible to a plain run.
 func TestKnownDefect_C9_GetBindingsConcurrentIsRaceFree(t *testing.T) {
 	saved := bindings
 	t.Cleanup(func() { bindings = saved })
 
-	var created sync.Map
+	type result struct {
+		path string
+		err  error
+	}
+	const callers = 8
 	for iter := 0; iter < 30; iter++ {
 		bindings = nil
+		results := make(chan result, callers)
 		var wg sync.WaitGroup
-		for i := 0; i < 8; i++ {
+		for i := 0; i < callers; i++ {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				if p, err := GetBindings(); err == nil {
-					created.Store(p, true)
-				}
+				p, err := GetBindings()
+				results <- result{p, err}
 			}()
 		}
 		wg.Wait()
-	}
-	created.Range(func(k, _ interface{}) bool {
-		if k.(string) != "" && (saved == nil || k.(string) != *saved) {
-			_ = os.Remove(k.(string))
+		close(results)
+
+		var first string
+		for r := range results {
+			if r.err != nil {
+				t.Errorf("C9: iteration %d: GetBindings failed: %v", iter, r.err)
+				continue
+			}
+			if r.path == "" {
+				t.Errorf("C9: iteration %d: GetBindings returned an empty path", iter)
+				continue
+			}
+			if _, err := os.ReadFile(r.path); err != nil {
+				t.Errorf("C9: iteration %d: extracted file %q is not readable: %v", iter, r.path, err)
+			}
+			if first == "" {
+				first = r.path
+			} else if r.path != first {
+				t.Errorf("C9: iteration %d: concurrent callers got different paths: %q and %q", iter, first, r.path)
+			}
+			if saved == nil || r.path != *saved {
+				defer func(path string) { _ = os.Remove(path) }(r.path)
+			}
 		}
-		return true
-	})
+	}
 }
 
 // C18: running the provider's own unit tests must not leave the extracted binary in the temp dir.
