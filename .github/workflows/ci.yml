@@ -36,9 +36,10 @@ jobs:
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} for staticx
         run: |
           # make docs-lint builds the PyInstaller helper and runs staticx on Linux.
-          sudo add-apt-repository --yes ppa:deadsnakes/ppa
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          # The deadsnakes PPA (launchpad) returns transient 503s; retry fetches.
+          for i in 1 2 3; do sudo add-apt-repository --yes ppa:deadsnakes/ppa && break; sleep 10; done
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
             "python${PYTHON_DEFAULT_VERSION}-dev" "python${PYTHON_DEFAULT_VERSION}-venv"
           "python${PYTHON_DEFAULT_VERSION}" -m venv "$RUNNER_TEMP/provider-python"
           echo "$RUNNER_TEMP/provider-python/bin" >> "$GITHUB_PATH"
@@ -113,9 +114,10 @@ jobs:
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} for staticx (ubuntu-latest)
         if: matrix.conf.os == 'linux'
         run: |
-          sudo add-apt-repository --yes ppa:deadsnakes/ppa
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          # The deadsnakes PPA (launchpad) returns transient 503s; retry fetches.
+          for i in 1 2 3; do sudo add-apt-repository --yes ppa:deadsnakes/ppa && break; sleep 10; done
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
             "python${PYTHON_DEFAULT_VERSION}-dev" "python${PYTHON_DEFAULT_VERSION}-venv"
           "python${PYTHON_DEFAULT_VERSION}" -m venv "$RUNNER_TEMP/provider-python"
           echo "$RUNNER_TEMP/provider-python/bin" >> "$GITHUB_PATH"
