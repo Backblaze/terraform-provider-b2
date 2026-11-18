@@ -23,4 +23,4 @@ jobs:
           PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: bash scripts/changelog-check.sh "$BASE_SHA"
       - name: Check assembled changelog
-        run: bash scripts/changelog-validate.sh
+        run: bash scripts/release-health.sh --changelog-only

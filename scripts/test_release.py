@@ -1,6 +1,7 @@
 """Offline release workflow contract tests; no production keys or API writes."""
 
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -112,8 +113,18 @@ class ReleaseTests(unittest.TestCase):
     def test_migrated_comparison_links_are_generated(self):
         repo = SCRIPTS.parent
         header = (repo / ".changes/header.tpl.md").read_text()
-        self.assertRegex(header, r"(?m)^\[Unreleased\]: https://github\.com/Backblaze/terraform-provider-b2/compare/v[0-9]+\.[0-9]+\.[0-9]+\.\.\.HEAD$")
-        unreleased = next(line for line in header.splitlines() if line.startswith("[Unreleased]:"))
+        # Derive the required base from versioned-note inputs, not the header
+        # being checked, so a later release needs only allowed version-path edits.
+        versions = []
+        for path in (repo / ".changes").glob("v*.md"):
+            match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?", path.stem)
+            if match:
+                prerelease = tuple((0, int(part)) if part.isdigit() else (1, part)
+                                   for part in (match[4] or "").split("."))
+                versions.append(((int(match[1]), int(match[2]), int(match[3]), match[4] is None, prerelease), path.stem))
+        latest = max(versions)[1]
+        unreleased = f"[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/{latest}...HEAD"
+        self.assertIn(unreleased, header)
         released = "[0.15.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...v0.15.0"
         self.assertIn(unreleased, (repo / "CHANGELOG.md").read_text())
         self.assertIn(released, (repo / ".changes/v0.15.0.md").read_text())
@@ -185,10 +196,10 @@ echo git >> "$CHECK_LOG"
         for path in self.bin.iterdir():
             path.chmod(0o755)
 
-    def health(self, failure=""):
+    def health(self, failure="", *args):
         log = self.root / "checks"
         log.unlink(missing_ok=True)
-        result = self.run_script("release-health.sh", PATH=str(self.bin) + os.pathsep + os.environ["PATH"],
+        result = self.run_script("release-health.sh", *args, PATH=str(self.bin) + os.pathsep + os.environ["PATH"],
                                  CHECK_LOG=str(log), FAIL_CHECK=failure, TF_ACC="1")
         return result, log.read_text().splitlines()
 
@@ -216,6 +227,14 @@ echo git >> "$CHECK_LOG"
         result, checks = self.health("batch")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("batch", checks)
+
+    def test_changelog_only_runs_generation_checks(self):
+        result, checks = self.health("", "--changelog-only")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(set(checks), {"merge", "batch"})
+        self.assertNotIn("Release health: PASS", result.stdout)
+        workflow = (SCRIPTS.parent / ".github/workflows/changelog.yml").read_text()
+        self.assertIn("run: bash scripts/release-health.sh --changelog-only", workflow)
 
 
 if __name__ == "__main__":
