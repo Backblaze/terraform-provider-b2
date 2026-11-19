@@ -56,8 +56,8 @@ Out of scope:
 - **Credentials**: `application_key_id` and `application_key` come from the provider block or the
   `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` environment variables. The Go provider passes them to
   the embedded Python bindings on stdin, never on the command line.
-- **Sensitive attributes**: `application_key`, SSE-C `secret_b64` and `hmac_sha256_signing_secret` are
-  marked `Sensitive`, so Terraform hides them in plan output; they are still stored in state.
+- **Sensitive attributes**: `application_key`, SSE-C `secret_b64`, `hmac_sha256_signing_secret` and
+  `b2_bucket_file_signed_url.signed_url` are marked `Sensitive`, so Terraform hides them in plan output; they are still stored in state.
 - **Logs and errors**: `TF_LOG=DEBUG` logs provider input, output and bindings stderr after redacting
   values the schema marks `Sensitive`, the provider credentials, signed URLs and webhook custom header
   values (`b2/client.go`); errors returned to Terraform carry only the operation and the reported error.

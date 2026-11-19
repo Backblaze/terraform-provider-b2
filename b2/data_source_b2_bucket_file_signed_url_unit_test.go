@@ -19,6 +19,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func TestSignedUrlIsSensitive_C5(t *testing.T) {
+	provider := New("test", "unused")()
+	attribute := provider.DataSourcesMap["b2_bucket_file_signed_url"].Schema["signed_url"]
+	if !attribute.Sensitive {
+		t.Fatal("signed_url must be marked Sensitive in the provider schema")
+	}
+}
+
 func TestDataSourceB2BucketFileSignedURLUsesNonCredentialID(t *testing.T) {
 	resource := dataSourceB2BucketFileSignedUrl()
 	d := schema.TestResourceDataRaw(t, resource.Schema, map[string]interface{}{
