@@ -88,7 +88,7 @@ func stepGuardsSecret(step workflowStep, name string) bool {
 	if regexp.MustCompile(`-n\s+"?\$\{?` + name + `\}?"?\s*\]\]?\s*\|\|\s*(?:\{\s*)?(?:echo[^;]*;\s*)?exit\s+1\b`).MatchString(script) {
 		return true
 	}
-	empty := regexp.MustCompile(`-z\s+"?\$\{?` + name + `\}?"?|"?\$\{?` + name + `\}?"?\s*==?\s*(?:''|"")`)
+	empty := regexp.MustCompile(`-z\s+"?\$\{?` + name + `\b\}?"?|"?\$\{?` + name + `\b\}?"?\s*==?\s*(?:''|"")`)
 	for _, loc := range empty.FindAllStringIndex(script, -1) {
 		rest := script[loc[1]:]
 		fi := fiWord.FindStringIndex(rest)
@@ -176,6 +176,7 @@ func TestCIWorkflowFailsOnMissingKeys(t *testing.T) {
 		{"key comparison in if, exit 1 in an unconditional unrelated step", "      - if: ${{ env.B2_TEST_APPLICATION_KEY == '' || env.B2_TEST_APPLICATION_KEY_ID == '' }}\n        run: echo skipping\n      - run: exit 1\n", false},
 		{"shell guard whose exit 1 is outside the if block", "      - run: |\n          if [ -z \"$B2_TEST_APPLICATION_KEY\" ] || [ -z \"$B2_TEST_APPLICATION_KEY_ID\" ]; then\n            echo missing\n          fi\n          exit 1\n", false},
 		{"only one key is guarded", "      - if: ${{ env.B2_TEST_APPLICATION_KEY == '' }}\n        run: exit 1\n", false},
+		{"shell guard checks only the key ID", "      - run: |\n          if [ -z \"$B2_TEST_APPLICATION_KEY_ID\" ]; then exit 1; fi\n", false},
 		{"both keys guarded with and (fails only when both are missing)", "      - if: ${{ env.B2_TEST_APPLICATION_KEY == '' && env.B2_TEST_APPLICATION_KEY_ID == '' }}\n        run: exit 1\n", false},
 		{"guard only in a comment", "      - run: |\n          # if [ -z \"$B2_TEST_APPLICATION_KEY\" ] || [ -z \"$B2_TEST_APPLICATION_KEY_ID\" ]; then exit 1; fi\n          make testacc\n", false},
 		{"guard that tests for presence is the skip condition", "      - if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}\n        run: make testacc\n", false},
