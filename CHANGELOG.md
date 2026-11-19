@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
+
 ## [0.15.0] - 2026-11-06
 
 ### Changed

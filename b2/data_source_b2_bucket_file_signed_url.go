@@ -47,6 +47,7 @@ func dataSourceB2BucketFileSignedUrl() *schema.Resource {
 				Description: "The signed URL for the given file contains an embedded download authorization token. Treat it as sensitive and keep it out of logs and outputs. Terraform stores it in plaintext state, so treat the state as sensitive.",
 				Type:        schema.TypeString,
 				Computed:    true,
+				Sensitive:   true,
 			},
 		},
 	}
