@@ -54,7 +54,7 @@ func StringLenExact(length int) schema.SchemaValidateFunc {
 		}
 
 		if len(v) != length {
-			errors = append(errors, fmt.Errorf("expected length of %s must be %d, got %s", k, length, v))
+			errors = append(errors, fmt.Errorf("expected length of %s must be %d, got %d", k, length, len(v)))
 		}
 
 		return warnings, errors
