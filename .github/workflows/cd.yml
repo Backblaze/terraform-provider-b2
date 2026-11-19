@@ -106,9 +106,6 @@ jobs:
       NOPYBINDINGS: 1  # do not build python bindings
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # The previous upload_url output referred to an undefined step and had no consumers.
-    # outputs:
-    #   upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -140,12 +137,6 @@ jobs:
           # Strip the prefix 'v'
           version=${RELEASE_TAG#v}
           echo "version=$version" >> "$GITHUB_OUTPUT"
-      # actions-governance: replaced by local changelog extraction; remove after a real run verifies it
-      # - name: Read the Changelog
-      #   id: read-changelog
-      #   uses: mindsers/changelog-reader-action@v2
-      #   with:
-      #     version: ${{ steps.version.outputs.version }}
       - name: Read the Changelog
         id: read-changelog
         env:
@@ -153,13 +144,6 @@ jobs:
         run: |
           python3 scripts/actions-changelog.py extract "$RELEASE_VERSION" \
             --notes-file "$RUNNER_TEMP/provider-release-notes.md"
-      # actions-governance: replaced by inline GPG import script; remove after a real run verifies it
-      # - name: Import GPG key
-      #   id: import_gpg
-      #   uses: crazy-max/ghaction-import-gpg@v6
-      #   with:
-      #     gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-      #     passphrase: ${{ secrets.PASSPHRASE }}
       - name: Import GPG key
         id: import_gpg
         env:
@@ -185,16 +169,8 @@ jobs:
               *) echo '::error::Unexpected release key directory'; exit 1 ;;
             esac
           fi
-      # actions-governance: replaced by gh release edit; remove after a real run verifies it
       # GoReleaser already creates the release and uploads its assets. This step
       # still sets the changelog body, title, and final flags; it is not redundant.
-      # - name: Update GitHub release
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     name: v${{ steps.version.outputs.version }}
-      #     body: ${{ steps.read-changelog.outputs.changes }}
-      #     draft: false
-      #     prerelease: false
       - name: Update GitHub release
         env:
           RELEASE_TAG: v${{ steps.version.outputs.version }}

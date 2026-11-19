@@ -28,11 +28,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-      # actions-governance: replaced by inline PPA setup; remove after a real run verifies it
-      # - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
-      #   uses: deadsnakes/action@v3.2.0  # staticx doesn't work with python installed by setup-python action
-      #   with:
-      #     python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} for staticx
         run: |
           # make docs-lint builds the PyInstaller helper and runs staticx on Linux.
@@ -64,12 +59,6 @@ jobs:
       - name: Run docs linters
         run: |
           make docs-lint
-      # actions-governance: replaced by local changelog validation; remove after a real run verifies it
-      # - name: Validate changelog
-      #   if: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
-      #   uses: zattoo/changelog@v2
-      #   with:
-      #     token: ${{ github.token }}
       - name: Validate changelog
         if: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && !contains(github.event.pull_request.labels.*.name, '-changelog') }}
         env:
@@ -105,12 +94,6 @@ jobs:
           - { runner: windows-2022, os: windows, arch: amd64 }
     steps:
       - uses: actions/checkout@v5
-      # actions-governance: replaced by inline PPA setup; remove after a real run verifies it
-      # - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
-      #   if: matrix.conf.os == 'linux'
-      #   uses: deadsnakes/action@v3.2.0  # staticx doesn't work with python installed by setup-python action
-      #   with:
-      #     python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} for staticx (ubuntu-latest)
         if: matrix.conf.os == 'linux'
         run: |
