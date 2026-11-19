@@ -57,11 +57,15 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"bucket_id"},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// Suppress diff if bucket_id is set in config (backward compatibility)
-					if _, ok := d.GetOk("bucket_id"); ok {
-						return true
+					// Suppress the bucket_ids diff only when it is just the mirror of
+					// the deprecated bucket_id set in config (backward compatibility).
+					// A previous bucket_ids containing other buckets is a real
+					// restriction change and must still force replacement.
+					bucketId, ok := configAttrString(d, "bucket_id")
+					if !ok {
+						return false
 					}
-					return false
+					return bucketIdsAreMirrorOf(d, bucketId)
 				},
 			},
 			"name_prefix": {
@@ -109,15 +113,50 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ConflictsWith: []string{"bucket_ids"},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					// Suppress diff if bucket_ids is set (bucket_id is auto-populated from bucket_ids)
-					if _, ok := d.GetOk("bucket_ids"); ok {
-						return true
-					}
-					return false
+					return configAttrIsSet(d, "bucket_ids")
 				},
 				Deprecated: "This argument is deprecated in favor of 'bucket_ids' argument",
 			},
 		},
 	}
+}
+
+// configAttrIsSet reports whether the given attribute is explicitly set in the
+// configuration that is being planned. Unlike d.GetOk, this reads only the
+// config, not the merged state, so values that the provider itself wrote into
+// state (e.g. the bucket_id mirrored from bucket_ids) cannot suppress a diff.
+func configAttrIsSet(d *schema.ResourceData, attr string) bool {
+	raw := d.GetRawConfig()
+	if raw.IsNull() || !raw.Type().HasAttribute(attr) {
+		return false
+	}
+	v := raw.GetAttr(attr)
+	return v.IsKnown() && !v.IsNull()
+}
+
+func configAttrString(d *schema.ResourceData, attr string) (string, bool) {
+	raw := d.GetRawConfig()
+	if raw.IsNull() || !raw.Type().HasAttribute(attr) {
+		return "", false
+	}
+	v := raw.GetAttr(attr)
+	if !v.IsKnown() || v.IsNull() {
+		return "", false
+	}
+	return v.AsString(), true
+}
+
+// bucketIdsAreMirrorOf reports whether the previous state's bucket_ids is just
+// the provider-written mirror of the given deprecated bucket_id. If the
+// previous set contains any other bucket, its removal is a real restriction
+// change and the diff must not be suppressed.
+func bucketIdsAreMirrorOf(d *schema.ResourceData, bucketId string) bool {
+	old, _ := d.GetChange("bucket_ids")
+	ids, ok := old.(*schema.Set)
+	if !ok || ids == nil {
+		return false
+	}
+	return ids.Len() == 0 || ids.Len() == 1 && ids.Contains(bucketId)
 }
 
 func resourceB2ApplicationKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
