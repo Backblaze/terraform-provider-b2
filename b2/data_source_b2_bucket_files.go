@@ -47,7 +47,7 @@ func dataSourceB2BucketFiles() *schema.Resource {
 				Optional:    true,
 			},
 			"file_versions": {
-				Description: "File versions in the folder.",
+				Description: "File versions in the folder. Non-recursive listings also include immediate subfolder prefixes as entries with action 'folder', bucket_id, and file_name. Their other file-version fields are empty or zero.",
 				Type:        schema.TypeList,
 				Elem:        getDataSourceFileVersionsElem(),
 				Computed:    true,

@@ -27,7 +27,7 @@ B2 bucket files data source.
 
 ### Read-Only
 
-- `file_versions` (List of Object) File versions in the folder. (see [below for nested schema](#nestedatt--file_versions))
+- `file_versions` (List of Object) File versions in the folder. Non-recursive listings also include immediate subfolder prefixes as entries with action 'folder', bucket_id, and file_name. Their other file-version fields are empty or zero. (see [below for nested schema](#nestedatt--file_versions))
 - `id` (String) The ID of this resource.
 
 <a id="nestedatt--file_versions"></a>

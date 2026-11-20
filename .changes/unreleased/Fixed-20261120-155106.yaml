@@ -1,0 +1,3 @@
+kind: Fixed
+body: Return folder prefixes instead of nested files in non-recursive `b2_bucket_files` listings.
+time: 2026-11-20T15:51:06.575518-05:00
