@@ -48,6 +48,7 @@ type Client struct {
 }
 
 // Apply executes a provider operation with typed input and output.
+// Context cancellation stops the bindings workers and returns an error wrapping ctx.Err().
 func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, output ResourceSchema) error {
 	name := input.ResourceName()
 
