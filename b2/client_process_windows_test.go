@@ -15,6 +15,10 @@ import (
 	"testing"
 )
 
+func TestApplyStopsBindingsProcessTree(t *testing.T) {
+	t.Skip("plain Python launcher uses Unix process groups and PID probes; TestApplyStopsGoProcessTree covers the Windows Job Object")
+}
+
 func TestBindingsStderrRetainsPrefixAndSuffix(t *testing.T) {
 	prefix, suffix := strings.Repeat("a", 32<<10), strings.Repeat("z", 32<<10)
 	for _, tc := range []struct{ name, input, want string }{
