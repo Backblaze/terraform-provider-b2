@@ -51,12 +51,22 @@ func TestAccountInfoC10(t *testing.T) {
 	if diags := dataSourceB2AccountInfoRead(context.Background(), d, client); diags.HasError() {
 		t.Fatalf("account info read failed: %v", diags)
 	}
-	if got := d.Get("allowed.0.bucket_id"); got != "bid1" {
-		t.Errorf("allowed.0.bucket_id = %q, want %q", got, "bid1")
+	for key, want := range map[string]interface{}{
+		"allowed.0.bucket_id":      "bid1",
+		"allowed.0.bucket_name":    "bname1",
+		"allowed.0.buckets.#":      1,
+		"allowed.0.buckets.0.id":   "bid1",
+		"allowed.0.buckets.0.name": "bname1",
+		"allowed.0.name_prefix":    "",
+	} {
+		if got := d.Get(key); got != want {
+			t.Errorf("%s = %v, want %v", key, got, want)
+		}
 	}
-	if got := d.Get("allowed.0.bucket_name"); got != "bname1" {
-		t.Errorf("allowed.0.bucket_name = %q, want %q", got, "bname1")
+	if got := d.Get("allowed.0.capabilities").(*schema.Set).List(); len(got) != 1 || got[0] != "listBuckets" {
+		t.Errorf("capabilities = %v, want [listBuckets]", got)
 	}
+	t.Run("multiple-buckets", TestAccountInfoPopulatesDeprecatedBucketFields)
 }
 
 func TestAccountInfoPopulatesDeprecatedBucketFields(t *testing.T) {
