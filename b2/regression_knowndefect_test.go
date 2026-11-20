@@ -14,7 +14,12 @@ package b2
 
 import (
 	"context"
+<<<<<<< HEAD
 	"encoding/json"
+=======
+	"crypto/sha1"
+	"encoding/hex"
+>>>>>>> cf6b0b8 (fix: default omitted signed URL duration to one day)
 	"errors"
 	"fmt"
 	"os"
@@ -39,31 +44,6 @@ import (
 // without the build tag (for example regression_test.go) so that it joins the default suite.
 //
 // Several tests use the fake child process from regression_test.go in place of the PyInstaller binary.
-
-// C3: with duration omitted, the provider must not send 0 seconds to B2. The expected default is any
-// positive value; the owner may pick the exact value.
-func TestKnownDefect_C3_SignedUrlOmittedDurationIsNotZero(t *testing.T) {
-	capture := filepath.Join(t.TempDir(), "stdin.json")
-	client := newFakeClient(t, fmt.Sprintf(`cat > %q; echo '{"bucketId":"b1","fileName":"f.txt","duration":3600,"signedUrl":"https://f.example.invalid/f"}'`, capture))
-	res := dataSourceB2BucketFileSignedUrl()
-	d := schema.TestResourceDataRaw(t, res.Schema, map[string]interface{}{
-		"bucket_id": "b1", "file_name": "f.txt",
-	})
-	if diags := dataSourceB2BucketFileSignedUrlRead(context.Background(), d, client); diags.HasError() {
-		t.Fatal(diags)
-	}
-	raw, err := os.ReadFile(capture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var sent map[string]interface{}
-	if err := json.Unmarshal(raw, &sent); err != nil {
-		t.Fatal(err)
-	}
-	if dur, _ := sent["duration"].(float64); dur <= 0 {
-		t.Errorf("C3: omitted duration was sent to the python layer as %v (want a positive default)", sent["duration"])
-	}
-}
 
 // C8: cancelling the context must stop the python child process and make Apply return a cancellation error.
 // The test does not depend on timing: the fake child announces that it has started (its pid, written to a
