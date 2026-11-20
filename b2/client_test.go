@@ -14,10 +14,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"net"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflogtest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -25,6 +30,34 @@ import (
 
 func init() {
 	switch os.Getenv("GO_WANT_B2_CLIENT_HELPER") {
+	case "cancel-direct":
+		if err := os.WriteFile(os.Getenv("B2_TEST_STARTED_FILE"), []byte("started"), 0o600); err != nil {
+			os.Exit(2)
+		}
+		time.Sleep(30 * time.Second)
+		os.Exit(0)
+	case "cancel-launcher":
+		worker := exec.Command(os.Args[0])
+		worker.Env = append(os.Environ(), "GO_WANT_B2_CLIENT_HELPER=cancel-worker")
+		worker.Stdin, worker.Stdout, worker.Stderr = os.Stdin, os.Stdout, os.Stderr
+		if err := worker.Run(); err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "cancel-worker":
+		_, _ = io.Copy(io.Discard, os.Stdin)
+		conn, err := net.DialTimeout("tcp", os.Getenv("B2_TEST_CANCEL_ADDRESS"), 5*time.Second)
+		if err != nil {
+			os.Exit(2)
+		}
+		_, _ = io.WriteString(conn, "started\n")
+		var b [1]byte
+		_, _ = conn.Read(b[:])
+		_ = conn.Close()
+		os.Exit(0)
+	case "file-version-existing":
+		_, _ = io.WriteString(os.Stdout, `{"fileId":"4_existing","fileName":"file.txt","action":"upload","size":3}`)
+		os.Exit(0)
 	case "notification-rules":
 		input, err := io.ReadAll(os.Stdin)
 		if err != nil || !bytes.Contains(input, []byte("Bearer custom-header-sentinel")) {
@@ -45,6 +78,27 @@ func init() {
 	if os.Getenv("GO_WANT_B2_SIGNED_URL_HELPER") == "1" {
 		_, _ = io.WriteString(os.Stdout, `{"bucketId":"bucket-123","fileName":"reports/file.txt","duration":3600,"signedUrl":"https://example.invalid/file?Authorization=bearer-credential"}`)
 		os.Exit(0)
+	}
+}
+
+func TestApplyStopsWhenContextDeadlineExpires(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "started")
+	t.Setenv("GO_WANT_B2_CLIENT_HELPER", "cancel-direct")
+	t.Setenv("B2_TEST_STARTED_FILE", marker)
+	provider := New("test", os.Args[0])()
+	client := Client{Exec: os.Args[0], DataSourcesMap: provider.DataSourcesMap}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	started := time.Now()
+	err := client.Apply(ctx, OpDataSourceRead, &AccountInfoInput{}, nil)
+	if raw, readErr := os.ReadFile(marker); readErr != nil || string(raw) != "started" {
+		t.Fatalf("bindings child did not announce startup: %v", readErr)
+	}
+	if elapsed := time.Since(started); elapsed >= 6*time.Second {
+		t.Errorf("Apply took %v; should return well before the child's 30s sleep", elapsed)
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("Apply error = %v, want context.DeadlineExceeded", err)
 	}
 }
 
