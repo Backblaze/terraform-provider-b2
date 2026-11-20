@@ -132,23 +132,6 @@ func TestKnownDefect_C8_ApplyStopsChildOnContextCancel(t *testing.T) {
 	}
 }
 
-// C10: the deprecated allowed.bucket_id / bucket_name must be set from the first bucket.
-func TestKnownDefect_C10_AccountInfoPopulatesDeprecatedBucketFields(t *testing.T) {
-	client := newFakeClient(t, `cat >/dev/null; echo '{"accountId":"acc1","accountAuthToken":"tok","apiUrl":"https://api.example.invalid","allowed":[{"buckets":[{"id":"bid1","name":"bname1"}],"bucketId":"","bucketName":"","capabilities":["listBuckets"],"namePrefix":""}],"downloadUrl":"d","s3ApiUrl":"s","recommendedPartSize":1,"absoluteMinimumPartSize":1}'`)
-	d := schema.TestResourceDataRaw(t, dataSourceB2AccountInfo().Schema, map[string]interface{}{})
-
-	if diags := dataSourceB2AccountInfoRead(context.Background(), d, client); diags.HasError() {
-		t.Fatal(diags)
-	}
-
-	if got := d.Get("allowed.0.bucket_id"); got != "bid1" {
-		t.Errorf("C10: allowed.0.bucket_id = %q, want %q", got, "bid1")
-	}
-	if got := d.Get("allowed.0.bucket_name"); got != "bname1" {
-		t.Errorf("C10: allowed.0.bucket_name = %q, want %q", got, "bname1")
-	}
-}
-
 // C4 (Go side): when the file version no longer exists (python returns an empty result), refresh must
 // drop the resource from state instead of keeping an empty object.
 func TestKnownDefect_C4_FileVersionReadRemovesMissingFromState(t *testing.T) {

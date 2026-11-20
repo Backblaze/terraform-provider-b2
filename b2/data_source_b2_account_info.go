@@ -113,6 +113,7 @@ func dataSourceB2AccountInfoPopulateDeprecated(d *schema.ResourceData) error {
 				allowedMap["bucket_id"] = ""
 				allowedMap["bucket_name"] = ""
 			}
+			return d.Set("allowed", allowedList)
 		}
 	}
 	return nil
