@@ -576,7 +576,12 @@ class BucketFiles(Command):
             folderName=folder_name,
             showVersions=show_versions,
             recursive=recursive,
-            fileVersions=[file_version_info for file_version_info, _ in generator],
+            fileVersions=[
+                {'action': 'folder', 'bucketId': bucket_id, 'fileName': folder}
+                if folder is not None
+                else file_version_info
+                for file_version_info, folder in generator
+            ],
         )
 
 
