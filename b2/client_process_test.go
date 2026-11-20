@@ -12,20 +12,41 @@ package b2
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"io"
 	"net"
 	"os"
+	"os/exec"
 	"syscall"
 	"testing"
 	"time"
 )
 
-// B2_TEST_PACKAGED_BINDINGS can point at the one-file PyInstaller build of
-// testdata/cancellation_worker.py to exercise the shipped launcher/worker format.
-// The default fixture has the same parent/worker shape and runs on every platform.
+func TestCIRequiresPackagedBindingsFixture(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestApplyStopsBindingsProcessTree$", "-test.v")
+	cmd.Env = append(os.Environ(), "CI=true", "TF_ACC=", "B2_TEST_PACKAGED_BINDINGS=", "GO_WANT_B2_CLIENT_HELPER=")
+	output, err := cmd.CombinedOutput()
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) || exitErr.ExitCode() != 1 ||
+		!bytes.Contains(output, []byte("CI requires B2_TEST_PACKAGED_BINDINGS")) {
+		t.Fatalf("missing CI fixture must fail explicitly; error = %v, output:\n%s", err, output)
+	}
+}
+
+// Offline CI builds testdata/cancellation_worker.py with PyInstaller --onefile
+// and must supply its path. Local and live acceptance runs can use the Go fixture.
 func TestApplyStopsBindingsProcessTree(t *testing.T) {
+	executable := os.Getenv("B2_TEST_PACKAGED_BINDINGS")
+	if executable == "" {
+		if os.Getenv("CI") != "" && os.Getenv("TF_ACC") == "" {
+			t.Fatal("CI requires B2_TEST_PACKAGED_BINDINGS pointing to the one-file PyInstaller fixture")
+		}
+		executable = os.Args[0]
+	}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -36,10 +57,6 @@ func TestApplyStopsBindingsProcessTree(t *testing.T) {
 	}
 	t.Setenv("GO_WANT_B2_CLIENT_HELPER", "cancel-launcher")
 	t.Setenv("B2_TEST_CANCEL_ADDRESS", listener.Addr().String())
-	executable := os.Getenv("B2_TEST_PACKAGED_BINDINGS")
-	if executable == "" {
-		executable = os.Args[0]
-	}
 	provider := New("test", executable)()
 	client := Client{Exec: executable, DataSourcesMap: provider.DataSourcesMap}
 	ctx, cancel := context.WithCancel(context.Background())
