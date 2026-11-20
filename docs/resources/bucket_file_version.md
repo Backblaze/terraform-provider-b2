@@ -19,7 +19,7 @@ B2 bucket file version resource.
 
 - `bucket_id` (String) The ID of the bucket. **Modifying this attribute will force creation of a new resource.**
 - `file_name` (String) The name of the B2 file. **Modifying this attribute will force creation of a new resource.**
-- `source` (String) Path to the local file. **Modifying this attribute will force creation of a new resource.**
+- `source` (String) Path to the local file. During planning, content changes require replacement when a usable stored checksum and a readable regular source are available. Otherwise content comparison is skipped. **Modifying this attribute will force creation of a new resource.**
 
 ### Optional
 

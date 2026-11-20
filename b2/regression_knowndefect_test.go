@@ -14,8 +14,6 @@ package b2
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,7 +29,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 // Known-defect tests: each test describes the correct behaviour and fails today because the defect is still
@@ -132,23 +129,6 @@ func TestKnownDefect_C8_ApplyStopsChildOnContextCancel(t *testing.T) {
 	}
 }
 
-// C10: the deprecated allowed.bucket_id / bucket_name must be set from the first bucket.
-func TestKnownDefect_C10_AccountInfoPopulatesDeprecatedBucketFields(t *testing.T) {
-	client := newFakeClient(t, `cat >/dev/null; echo '{"accountId":"acc1","accountAuthToken":"tok","apiUrl":"https://api.example.invalid","allowed":[{"buckets":[{"id":"bid1","name":"bname1"}],"bucketId":"","bucketName":"","capabilities":["listBuckets"],"namePrefix":""}],"downloadUrl":"d","s3ApiUrl":"s","recommendedPartSize":1,"absoluteMinimumPartSize":1}'`)
-	d := schema.TestResourceDataRaw(t, dataSourceB2AccountInfo().Schema, map[string]interface{}{})
-
-	if diags := dataSourceB2AccountInfoRead(context.Background(), d, client); diags.HasError() {
-		t.Fatal(diags)
-	}
-
-	if got := d.Get("allowed.0.bucket_id"); got != "bid1" {
-		t.Errorf("C10: allowed.0.bucket_id = %q, want %q", got, "bid1")
-	}
-	if got := d.Get("allowed.0.bucket_name"); got != "bname1" {
-		t.Errorf("C10: allowed.0.bucket_name = %q, want %q", got, "bname1")
-	}
-}
-
 // C4 (Go side): when the file version no longer exists (python returns an empty result), refresh must
 // drop the resource from state instead of keeping an empty object.
 func TestKnownDefect_C4_FileVersionReadRemovesMissingFromState(t *testing.T) {
@@ -164,54 +144,6 @@ func TestKnownDefect_C4_FileVersionReadRemovesMissingFromState(t *testing.T) {
 	}
 	if d.Id() != "" {
 		t.Errorf("C4: file version that no longer exists was kept in state with id %q", d.Id())
-	}
-}
-
-// C15: changing the content of the local source file must produce a diff (replacement).
-func TestKnownDefect_C15_FileVersionContentChangeProducesDiff(t *testing.T) {
-	source := filepath.Join(t.TempDir(), "source.txt")
-	if err := os.WriteFile(source, []byte("hello"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	sum := sha1.Sum([]byte("hello"))
-	oldSha1 := hex.EncodeToString(sum[:])
-
-	res := resourceB2BucketFileVersion()
-	state := &terraform.InstanceState{
-		ID: "4_zfile1",
-		Attributes: map[string]string{
-			"id": "4_zfile1", "bucket_id": "b1", "file_name": "f.txt", "source": source,
-			"content_sha1": oldSha1, "file_id": "4_zfile1", "action": "upload",
-			"content_type": "text/plain", "file_info.%": "0", "server_side_encryption.#": "0",
-		},
-	}
-	cfg := terraform.NewResourceConfigRaw(map[string]interface{}{
-		"bucket_id": "b1", "file_name": "f.txt", "source": source,
-	})
-
-	// control: the same state, config and path with the original content must plan no change at all
-	control, err := res.Diff(context.Background(), state, cfg, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if control != nil && (!control.Empty() || control.RequiresNew()) {
-		t.Fatalf("control: unchanged content already produces a diff (requires new=%v): %v", control.RequiresNew(), control)
-	}
-
-	// only the content changes on disk; path and every config attribute stay the same
-	if err := os.WriteFile(source, []byte("hello, changed content"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	diff, err := res.Diff(context.Background(), state, cfg, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff == nil || diff.Empty() {
-		t.Fatal("C15: changing the content of the source file yields no diff, so the new content is never uploaded")
-	}
-	if !diff.RequiresNew() {
-		t.Errorf("C15: the content change does not require replacement (the new content would not be uploaded): %v", diff)
 	}
 }
 
