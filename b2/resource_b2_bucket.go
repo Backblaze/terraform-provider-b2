@@ -148,6 +148,7 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	// B2 does not guarantee the order of lifecycle rules, store them in config order
 	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+	retainExplicitNoDefaultRetention(d, &output)
 
 	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
@@ -181,6 +182,7 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// B2 does not guarantee the order of lifecycle rules, store them in state order
 	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+	retainExplicitNoDefaultRetention(d, &output)
 
 	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
@@ -215,6 +217,7 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	// B2 does not guarantee the order of lifecycle rules, store them in config order
 	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+	retainExplicitNoDefaultRetention(d, &output)
 
 	err = client.Populate(ctx, OpResourceUpdate, &output, d)
 	if err != nil {
@@ -222,6 +225,16 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	return nil
+}
+
+// B2 returns no default retention when it is cleared. Preserve the equivalent
+// explicit "none" configuration in state so the next plan remains stable.
+func retainExplicitNoDefaultRetention(d *schema.ResourceData, output *BucketOutput) {
+	if output.FileLockConfiguration != nil && output.FileLockConfiguration.IsFileLockEnabled &&
+		output.FileLockConfiguration.DefaultRetention == nil &&
+		d.Get("file_lock_configuration.0.default_retention.0.mode") == "none" {
+		output.FileLockConfiguration.DefaultRetention = &DefaultRetention{Mode: "none"}
+	}
 }
 
 func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

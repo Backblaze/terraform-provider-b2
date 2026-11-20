@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-* Allow `default_retention` mode `none` to clear bucket default retention
+* Allow `default_retention` mode `none` to clear bucket default retention without a perpetual Terraform diff
 * Length-validation errors now report the field's length instead of its value.
 
 ### Changed
