@@ -619,6 +619,8 @@ class ProviderTool:
 
     def run_command(self, argv) -> int:
         try:
+            sys.stdin.reconfigure(encoding='utf-8')
+            sys.stdout.reconfigure(encoding='utf-8')
             b2_provider = B2Provider(self)
             args = b2_provider.get_parser().parse_args(argv[1:])
             data_in = input().strip()
