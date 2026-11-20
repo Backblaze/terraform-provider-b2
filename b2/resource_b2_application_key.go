@@ -57,11 +57,14 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"bucket_id"},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// Suppress diff if bucket_id is set in config (backward compatibility)
-					if _, ok := d.GetOk("bucket_id"); ok {
-						return true
+					// Only suppress for the deprecated argument in configuration.
+					// Refresh also populates bucket_id for keys using bucket_ids.
+					config := d.GetRawConfig()
+					if config.IsNull() || !config.IsKnown() {
+						return false
 					}
-					return false
+					bucketID := config.GetAttr("bucket_id")
+					return bucketID.IsKnown() && !bucketID.IsNull()
 				},
 			},
 			"name_prefix": {
