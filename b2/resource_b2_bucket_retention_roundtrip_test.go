@@ -173,11 +173,24 @@ func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
         duration = 1
         unit = "days"
       }`, 1)
+			invalidSecondBlock := strings.TrimSuffix(current, "\n}") + `
+  file_lock_configuration {
+    is_file_lock_enabled = true
+    default_retention {
+      mode = "none"
+      period {
+        duration = 1
+        unit = "days"
+      }
+    }
+  }
+}`
 			resource.Test(t, resource.TestCase{
 				ProviderFactories: factories,
 				CheckDestroy:      checkDestroy,
 				Steps: []resource.TestStep{
 					{Config: invalid, ExpectError: regexp.MustCompile(`period must be omitted when default retention mode is none`)},
+					{Config: invalidSecondBlock, ExpectError: regexp.MustCompile(`period must be omitted when default retention mode is none`)},
 					{Config: current, Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("b2_bucket.test", "file_lock_configuration.0.default_retention.0.mode", mode),
 						resource.TestCheckResourceAttr("b2_bucket.test", "file_lock_configuration.0.default_retention.0.period.0.duration", "1"),

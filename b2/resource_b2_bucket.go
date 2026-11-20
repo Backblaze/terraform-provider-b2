@@ -38,9 +38,12 @@ func resourceB2Bucket() *schema.Resource {
 		// instead of reporting it as drift on the next plan.
 		CustomizeDiff: customdiff.All(
 			func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
-				if d.Get("file_lock_configuration.0.default_retention.0.mode") == "none" &&
-					d.Get("file_lock_configuration.0.default_retention.0.period.#").(int) > 0 {
-					return fmt.Errorf("period must be omitted when default retention mode is none")
+				locks := d.Get("file_lock_configuration").([]interface{})
+				for i := range locks {
+					prefix := fmt.Sprintf("file_lock_configuration.%d.default_retention.0.", i)
+					if d.Get(prefix+"mode") == "none" && d.Get(prefix+"period.#").(int) > 0 {
+						return fmt.Errorf("period must be omitted when default retention mode is none")
+					}
 				}
 				return nil
 			},
