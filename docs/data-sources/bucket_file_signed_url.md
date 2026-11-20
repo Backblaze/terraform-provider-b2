@@ -20,7 +20,7 @@ B2 signed URL for a bucket file data source.
 
 ### Optional
 
-- `duration` (Number) The duration for which the presigned URL is valid.
+- `duration` (Number) The duration in seconds for which the presigned URL is valid. Defaults to 86400 (one day).
 
 ### Read-Only
 
