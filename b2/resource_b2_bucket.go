@@ -12,6 +12,7 @@ package b2
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -35,9 +36,21 @@ func resourceB2Bucket() *schema.Resource {
 		// The API bumps the revision on every change. Mark it as computed
 		// whenever any other field changes so terraform stores the new value
 		// instead of reporting it as drift on the next plan.
-		CustomizeDiff: customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-			return len(d.GetChangedKeysPrefix("")) > 0
-		}),
+		CustomizeDiff: customdiff.All(
+			func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+				locks := d.Get("file_lock_configuration").([]interface{})
+				for i := range locks {
+					prefix := fmt.Sprintf("file_lock_configuration.%d.default_retention.0.", i)
+					if d.Get(prefix+"mode") == "none" && d.Get(prefix+"period.#").(int) > 0 {
+						return fmt.Errorf("period must be omitted when default retention mode is none")
+					}
+				}
+				return nil
+			},
+			customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				return len(d.GetChangedKeysPrefix("")) > 0
+			}),
+		),
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
@@ -148,6 +161,7 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	// B2 does not guarantee the order of lifecycle rules, store them in config order
 	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+	retainExplicitNoDefaultRetention(d, &output)
 
 	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
@@ -181,6 +195,7 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// B2 does not guarantee the order of lifecycle rules, store them in state order
 	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+	retainExplicitNoDefaultRetention(d, &output)
 
 	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
@@ -215,6 +230,7 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 
 	// B2 does not guarantee the order of lifecycle rules, store them in config order
 	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+	retainExplicitNoDefaultRetention(d, &output)
 
 	err = client.Populate(ctx, OpResourceUpdate, &output, d)
 	if err != nil {
@@ -222,6 +238,16 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	return nil
+}
+
+// B2 returns no default retention when it is cleared. Preserve the equivalent
+// explicit "none" configuration in state so the next plan remains stable.
+func retainExplicitNoDefaultRetention(d *schema.ResourceData, output *BucketOutput) {
+	if output.FileLockConfiguration != nil && output.FileLockConfiguration.IsFileLockEnabled &&
+		output.FileLockConfiguration.DefaultRetention == nil &&
+		d.Get("file_lock_configuration.0.default_retention.0.mode") == "none" {
+		output.FileLockConfiguration.DefaultRetention = &DefaultRetention{Mode: "none"}
+	}
 }
 
 func resourceB2BucketDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

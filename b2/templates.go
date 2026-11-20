@@ -300,7 +300,7 @@ func getFileLockConfigurationElem(ds bool) *schema.Resource {
 							ValidateFunc: If(ds, nil, validation.StringInSlice([]string{"compliance", "governance", "none"}, false)),
 						},
 						"period": {
-							Description: "How long for to make files immutable",
+							Description: "How long for to make files immutable. Omit when default retention mode is none",
 							Type:        schema.TypeList,
 							MaxItems:    If(ds, 0, 1),
 							Computed:    If(ds, true, false),
