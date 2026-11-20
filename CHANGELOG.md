@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Allow `default_retention` mode `none` to clear bucket default retention without a perpetual Terraform diff; reject a retention period with mode `none`
 * Populate the deprecated `allowed.bucket_id` and `allowed.bucket_name` fields of `b2_account_info` from the first allowed bucket.
+* Detect `b2_bucket_file_version` source content changes when a B2 checksum and readable local source are available, and replace the file version when they differ.
 * Length-validation errors now report the field's length instead of its value.
 
 ### Changed
