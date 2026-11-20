@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -167,15 +168,23 @@ func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 			}
 			current := retentionRoundTripConfig(bucketName, mode)
 			cleared := retentionRoundTripConfig(bucketName, "none")
+			invalid := strings.Replace(cleared, `mode = "none"`, `mode = "none"
+      period {
+        duration = 1
+        unit = "days"
+      }`, 1)
 			resource.Test(t, resource.TestCase{
 				ProviderFactories: factories,
 				CheckDestroy:      checkDestroy,
 				Steps: []resource.TestStep{
+					{Config: invalid, ExpectError: regexp.MustCompile(`period must be omitted when default retention mode is none`)},
 					{Config: current, Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("b2_bucket.test", "file_lock_configuration.0.default_retention.0.mode", mode),
 						resource.TestCheckResourceAttr("b2_bucket.test", "file_lock_configuration.0.default_retention.0.period.0.duration", "1"),
 						seed,
 					)},
+					{Config: invalid, ExpectError: regexp.MustCompile(`period must be omitted when default retention mode is none`)},
+					{Config: current, PlanOnly: true},
 					{Config: cleared, Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("b2_bucket.test", "file_lock_configuration.0.default_retention.0.mode", "none"),
 						resource.TestCheckResourceAttr("b2_bucket.test", "file_lock_configuration.0.default_retention.0.period.#", "0"),

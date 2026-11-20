@@ -12,6 +12,7 @@ package b2
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -35,9 +36,18 @@ func resourceB2Bucket() *schema.Resource {
 		// The API bumps the revision on every change. Mark it as computed
 		// whenever any other field changes so terraform stores the new value
 		// instead of reporting it as drift on the next plan.
-		CustomizeDiff: customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-			return len(d.GetChangedKeysPrefix("")) > 0
-		}),
+		CustomizeDiff: customdiff.All(
+			func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+				if d.Get("file_lock_configuration.0.default_retention.0.mode") == "none" &&
+					d.Get("file_lock_configuration.0.default_retention.0.period.#").(int) > 0 {
+					return fmt.Errorf("period must be omitted when default retention mode is none")
+				}
+				return nil
+			},
+			customdiff.ComputedIf("revision", func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				return len(d.GetChangedKeysPrefix("")) > 0
+			}),
+		),
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
