@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+* Stop the bindings process and its workers when an operation is canceled, and preserve cancellation and deadline errors.
+* Remove externally deleted `b2_bucket_file_version` versions from state during refresh while preserving other API errors.
 * Return folder prefixes instead of nested files in non-recursive `b2_bucket_files` listings.
 * Allow `default_retention` mode `none` to clear bucket default retention without a perpetual Terraform diff; reject a retention period with mode `none`
 * Populate the deprecated `allowed.bucket_id` and `allowed.bucket_name` fields of `b2_account_info` from the first allowed bucket.

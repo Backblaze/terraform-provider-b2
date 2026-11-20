@@ -126,6 +126,12 @@ func TestFileVersionReadPreservesExistingStateAndErrors(t *testing.T) {
 			if err := d.Set("source", "source.txt"); err != nil {
 				t.Fatal(err)
 			}
+			if err := d.Set("file_name", "file.txt"); err != nil {
+				t.Fatal(err)
+			}
+			if err := d.Set("size", 3); err != nil {
+				t.Fatal(err)
+			}
 			diags := resourceB2BucketFileVersionRead(context.Background(), d, client)
 			if diags.HasError() != tc.wantError {
 				t.Fatalf("diagnostics = %v, want error = %v", diags, tc.wantError)
@@ -133,7 +139,7 @@ func TestFileVersionReadPreservesExistingStateAndErrors(t *testing.T) {
 			if d.Id() != "4_existing" || d.Get("bucket_id") != "bucket-1" || d.Get("source") != "source.txt" {
 				t.Fatal("read lost the existing ID, bucket, or source")
 			}
-			if !tc.wantError && (d.Get("file_name") != "file.txt" || d.Get("size") != 3) {
+			if d.Get("file_name") != "file.txt" || d.Get("size") != 3 {
 				t.Fatal("read did not populate the existing file's attributes")
 			}
 		})

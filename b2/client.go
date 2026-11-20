@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -68,7 +69,8 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 		"input": sanitizer.sanitizeForLog(inputMap, schemaMap),
 	})
 
-	cmd := exec.Command(c.Exec, name, string(op))
+	cmd := exec.CommandContext(ctx, c.Exec, name, string(op))
+	cmd.WaitDelay = 2 * time.Second
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("B2_USER_AGENT_APPEND=%s", c.UserAgentAppend))
 
@@ -83,9 +85,12 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 	}
 	cmd.Stdin = bytes.NewReader(inputJson)
 
-	outputJson, err := cmd.Output()
+	outputJson, err := bindingsOutput(cmd)
 
 	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return fmt.Errorf("b2_%s %s canceled: %w", name, op, ctxErr)
+		}
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if len(exitErr.Stderr) > 0 {
 				text := sanitizer.redactText(string(exitErr.Stderr), c.ApplicationKeyId, c.ApplicationKey)

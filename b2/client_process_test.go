@@ -17,6 +17,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -78,7 +79,7 @@ func TestApplyStopsBindingsProcessTree(t *testing.T) {
 		t.Errorf("Apply error = %v, want context.Canceled", applyErr)
 	}
 	var b [1]byte
-	if _, err := conn.Read(b[:]); !errors.Is(err, io.EOF) {
+	if _, err := conn.Read(b[:]); !errors.Is(err, io.EOF) && !errors.Is(err, syscall.ECONNRESET) {
 		t.Errorf("worker connection is still open after Apply returned: %v", err)
 	}
 }
