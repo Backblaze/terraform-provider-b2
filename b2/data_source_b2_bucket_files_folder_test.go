@@ -13,6 +13,7 @@ package b2
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -38,6 +39,15 @@ func TestBucketFilesFolderEntryPopulatesState(t *testing.T) {
 	} {
 		if got := d.Get(key); got != want {
 			t.Errorf("%s = %v, want %v", key, got, want)
+		}
+	}
+}
+
+func TestBucketFilesSchemaDescribesFolderEntries(t *testing.T) {
+	description := strings.ToLower(dataSourceB2BucketFiles().Schema["file_versions"].Description)
+	for _, detail := range []string{"non-recursive", "subfolder", "action", "folder", "bucket_id", "file_name", "empty or zero"} {
+		if !strings.Contains(description, detail) {
+			t.Errorf("file_versions description does not explain %q: %s", detail, description)
 		}
 	}
 }
