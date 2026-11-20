@@ -12,6 +12,11 @@ package b2
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
+	"os"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -29,6 +34,7 @@ func resourceB2BucketFileVersion() *schema.Resource {
 		CreateContext: resourceB2BucketFileVersionCreate,
 		ReadContext:   resourceB2BucketFileVersionRead,
 		DeleteContext: resourceB2BucketFileVersionDelete,
+		CustomizeDiff: resourceB2BucketFileVersionDiff,
 		Schema: map[string]*schema.Schema{
 			"bucket_id": {
 				Description:  "The ID of the bucket.",
@@ -45,7 +51,8 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"source": {
-				Description:  "Path to the local file.",
+				Description: "Path to the local file. During planning, content changes require replacement when a usable " +
+					"stored checksum and a readable regular source are available. Otherwise content comparison is skipped.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
@@ -115,6 +122,73 @@ func resourceB2BucketFileVersion() *schema.Resource {
 			},
 		},
 	}
+}
+
+// resourceB2BucketFileVersionDiff compares the source with B2's full-file SHA-1.
+// The checksum is used for B2 compatibility, not for authentication.
+func resourceB2BucketFileVersionDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if d.Id() == "" || !d.NewValueKnown("source") || d.HasChange("source") {
+		return nil
+	}
+
+	oldChecksum, _ := d.GetChange("content_sha1")
+	checksum := oldChecksum.(string)
+	if checksum == "" || checksum == "none" {
+		oldInfo, _ := d.GetChange("file_info")
+		if value, ok := oldInfo.(map[string]interface{})["large_file_sha1"].(string); ok {
+			checksum = value
+		}
+	}
+	decoded, err := hex.DecodeString(checksum)
+	if err != nil || len(decoded) != sha1.Size {
+		return nil
+	}
+
+	path := d.Get("source").(string)
+	info, err := os.Stat(path)
+	if err != nil || !info.Mode().IsRegular() {
+		return ctx.Err()
+	}
+	file, err := openFileVersionSource(path)
+	if err != nil {
+		return ctx.Err()
+	}
+	defer func() { _ = file.Close() }()
+	info, err = file.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		return ctx.Err()
+	}
+	stopClose := context.AfterFunc(ctx, func() { _ = file.Close() })
+	defer stopClose()
+	hash := sha1.New()
+	if _, err := io.Copy(hash, &fileVersionContextReader{ctx: ctx, reader: file}); err != nil {
+		return ctx.Err()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if strings.EqualFold(hex.EncodeToString(hash.Sum(nil)), checksum) {
+		return nil
+	}
+	if err := d.SetNewComputed("file_id"); err != nil {
+		return err
+	}
+	return d.ForceNew("file_id")
+}
+
+type fileVersionContextReader struct {
+	ctx    context.Context
+	reader io.Reader
+}
+
+func (r *fileVersionContextReader) Read(p []byte) (int, error) {
+	if err := r.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return r.reader.Read(p)
 }
 
 func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
