@@ -27,7 +27,7 @@ from b2sdk.v3 import (
     EncryptionSetting,
     InMemoryAccountInfo,
 )
-from b2sdk.v3.exception import BadRequest, BucketIdNotFound
+from b2sdk.v3.exception import BadRequest, BucketIdNotFound, FileNotPresent
 from b2_terraform.arg_parser import ArgumentParser
 from b2_terraform.json_encoder import B2ProviderJsonEncoder
 
@@ -427,7 +427,11 @@ class BucketFileVersion(Command):
         return self._postprocess(file_info, source=source, bucket_id=bucket_id)
 
     def resource_read(self, *, file_id, **kwargs):
-        return self._postprocess(self.api.get_file_info(file_id))
+        try:
+            file_version = self.api.get_file_info(file_id)
+        except FileNotPresent:
+            return None
+        return self._postprocess(file_version)
 
     def resource_delete(self, *, file_id, file_name, **kwargs):
         self.api.delete_file_version(file_id, file_name)

@@ -15,7 +15,7 @@ import io
 import json
 
 import pytest
-from b2sdk.v3.exception import BucketIdNotFound, FileNotPresent
+from b2sdk.v3.exception import BucketIdNotFound, FileNotPresent, ServiceError, Unauthorized
 
 from b2_terraform import provider_tool
 from b2_terraform.provider_tool import B2Provider, Bucket, BucketFiles, BucketFileVersion
@@ -61,7 +61,6 @@ def test_C13_delete_of_already_deleted_bucket_succeeds(tool):
     Bucket(tool).resource_delete(bucket_id=bucket['bucketId'])  # must not raise
 
 
-@pytest.mark.known_defect(raises=FileNotPresent, match='File not present')
 def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeypatch):
     """C4: refresh must tolerate a file version deleted outside Terraform (return an empty result).
 
@@ -85,6 +84,30 @@ def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeyp
     result = BucketFileVersion(tool).resource_read(file_id=version.id_)
 
     assert not result, f'expected an empty result for a missing file version, got {result!r}'
+
+
+@pytest.mark.parametrize(
+    'error', [Unauthorized('access denied', 'unauthorized'), ServiceError('server failure')]
+)
+def test_file_version_read_propagates_auth_and_server_errors(tool, monkeypatch, error):
+    def failing_read(file_id):
+        raise error
+
+    monkeypatch.setattr(tool.api, 'get_file_info', failing_read)
+    with pytest.raises(type(error)) as caught:
+        BucketFileVersion(tool).resource_read(file_id='existing-file')
+    assert caught.value is error
+
+
+def test_file_version_read_keeps_existing_attributes(tool):
+    bucket = make_bucket(tool, 'bucket-existing-version')
+    version = upload(tool, bucket['bucketId'], 'file.txt', b'data')
+
+    result = BucketFileVersion(tool).resource_read(file_id=version.id_)
+
+    assert result['fileId'] == version.id_
+    assert result['fileName'] == 'file.txt'
+    assert result['size'] == 4
 
 
 def test_C39_non_recursive_listing_does_not_return_nested_files(tool):
