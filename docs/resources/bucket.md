@@ -78,7 +78,7 @@ Required:
 
 Optional:
 
-- `period` (Block List, Max: 1) How long for to make files immutable. (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
+- `period` (Block List, Max: 1) How long for to make files immutable. Omit when default retention mode is none. (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
 
 <a id="nestedblock--file_lock_configuration--default_retention--period"></a>
 ### Nested Schema for `file_lock_configuration.default_retention.period`

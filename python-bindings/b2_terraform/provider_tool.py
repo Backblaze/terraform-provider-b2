@@ -319,12 +319,12 @@ class Bucket(Command):
             if 'is_file_lock_enabled' in file_lock_configuration:
                 kwargs['is_file_lock_enabled'] = file_lock_configuration['is_file_lock_enabled']
             for default_retention in file_lock_configuration.get('default_retention', ()):
-                if default_retention.get('period') and isinstance(
-                    default_retention.get('period'), list
-                ):
-                    default_retention['period'] = default_retention['period'][0]
+                period = default_retention.get('period') or None
+                if isinstance(period, list):
+                    period = period[0]
+                mode = default_retention['mode']
                 kwargs['default_retention'] = BucketRetentionSetting.from_bucket_retention_dict(
-                    default_retention
+                    {'mode': None if mode == 'none' else mode, 'period': period}
                 )
 
         default_server_side_encryption = kwargs.pop('default_server_side_encryption', None)

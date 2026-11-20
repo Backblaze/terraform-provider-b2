@@ -38,7 +38,6 @@ def upload(tool, bucket_id, file_name, data=b'hello'):
     return bucket.upload_bytes(data, file_name)
 
 
-@pytest.mark.known_defect(raises=TypeError, match='list indices must be integers')
 def test_C11_default_retention_mode_none_creates_bucket(tool):
     """C11: default_retention mode 'none' (allowed by the Go schema) must not crash the python layer."""
     file_lock = [
