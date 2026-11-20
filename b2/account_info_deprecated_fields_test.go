@@ -30,12 +30,33 @@ func init() {
 	switch fixture {
 	case "restricted":
 		_, _ = io.WriteString(os.Stdout, `{"accountId":"account-1","allowed":[{"buckets":[{"id":"bucket-1","name":"first-bucket"},{"id":"bucket-2","name":"second-bucket"}],"capabilities":["listBuckets"],"namePrefix":"reports/"}]}`)
+	case "single-bucket":
+		_, _ = io.WriteString(os.Stdout, `{"accountId":"acc1","allowed":[{"buckets":[{"id":"bid1","name":"bname1"}],"capabilities":["listBuckets"],"namePrefix":""}]}`)
 	case "unrestricted":
 		_, _ = io.WriteString(os.Stdout, `{"accountId":"account-1","allowed":[{"buckets":[],"capabilities":["listBuckets"],"namePrefix":""}]}`)
 	default:
 		os.Exit(2)
 	}
 	os.Exit(0)
+}
+
+// TestAccountInfoC10 preserves the single-bucket regression from the known-defect suite.
+func TestAccountInfoC10(t *testing.T) {
+	t.Setenv("GO_WANT_ACCOUNT_INFO_FIXTURE", "single-bucket")
+	resource := dataSourceB2AccountInfo()
+	d := schema.TestResourceDataRaw(t, resource.Schema, nil)
+	client := &Client{Exec: os.Args[0], DataSourcesMap: map[string]*schema.Resource{
+		"b2_account_info": resource,
+	}}
+	if diags := dataSourceB2AccountInfoRead(context.Background(), d, client); diags.HasError() {
+		t.Fatalf("account info read failed: %v", diags)
+	}
+	if got := d.Get("allowed.0.bucket_id"); got != "bid1" {
+		t.Errorf("allowed.0.bucket_id = %q, want %q", got, "bid1")
+	}
+	if got := d.Get("allowed.0.bucket_name"); got != "bname1" {
+		t.Errorf("allowed.0.bucket_name = %q, want %q", got, "bname1")
+	}
 }
 
 func TestAccountInfoPopulatesDeprecatedBucketFields(t *testing.T) {
