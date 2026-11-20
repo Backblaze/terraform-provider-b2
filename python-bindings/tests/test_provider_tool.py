@@ -87,11 +87,8 @@ def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeyp
     assert not result, f'expected an empty result for a missing file version, got {result!r}'
 
 
-@pytest.mark.known_defect(
-    raises=AssertionError, match='C39: non-recursive listing returned nested files'
-)
 def test_C39_non_recursive_listing_does_not_return_nested_files(tool):
-    """C39: a non-recursive listing must not return files from sub-folders (one per folder today)."""
+    """C39: a non-recursive listing must not return files from sub-folders."""
     bucket = make_bucket(tool, 'bucket-c39')
     for name in ('top.txt', 'sub/a.txt', 'sub/b.txt', 'other/c.txt'):
         upload(tool, bucket['bucketId'], name)
