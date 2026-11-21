@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Backblaze/terraform-provider-b2/security/advisories/new
+    about: Report privately. Do not open a public issue. See SECURITY.md.
+  - name: Backblaze B2 service or account problem
+    url: https://help.backblaze.com/hc/en-us/requests/new
+    about: Problems with B2 itself (not this provider) go to Backblaze support.

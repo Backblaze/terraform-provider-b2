@@ -1,0 +1,32 @@
+name: Changelog
+
+on:
+  pull_request:
+    branches: [master, release/*]
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+env:
+  GO_DEFAULT_VERSION: '1.26.10'
+
+jobs:
+  changelog:
+    name: changelog
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && !contains(github.event.pull_request.labels.*.name, '-changelog') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # the base branch is needed to find the entries this PR adds
+      - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_DEFAULT_VERSION }}
+      - name: Check changelog entry
+        run: make changelog-check
+        env:
+          BASE_REF: origin/${{ github.base_ref }}

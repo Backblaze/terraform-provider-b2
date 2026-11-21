@@ -1,0 +1,6 @@
+This is a Terraform provider: Go (b2/) passes credentials and resource input as JSON on stdin to
+embedded Python bindings (python-bindings/) that call b2sdk. Look for application keys, SSE-C
+secrets (secret_b64) and event notification signing secrets (hmac_sha256_signing_secret) reaching
+tflog calls, errors, warnings or non-Sensitive schema fields; credentials on a command line or in
+the environment of child processes; and workflow changes that expose repository secrets to fork
+or Dependabot PRs.

@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Add regression tests for known defects. Tests for defects that are still present are excluded from `make test` and run with `make test-known-defects` (Go, build tag `knowndefect`) or `python -m pytest python-bindings/tests -m known_defect --runxfail` (Python)
+time: 2026-11-20T01:58:28.350448-05:00

@@ -1,0 +1,3 @@
+kind: Fixed
+body: Default omitted `duration` in `b2_bucket_file_signed_url` to 86400 seconds (one day) instead of sending zero seconds
+time: 2026-11-20T14:50:28.156657-05:00
