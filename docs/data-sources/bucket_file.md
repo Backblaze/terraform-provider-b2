@@ -3,12 +3,12 @@
 page_title: "b2_bucket_file Data Source - terraform-provider-b2"
 subcategory: ""
 description: |-
-  B2 bucket file data source.
+  B2 bucket file data source. The ID is <bucket_id>/<file_name>.
 ---
 
 # b2_bucket_file (Data Source)
 
-B2 bucket file data source.
+B2 bucket file data source. The ID is `<bucket_id>/<file_name>`.
 
 
 

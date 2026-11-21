@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+* Derive `b2_bucket_file` and `b2_bucket_files` data-source IDs from bucket and path instead of provider credentials. IDs change on the next refresh.
+* Bound `b2_bucket_files` listings with `max_results` (default 10000, maximum 100000); reads exceeding the limit now fail instead of returning an incomplete list. Increase the limit or narrow `folder_name` for larger listings.
 * Advertise the provider registry address in debug reattach configuration.
 * Restrict extracted bindings executables to owner-only permissions.
 * Preserve the exact embedded bindings bytes when extracting the executable.
