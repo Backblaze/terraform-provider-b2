@@ -1,0 +1,42 @@
+name: Security
+
+on:
+  push:
+    branches: [master, release/*]
+    paths-ignore:
+      - 'LICENSE'
+      - 'README.md'
+      - 'README.release.md'
+  pull_request:
+    branches: [master, release/*]
+  schedule:
+    # Weekly, so newly published advisories surface without a code change.
+    - cron: '23 5 * * 1'
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GO_DEFAULT_VERSION: '1.26.10'
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_DEFAULT_VERSION }}
+      - name: Install govulncheck (version pinned in GNUmakefile)
+        run: |
+          cd tools
+          go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
+      - name: Audit dependencies for known vulnerabilities
+        run: |
+          make vulncheck
