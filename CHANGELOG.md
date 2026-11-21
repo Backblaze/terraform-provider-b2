@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Derive `b2_bucket_file` and `b2_bucket_files` data-source IDs from bucket and path instead of provider credentials. IDs change on the next refresh.
 * Bound `b2_bucket_files` listings with `max_results` (default 10000, maximum 100000); reads exceeding the limit now fail instead of returning an incomplete list. Increase the limit or narrow `folder_name` for larger listings.
+* Advertise the provider registry address in debug reattach configuration.
 * Restrict extracted bindings executables to owner-only permissions.
 * Preserve the exact embedded bindings bytes when extracting the executable.
 * Synchronize all access to the cached bindings executable path.
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
 
 ### Infrastructure
+* Pin Python build dependencies, run Python bindings tests in CI, and validate SDK harness rows without relying on their order or count.
 * Gate tagged releases on CI, restrict workflow token permissions, and pin actions to commits.
 * Add regression tests for known defects. Tests for defects that are still present are excluded from `make test` and run with `make test-known-defects` (Go, build tag `knowndefect`) or `python -m pytest python-bindings/tests -m known_defect --runxfail` (Python)
 

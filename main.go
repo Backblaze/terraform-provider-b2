@@ -38,6 +38,6 @@ func main() {
 	}
 	defer func() { _ = os.Remove(pybindings) }()
 
-	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, pybindings), Debug: debugMode}
+	opts := &plugin.ServeOpts{ProviderFunc: b2.New(version, pybindings), Debug: debugMode, ProviderAddr: "registry.terraform.io/Backblaze/b2"}
 	plugin.Serve(opts)
 }

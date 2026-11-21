@@ -92,6 +92,10 @@ jobs:
           printf 'B2_TEST_PACKAGED_BINDINGS=%s\n' "${RUNNER_TEMP}/b2-cancellation/dist/cancellation-worker" >> "$GITHUB_ENV"
       - name: Run unit tests
         run: make test
+      - name: Run Python bindings tests
+        run: |
+          python -m pip install -r python-bindings/requirements.txt pytest
+          python -m pytest python-bindings/tests
   build:
     needs: [lint, test]
     runs-on: ${{ matrix.conf.runner }}
