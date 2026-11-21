@@ -15,7 +15,7 @@ import io
 import json
 
 import pytest
-from b2sdk.v3.exception import BucketIdNotFound, FileNotPresent, ServiceError, Unauthorized
+from b2sdk.v3.exception import FileNotPresent, ServiceError, Unauthorized
 
 from b2_terraform import provider_tool
 from b2_terraform.provider_tool import B2Provider, Bucket, BucketFiles, BucketFileVersion
@@ -52,13 +52,24 @@ def test_C11_default_retention_mode_none_creates_bucket(tool):
     assert result['bucketId'], 'bucket was not created'
 
 
-@pytest.mark.known_defect(raises=BucketIdNotFound, match='not found')
 def test_C13_delete_of_already_deleted_bucket_succeeds(tool):
     """C13: destroy of a bucket that is already gone must be a no-op, not an error."""
     bucket = make_bucket(tool, 'bucket-c13')
     tool.api.delete_bucket(tool.api.get_bucket_by_id(bucket['bucketId']))
 
     Bucket(tool).resource_delete(bucket_id=bucket['bucketId'])  # must not raise
+
+
+def test_bucket_delete_propagates_lookup_errors(tool, monkeypatch):
+    error = Unauthorized('access denied', 'unauthorized')
+
+    def failing_lookup(bucket_id):
+        raise error
+
+    monkeypatch.setattr(tool.api, 'get_bucket_by_id', failing_lookup)
+    with pytest.raises(Unauthorized) as caught:
+        Bucket(tool).resource_delete(bucket_id='bucket-id')
+    assert caught.value is error
 
 
 def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeypatch):
@@ -127,7 +138,6 @@ def test_C39_non_recursive_listing_does_not_return_nested_files(tool):
     assert not nested, f'C39: non-recursive listing returned nested files: {names}'
 
 
-@pytest.mark.known_defect(raises=AssertionError, match='C36: the surfaced error text')
 def test_C36_failed_rollback_names_the_leftover_bucket(tool, monkeypatch):
     """C36: if updating retention fails and the rollback delete also fails, the error must name the
     bucket left behind so the user can clean it up."""
@@ -140,8 +150,10 @@ def test_C36_failed_rollback_names_the_leftover_bucket(tool, monkeypatch):
         }
     ]
 
+    update_error = ValueError('retention update failed')
+
     def failing_update(self, **kwargs):
-        raise ValueError('retention update failed')
+        raise update_error
 
     def failing_delete(bucket):
         raise RuntimeError('delete failed')
@@ -149,7 +161,7 @@ def test_C36_failed_rollback_names_the_leftover_bucket(tool, monkeypatch):
     monkeypatch.setattr(tool.api.BUCKET_CLASS, 'update', failing_update)
     monkeypatch.setattr(tool.api, 'delete_bucket', failing_delete)
 
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(RuntimeError) as excinfo:
         make_bucket(tool, 'bucket-c36', file_lock)
 
     surfaced = str(excinfo.value)
@@ -157,6 +169,30 @@ def test_C36_failed_rollback_names_the_leftover_bucket(tool, monkeypatch):
         'C36: the surfaced error text must carry both the original failure ("retention update failed") '
         f'and the name of the bucket left behind ("bucket-c36"), got: {surfaced!r}'
     )
+    assert 'delete failed' in surfaced
+    assert excinfo.value.__cause__ is update_error
+
+
+def test_failed_retention_update_rolls_back_and_preserves_original_error(tool, monkeypatch):
+    file_lock = [
+        {
+            'is_file_lock_enabled': True,
+            'default_retention': [
+                {'mode': 'governance', 'period': [{'duration': 1, 'unit': 'days'}]}
+            ],
+        }
+    ]
+    update_error = ValueError('retention update failed')
+
+    def failing_update(self, **kwargs):
+        raise update_error
+
+    monkeypatch.setattr(tool.api.BUCKET_CLASS, 'update', failing_update)
+    with pytest.raises(ValueError) as excinfo:
+        make_bucket(tool, 'bucket-c36-rollback', file_lock)
+
+    assert excinfo.value is update_error
+    assert not any(bucket.name == 'bucket-c36-rollback' for bucket in tool.api.list_buckets())
 
 
 def test_C16_stdin_is_read_as_utf8_whatever_the_locale(monkeypatch):
