@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Derive `b2_bucket_file` and `b2_bucket_files` data-source IDs from bucket and path instead of provider credentials. IDs change on the next refresh.
 * Bound `b2_bucket_files` listings with `max_results` (default 10000, maximum 100000); reads exceeding the limit now fail instead of returning an incomplete list. Increase the limit or narrow `folder_name` for larger listings.
+* Restrict extracted bindings executables to owner-only permissions.
+* Preserve the exact embedded bindings bytes when extracting the executable.
+* Synchronize all access to the cached bindings executable path.
+* Explain bindings execution failures caused by permissions, noexec temporary directories, or an incompatible executable format.
 * Decode binding input and encode output as UTF-8 regardless of the system locale.
 * Remove extracted bindings after provider tests and when extraction fails.
 * Report the bucket name and original error when a failed bucket update cannot be rolled back.
