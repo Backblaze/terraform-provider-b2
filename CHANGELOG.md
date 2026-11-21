@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+* Decode binding input and encode output as UTF-8 regardless of the system locale.
 * Stop the bindings process and its workers when an operation is canceled, and preserve cancellation and deadline errors.
 * Remove externally deleted `b2_bucket_file_version` versions from state during refresh while preserving other API errors.
 * Return folder prefixes instead of nested files in non-recursive `b2_bucket_files` listings.
