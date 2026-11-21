@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Decode binding input and encode output as UTF-8 regardless of the system locale.
+* Remove extracted bindings after provider tests and when extraction fails.
+* Report the bucket name and original error when a failed bucket update cannot be rolled back.
+* Treat deletion of an already-deleted bucket as a successful no-op.
 * Stop the bindings process and its workers when an operation is canceled, and preserve cancellation and deadline errors.
 * Remove externally deleted `b2_bucket_file_version` versions from state during refresh while preserving other API errors.
 * Return folder prefixes instead of nested files in non-recursive `b2_bucket_files` listings.

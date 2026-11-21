@@ -11,6 +11,7 @@
 package b2
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,6 +19,17 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if bindings != nil {
+		if err := os.Remove(*bindings); err != nil && !os.IsNotExist(err) {
+			_, _ = fmt.Fprintf(os.Stderr, "remove extracted bindings: %v\n", err)
+			code = 1
+		}
+	}
+	os.Exit(code)
+}
 
 // providerFactories are used to instantiate a provider during acceptance testing.
 // The factory function will be invoked for every Terraform CLI command executed
