@@ -15,10 +15,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 	"unicode"
 
@@ -102,6 +104,15 @@ func (c Client) Apply(ctx context.Context, op Operation, input ResourceSchema, o
 			}
 			return fmt.Errorf("failed to execute")
 		} else {
+			var pathErr *os.PathError
+			if errors.As(err, &pathErr) {
+				switch {
+				case errors.Is(err, os.ErrPermission):
+					err = fmt.Errorf("cannot execute Python bindings: %w; check executable permissions and whether the temporary directory is mounted noexec; set TMPDIR to a directory that permits execution", err)
+				case errors.Is(err, syscall.ENOEXEC):
+					err = fmt.Errorf("cannot execute Python bindings: %w; check that the executable format matches the operating system and architecture, and re-extract with TMPDIR set to a directory that permits execution", err)
+				}
+			}
 			tflog.Error(ctx, "Error", map[string]interface{}{
 				"err": err,
 			})
