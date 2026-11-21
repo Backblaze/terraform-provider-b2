@@ -11,7 +11,6 @@
 package b2
 
 import (
-	"bufio"
 	"embed"
 	"io"
 	"log"
@@ -29,10 +28,8 @@ var (
 )
 
 func GetBindings() (string, error) {
-	if bindings == nil {
-		lock.Lock()
-		defer lock.Unlock()
-	}
+	lock.Lock()
+	defer lock.Unlock()
 	if bindings != nil {
 		return *bindings, nil
 	}
@@ -62,37 +59,15 @@ func GetBindings() (string, error) {
 			_ = os.Remove(destinationPath)
 		}
 	}()
-	reader := bufio.NewReader(sourceFile)
-	buf := make([]byte, 2048)
-
-	for {
-		_, err := reader.Read(buf)
-
-		if err != nil {
-			if err != io.EOF {
-				return destinationPath, err
-			}
-
-			_, err = destinationFile.Seek(0, 0)
-			if err != nil {
-				return destinationPath, err
-			}
-
-			break
-		}
-
-		_, err = destinationFile.Write(buf)
-		if err != nil {
-			return destinationPath, err
-		}
-	}
-
-	if err := destinationFile.Close(); err != nil {
+	if _, err := io.Copy(destinationFile, sourceFile); err != nil {
 		return destinationPath, err
 	}
 
-	err = os.Chmod(destinationPath, 0770)
-	if err != nil {
+	if err := destinationFile.Chmod(0o700); err != nil {
+		return destinationPath, err
+	}
+
+	if err := destinationFile.Close(); err != nil {
 		return destinationPath, err
 	}
 
