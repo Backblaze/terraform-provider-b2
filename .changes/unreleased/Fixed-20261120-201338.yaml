@@ -1,0 +1,3 @@
+kind: Fixed
+body: Stop the bindings process and its workers when an operation is canceled, and preserve cancellation and deadline errors.
+time: 2026-11-20T20:13:38.185752-05:00

@@ -15,7 +15,7 @@ import io
 import json
 
 import pytest
-from b2sdk.v3.exception import BucketIdNotFound, FileNotPresent
+from b2sdk.v3.exception import BucketIdNotFound, FileNotPresent, ServiceError, Unauthorized
 
 from b2_terraform import provider_tool
 from b2_terraform.provider_tool import B2Provider, Bucket, BucketFiles, BucketFileVersion
@@ -61,7 +61,6 @@ def test_C13_delete_of_already_deleted_bucket_succeeds(tool):
     Bucket(tool).resource_delete(bucket_id=bucket['bucketId'])  # must not raise
 
 
-@pytest.mark.known_defect(raises=FileNotPresent, match='File not present')
 def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeypatch):
     """C4: refresh must tolerate a file version deleted outside Terraform (return an empty result).
 
@@ -85,6 +84,30 @@ def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeyp
     result = BucketFileVersion(tool).resource_read(file_id=version.id_)
 
     assert not result, f'expected an empty result for a missing file version, got {result!r}'
+
+
+@pytest.mark.parametrize(
+    'error', [Unauthorized('access denied', 'unauthorized'), ServiceError('server failure')]
+)
+def test_file_version_read_propagates_auth_and_server_errors(tool, monkeypatch, error):
+    def failing_read(file_id):
+        raise error
+
+    monkeypatch.setattr(tool.api, 'get_file_info', failing_read)
+    with pytest.raises(type(error)) as caught:
+        BucketFileVersion(tool).resource_read(file_id='existing-file')
+    assert caught.value is error
+
+
+def test_file_version_read_keeps_existing_attributes(tool):
+    bucket = make_bucket(tool, 'bucket-existing-version')
+    version = upload(tool, bucket['bucketId'], 'file.txt', b'data')
+
+    result = BucketFileVersion(tool).resource_read(file_id=version.id_)
+
+    assert result['fileId'] == version.id_
+    assert result['fileName'] == 'file.txt'
+    assert result['size'] == 4
 
 
 def test_C39_non_recursive_listing_does_not_return_nested_files(tool):
@@ -136,7 +159,6 @@ def test_C36_failed_rollback_names_the_leftover_bucket(tool, monkeypatch):
     )
 
 
-@pytest.mark.known_defect(raises=AssertionError, match='C16: input was altered')
 def test_C16_stdin_is_read_as_utf8_whatever_the_locale(monkeypatch):
     """C16: Go writes UTF-8 to stdin; on Windows the python child decoded it with the locale code
     page. Simulate a cp1252 locale and check that non-ASCII input arrives intact."""
@@ -154,3 +176,21 @@ def test_C16_stdin_is_read_as_utf8_whatever_the_locale(monkeypatch):
     assert status == 0, f'run_command returned {status}'
     assert seen, 'the command did not receive any input'
     assert json.loads(seen[0]) == payload, f'C16: input was altered on the way in: {seen[0]!r}'
+
+
+def test_C16_stdout_is_written_as_utf8_whatever_the_locale(monkeypatch):
+    payload = {'file_name': 'caf\u00e9-\u65e5\u672c.txt'}
+    output = io.BytesIO()
+    monkeypatch.setattr('sys.stdin', io.TextIOWrapper(io.BytesIO(b'{}\n'), encoding='cp1252'))
+    monkeypatch.setattr('sys.stdout', io.TextIOWrapper(output, encoding='cp1252', write_through=True))
+    monkeypatch.setattr(B2Provider, 'run', lambda self, args, data_in: {})
+    monkeypatch.setattr(
+        provider_tool.AccountInfo,
+        'run',
+        lambda self, args, data_in: json.dumps(payload, ensure_ascii=False),
+    )
+
+    status = provider_tool.ProviderTool().run_command(['tool', 'account_info', 'data_source_read'])
+
+    assert status == 0
+    assert json.loads(output.getvalue().decode('utf-8')) == payload

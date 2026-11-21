@@ -1,0 +1,3 @@
+kind: Fixed
+body: Decode binding input and encode output as UTF-8 regardless of the system locale.
+time: 2026-11-20T20:13:39.555307-05:00

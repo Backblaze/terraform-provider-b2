@@ -230,6 +230,11 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if output.FileId == "" && !d.IsNewResource() {
+		// A missing version returns only bridge metadata, without a file ID.
+		d.SetId("")
+		return nil
+	}
 
 	// These fields are not returned by the API but are needed for the resource
 	output.BucketId = d.Get("bucket_id").(string)
