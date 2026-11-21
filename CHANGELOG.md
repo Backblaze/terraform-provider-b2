@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Infrastructure
 * Add regression tests for known defects. Tests for defects that are still present are excluded from `make test` and run with `make test-known-defects` (Go, build tag `knowndefect`) or `python -m pytest python-bindings/tests -m known_defect --runxfail` (Python)
+* Add `Security` (govulncheck via `make vulncheck`) and `CodeQL` (Go) GitHub Actions workflows for static security analysis
 
 ## [0.15.0] - 2026-11-06
 
