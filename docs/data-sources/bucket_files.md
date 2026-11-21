@@ -3,12 +3,12 @@
 page_title: "b2_bucket_files Data Source - terraform-provider-b2"
 subcategory: ""
 description: |-
-  B2 bucket files data source.
+  B2 bucket files data source. The ID is <bucket_id>/<folder_name>.
 ---
 
 # b2_bucket_files (Data Source)
 
-B2 bucket files data source.
+B2 bucket files data source. The ID is `<bucket_id>/<folder_name>`.
 
 
 
@@ -22,6 +22,7 @@ B2 bucket files data source.
 ### Optional
 
 - `folder_name` (String) The folder name (B2 file name prefix).
+- `max_results` (Number) Maximum number of file versions and folder entries to return (1 to 100000). The read fails if more entries match; increase this value or narrow `folder_name`. Defaults to `10000`.
 - `recursive` (Boolean) Recursive mode.
 - `show_versions` (Boolean) Show all file versions.
 

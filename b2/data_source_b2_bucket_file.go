@@ -20,7 +20,7 @@ import (
 
 func dataSourceB2BucketFile() *schema.Resource {
 	return &schema.Resource{
-		Description: "B2 bucket file data source.",
+		Description: "B2 bucket file data source. The ID is `<bucket_id>/<file_name>`.",
 
 		ReadContext: dataSourceB2BucketFileRead,
 
@@ -67,7 +67,7 @@ func dataSourceB2BucketFileRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output.Sha1)
+	d.SetId(input.BucketId + "/" + input.FileName)
 
 	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {
