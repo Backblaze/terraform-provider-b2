@@ -54,9 +54,14 @@ func GetBindings() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = destinationFile.Close() }()
-
 	destinationPath := filepath.ToSlash(destinationFile.Name())
+	extracted := false
+	defer func() {
+		_ = destinationFile.Close()
+		if !extracted {
+			_ = os.Remove(destinationPath)
+		}
+	}()
 	reader := bufio.NewReader(sourceFile)
 	buf := make([]byte, 2048)
 
@@ -92,6 +97,7 @@ func GetBindings() (string, error) {
 	}
 
 	bindings = &destinationPath
+	extracted = true
 	log.Printf("Extracted pybindings: %s\n", *bindings)
 	return *bindings, nil
 }

@@ -1,0 +1,3 @@
+kind: Fixed
+body: Remove extracted bindings after provider tests and when extraction fails.
+time: 2026-11-21T16:10:58.69904-05:00

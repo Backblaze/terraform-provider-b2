@@ -1,0 +1,3 @@
+kind: Fixed
+body: Report the bucket name and original error when a failed bucket update cannot be rolled back.
+time: 2026-11-21T16:10:57.193997-05:00

@@ -253,8 +253,14 @@ class Bucket(Command):
                     'is_file_lock_enabled', None
                 )  # this can only be set during bucket creation
                 bucket = bucket.update(**params)
-            except Exception:
-                self.api.delete_bucket(bucket)
+            except Exception as update_error:
+                try:
+                    self.api.delete_bucket(bucket)
+                except Exception as rollback_error:
+                    raise RuntimeError(
+                        f'Failed to update bucket {bucket_name!r}: {update_error}; '
+                        f'rollback failed, leaving bucket {bucket_name!r}: {rollback_error}'
+                    ) from update_error
                 raise
 
         return self._postprocess(bucket, config_cors_rules=cors_rules)
@@ -294,7 +300,10 @@ class Bucket(Command):
         return self._postprocess(bucket, config_cors_rules=cors_rules)
 
     def resource_delete(self, *, bucket_id, **kwargs):
-        bucket = self.api.get_bucket_by_id(bucket_id)
+        try:
+            bucket = self.api.get_bucket_by_id(bucket_id)
+        except BucketIdNotFound:
+            return
         try:
             self.api.delete_bucket(bucket)
         except BadRequest as e:
