@@ -7,4 +7,4 @@ setuptools<80 ; sys_platform == 'linux'
 staticx~=0.14.1 ; sys_platform == 'linux' and platform_machine == 'x86_64'
 # staticx 0.14.1 fails with "ModuleNotFoundError: No module named 'pkg_resources'" on linux/arm
 # and a new version is not yet available on PyPI
-staticx @ git+https://github.com/JonathonReinhart/staticx.git@main ; sys_platform == 'linux' and platform_machine == 'aarch64'
+staticx @ git+https://github.com/JonathonReinhart/staticx.git@6d4c8b9d55ceccac925645440248c20ce99bb8b7 ; sys_platform == 'linux' and platform_machine == 'aarch64'

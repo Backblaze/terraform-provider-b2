@@ -1,8 +1,6 @@
-//go:build knowndefect
-
 //####################################################################
 //
-// File: main_knowndefect_test.go
+// File: main_test.go
 //
 // Copyright 2026 Backblaze Inc. All Rights Reserved.
 //
@@ -23,14 +21,8 @@ import (
 	"time"
 )
 
-// Known-defect test (build tag "knowndefect"; run with `make test-known-defects`). When the defect is fixed,
-// drop the build tag and the "TestKnownDefect_" prefix and rename this file to main_test.go.
-
-// C38: in -debug mode the provider must be served with its registry address, otherwise the
-// TF_REATTACH_PROVIDERS entry printed for the debugger is keyed "provider" and Terraform ignores it.
-// The expected address string (registry.terraform.io/backblaze/b2) is an assumption; adjust it if the
-// provider is published under another address.
-func TestKnownDefect_C38_DebugModeAdvertisesProviderAddress(t *testing.T) {
+// Debug reattach configuration must identify the provider by its registry address.
+func TestDebugModeAdvertisesProviderAddress(t *testing.T) {
 	if testing.Short() {
 		t.Skip("builds and runs the provider binary")
 	}

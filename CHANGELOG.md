@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+* Advertise the provider registry address in debug reattach configuration.
 * Decode binding input and encode output as UTF-8 regardless of the system locale.
 * Remove extracted bindings after provider tests and when extraction fails.
 * Report the bucket name and original error when a failed bucket update cannot be rolled back.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
 
 ### Infrastructure
+* Pin Python build dependencies, run Python bindings tests in CI, and validate SDK harness rows without relying on their order or count.
 * Gate tagged releases on CI, restrict workflow token permissions, and pin actions to commits.
 * Add regression tests for known defects. Tests for defects that are still present are excluded from `make test` and run with `make test-known-defects` (Go, build tag `knowndefect`) or `python -m pytest python-bindings/tests -m known_defect --runxfail` (Python)
 

@@ -193,3 +193,14 @@ func TestCIWorkflowFailsOnMissingKeys(t *testing.T) {
 		})
 	}
 }
+
+func TestCIWorkflowRunsPythonBindingsTests(t *testing.T) {
+	ci := readRepoFile(t, ".github", "workflows", "ci.yml")
+	ok, err := ciWorkflowRunsPythonTests(ci)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("CI does not run Python tests")
+	}
+}
