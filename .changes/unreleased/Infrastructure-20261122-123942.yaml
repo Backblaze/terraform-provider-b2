@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Allow offline CI runs without a packaged bindings fixture while requiring it in the provider CI.
+time: 2026-11-22T12:39:42.701098-05:00

@@ -87,6 +87,8 @@ jobs:
             b2/testdata/cancellation_worker.py
           printf 'B2_TEST_PACKAGED_BINDINGS=%s\n' "${RUNNER_TEMP}/b2-cancellation/dist/cancellation-worker" >> "$GITHUB_ENV"
       - name: Run unit tests
+        env:
+          B2_REQUIRE_PACKAGED_BINDINGS: "1"
         run: make test
       - name: Run Python bindings tests
         run: |
