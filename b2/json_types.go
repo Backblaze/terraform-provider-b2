@@ -221,7 +221,6 @@ func (s *BucketFileInput) ResourceName() string {
 
 type BucketFileOutput struct {
 	BucketFileInput
-	Sha1         string        `json:"_sha1"`
 	FileVersions []FileVersion `json:"fileVersions"`
 }
 
@@ -236,6 +235,7 @@ type BucketFilesInput struct {
 	FolderName   string `json:"folderName"`
 	ShowVersions bool   `json:"showVersions"`
 	Recursive    bool   `json:"recursive"`
+	MaxResults   int    `json:"maxResults"`
 }
 
 func (s *BucketFilesInput) ResourceName() string {
@@ -244,7 +244,6 @@ func (s *BucketFilesInput) ResourceName() string {
 
 type BucketFilesOutput struct {
 	BucketFilesInput
-	Sha1         string        `json:"_sha1"`
 	FileVersions []FileVersion `json:"fileVersions"`
 }
 

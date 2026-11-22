@@ -1,0 +1,3 @@
+kind: Fixed
+body: Restrict extracted bindings executables to owner-only permissions.
+time: 2026-11-21T20:38:05.547139-05:00

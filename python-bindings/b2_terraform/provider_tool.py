@@ -9,8 +9,8 @@
 ######################################################################
 
 import base64
+import itertools
 import json
-import hashlib
 import sys
 import traceback
 from functools import cached_property
@@ -93,7 +93,6 @@ class Command:
     def run(self, args, data_in):
         handler = getattr(self, args.OP)
         result = handler(**json.loads(data_in)) or {}
-        result['_sha1'] = hashlib.sha1(data_in.encode()).hexdigest()
         data_out = json.dumps(
             result,
             cls=B2ProviderJsonEncoder,
@@ -577,23 +576,35 @@ class BucketFileSignedUrl(Command):
 
 @B2Provider.register_subcommand
 class BucketFiles(Command):
-    def data_source_read(self, *, bucket_id, folder_name, show_versions, recursive, **kwargs):
+    def data_source_read(
+        self, *, bucket_id, folder_name, show_versions, recursive, max_results=10000, **kwargs
+    ):
+        if type(max_results) is not int or not 1 <= max_results <= 100000:
+            raise ValueError('max_results must be between 1 and 100000')
         bucket = self.api.get_bucket_by_id(bucket_id)
         generator = bucket.ls(
             folder_name,
             latest_only=not show_versions,
             recursive=recursive,
+            fetch_count=min(max_results + 1, 1000),
         )
+        entries = list(itertools.islice(generator, max_results + 1))
+        if len(entries) > max_results:
+            raise ValueError(
+                'bucket listing exceeds max_results; increase max_results (up to 100000) '
+                'or narrow folder_name'
+            )
         return self._postprocess(
             bucketId=bucket_id,
             folderName=folder_name,
             showVersions=show_versions,
             recursive=recursive,
+            maxResults=max_results,
             fileVersions=[
                 {'action': 'folder', 'bucketId': bucket_id, 'fileName': folder}
                 if folder is not None
                 else file_version_info
-                for file_version_info, folder in generator
+                for file_version_info, folder in entries
             ],
         )
 

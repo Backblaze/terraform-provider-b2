@@ -1,36 +1,22 @@
 # Security Policy
 
-Security-response owner: Backblaze Security. Repository maintainers triage reports and ship the fix.
+## Supported versions
 
-## Supported Versions
+Please check the latest released version when reporting a security issue. Maintainers will assess reports
+affecting older versions case by case. Fixes ship in a new release; see [`RELEASE.md`](RELEASE.md).
 
-The latest minor release line (currently `0.15.x`) is supported. Earlier releases are not patched in
-place; upgrade to the newest `v0.x` release in the [Terraform Registry](https://registry.terraform.io/providers/Backblaze/b2/latest)
-to receive fixes. See [`RELEASE.md`](RELEASE.md).
+## Reporting a vulnerability
 
-| Version | Supported |
-|---|---|
-| Latest minor (`0.15.x`) | Yes |
-| Older releases | No |
+Please report suspected vulnerabilities privately through [Backblaze's Bugcrowd program](https://bugcrowd.com/engagements/backblaze),
+as directed by the [Backblaze Trust Center](https://www.backblaze.com/company/trust-center). Do not open a
+public GitHub issue for a security report.
 
-## Reporting a Vulnerability
+Include the affected version, a description of the issue, steps to reproduce it, and any relevant impact.
+Do not include credentials or other sensitive customer data.
 
-**Do not file a public GitHub issue for a security vulnerability.**
-
-Instead, report it privately via GitHub Security Advisories:
-
-1. Go to the [Security tab](https://github.com/Backblaze/terraform-provider-b2/security/advisories/new) of this repository
-2. Click **Report a vulnerability**
-3. Provide a clear description, the affected provider version, a minimal configuration, reproduction steps, and impact assessment
-
-You can also email **security@backblaze.com** if you cannot use GitHub Security Advisories.
-
-## What to expect
-
-- Acknowledgement within 3 business days
-- Initial assessment within 7 business days
-- Coordinated disclosure once a fix is available, shipped as a patch release with a `Security` changelog
-  entry and a GitHub security advisory
+Please allow time for the maintainers to investigate and coordinate a fix before disclosing the issue
+publicly. The security team can coordinate follow-up and disclosure through the reporting channel. Fixes
+ship as a release with a `Security` changelog entry.
 
 ## Scope
 

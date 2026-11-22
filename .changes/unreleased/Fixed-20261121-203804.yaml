@@ -1,0 +1,3 @@
+kind: Fixed
+body: Preserve the exact embedded bindings bytes when extracting the executable.
+time: 2026-11-21T20:38:04.132785-05:00

@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Pin Python build dependencies, run Python bindings tests in CI, and validate SDK harness rows without relying on their order or count.
+time: 2026-11-21T20:38:12.664357-05:00

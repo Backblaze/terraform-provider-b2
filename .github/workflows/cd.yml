@@ -4,6 +4,9 @@ on:
   push:
     tags: ['v*']  # push events to matching v*, i.e. v1.0, v20.15.10
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -11,10 +14,19 @@ defaults:
 env:
   PYTHON_DEFAULT_VERSION: '3.13'
   GO_DEFAULT_VERSION: '1.26.10'
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    secrets:
+      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
+      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_TEST_APPLICATION_KEY_ID }}
+
   build-pybindings:
+    needs: [ci]
     runs-on: ${{ matrix.conf.runner }}
     timeout-minutes: 60
     strategy:
@@ -29,7 +41,7 @@ jobs:
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Start a Docker container (linux-arm64)
         if: matrix.conf.os == 'linux' && matrix.conf.arch == 'arm64'
         run: |
@@ -50,15 +62,17 @@ jobs:
               /bin/bash -c "sleep infinity"
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (darwin, windows)
         if: matrix.conf.os != 'linux'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
       - name: Define command wrapper (linux)
         if: matrix.conf.os == 'linux'
         run: |
           # We'll define a 'run' command that will run our commands in the container.
-          echo '#!/bin/bash' > run
-          echo 'command="$*"; docker exec --workdir /work/python-bindings builder /bin/bash -c "$command"' >> run
+          cat > run <<'EOF'
+          #!/bin/bash
+          command="$*"; docker exec --workdir /work/python-bindings builder /bin/bash -c "$command"
+          EOF
           chmod +x run
           sudo mv run /usr/local/bin/run
       - name: Define command wrapper (darwin)
@@ -93,7 +107,7 @@ jobs:
         run: |
           sudo chmod -R a+r python-bindings
       - name: Upload Python bindings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/py-terraform-provider-b2
@@ -101,26 +115,28 @@ jobs:
           retention-days: 1
   build-and-deploy:
     needs: [build-pybindings]
+    permissions:
+      contents: write
     env:
       NOPYBINDINGS: 1  # do not build python bindings
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    outputs:
-      upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
       - name: Install dependencies
         run: |
           make deps
       - name: Download python bindings for all OSes
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
+          pattern: py-terraform-provider-b2-*
           path: python-bindings/dist/artifacts/
       - name: Postprocess python bindings
         working-directory: python-bindings/dist
@@ -133,33 +149,33 @@ jobs:
       - name: Set release version output
         id: version
         run: |
-          tag=${{ github.ref_name }}
+          tag="${GITHUB_REF_NAME}"
           # Strip the prefix 'v'
           version=${tag:1}
-          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           # A release candidate (vX.Y.Z-rc.N) has no changelog section yet; see RELEASE.md.
-          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> $GITHUB_OUTPUT; else echo "prerelease=false" >> $GITHUB_OUTPUT; fi
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
       - name: Read the Changelog
         id: read-changelog
         if: steps.version.outputs.prerelease == 'false'
-        uses: mindsers/changelog-reader-action@v2
+        uses: mindsers/changelog-reader-action@1faaf50aa09d5793d9a100819973df801febfb31 # v2
         with:
           version: ${{ steps.version.outputs.version }}
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
       - name: Create GitHub release
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
           version: '~> v2'
           args: release --clean -p 1
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
       - name: Update GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: v${{ steps.version.outputs.version }}
           body: ${{ steps.version.outputs.prerelease == 'true' && format('Release candidate for v{0}. Changes are in [`.changes/unreleased/`](https://github.com/{1}/tree/{2}/.changes/unreleased).', steps.version.outputs.version, github.repository, github.ref_name) || steps.read-changelog.outputs.changes }}

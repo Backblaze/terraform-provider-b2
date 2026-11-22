@@ -43,7 +43,7 @@ orchestration, evidence retention, and fleet reporting.
 
 ## Prerequisites
 
-- Go as declared in `go.mod` (1.25.x), `make`, Terraform (any release that supports `dev_overrides`; the provider's own CI matrix
+- Go as declared in `go.mod` (1.26.x), `make`, Terraform (any release that supports `dev_overrides`; the provider's own CI matrix
   (`.github/workflows/ci.yml`) tests 1.13.* and 1.14.*, and the central SDK harness workflows run
   these checks with 1.12.2), `python3`, `jq`.
 - To build the provider: Python 3.10+ with `python-bindings/requirements.txt` and

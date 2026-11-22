@@ -20,7 +20,7 @@ import (
 
 func dataSourceB2BucketFiles() *schema.Resource {
 	return &schema.Resource{
-		Description: "B2 bucket files data source.",
+		Description: "B2 bucket files data source. The ID is `<bucket_id>/<folder_name>`.",
 
 		ReadContext: dataSourceB2BucketFilesRead,
 
@@ -46,6 +46,13 @@ func dataSourceB2BucketFiles() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
+			"max_results": {
+				Description:  "Maximum number of file versions and folder entries to return (1 to 100000). The read fails if more entries match; increase this value or narrow `folder_name`.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      10000,
+				ValidateFunc: validation.IntBetween(1, 100000),
+			},
 			"file_versions": {
 				Description: "File versions in the folder. Non-recursive listings also include immediate subfolder prefixes as entries with action 'folder', bucket_id, and file_name. Their other file-version fields are empty or zero.",
 				Type:        schema.TypeList,
@@ -64,6 +71,7 @@ func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, me
 		FolderName:   d.Get("folder_name").(string),
 		ShowVersions: d.Get("show_versions").(bool),
 		Recursive:    d.Get("recursive").(bool),
+		MaxResults:   d.Get("max_results").(int),
 	}
 
 	var output BucketFilesOutput
@@ -72,7 +80,7 @@ func dataSourceB2BucketFilesRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	d.SetId(output.Sha1)
+	d.SetId(input.BucketId + "/" + input.FolderName)
 
 	err = client.Populate(ctx, OpDataSourceRead, &output, d)
 	if err != nil {

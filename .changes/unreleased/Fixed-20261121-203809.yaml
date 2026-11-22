@@ -1,0 +1,3 @@
+kind: Fixed
+body: Derive `b2_bucket_file` and `b2_bucket_files` data-source IDs from bucket and path instead of provider credentials. IDs change on the next refresh.
+time: 2026-11-21T20:38:09.769749-05:00
