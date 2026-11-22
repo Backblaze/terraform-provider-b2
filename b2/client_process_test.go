@@ -24,16 +24,35 @@ import (
 	"time"
 )
 
-func TestCIRequiresPackagedBindingsFixture(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestApplyStopsPackagedBindingsProcessTree$", "-test.v")
-	cmd.Env = append(os.Environ(), "CI=true", "TF_ACC=", "B2_TEST_PACKAGED_BINDINGS=", "GO_WANT_B2_CLIENT_HELPER=")
-	output, err := cmd.CombinedOutput()
-	var exitErr *exec.ExitError
-	if !errors.As(err, &exitErr) || exitErr.ExitCode() != 1 ||
-		!bytes.Contains(output, []byte("CI requires B2_TEST_PACKAGED_BINDINGS")) {
-		t.Fatalf("missing CI fixture must fail explicitly; error = %v, output:\n%s", err, output)
+func TestPackagedBindingsFixtureRequirement(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		require  string
+		ci       string
+		tfAcc    string
+		wantSkip bool
+	}{
+		{name: "generic CI skips", ci: "true", wantSkip: true},
+		{name: "explicit requirement fails", require: "1", ci: "true"},
+		{name: "requirement independent of CI and TF_ACC", require: "1", tfAcc: "1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestApplyStopsPackagedBindingsProcessTree$", "-test.v")
+			cmd.Env = append(os.Environ(), "CI="+tc.ci, "TF_ACC="+tc.tfAcc, "B2_TEST_PACKAGED_BINDINGS=", "B2_REQUIRE_PACKAGED_BINDINGS="+tc.require, "GO_WANT_B2_CLIENT_HELPER=")
+			output, err := cmd.CombinedOutput()
+			if tc.wantSkip {
+				if err != nil || !bytes.Contains(output, []byte("--- SKIP: TestApplyStopsPackagedBindingsProcessTree")) {
+					t.Fatalf("missing fixture must skip; error = %v, output:\n%s", err, output)
+				}
+				return
+			}
+			var exitErr *exec.ExitError
+			if !errors.As(err, &exitErr) || exitErr.ExitCode() != 1 || !bytes.Contains(output, []byte("requires B2_TEST_PACKAGED_BINDINGS")) {
+				t.Fatalf("required fixture must fail explicitly; error = %v, output:\n%s", err, output)
+			}
+		})
 	}
 }
 
@@ -45,8 +64,8 @@ func TestApplyStopsGoProcessTree(t *testing.T) {
 func TestApplyStopsPackagedBindingsProcessTree(t *testing.T) {
 	executable := os.Getenv("B2_TEST_PACKAGED_BINDINGS")
 	if executable == "" {
-		if os.Getenv("CI") != "" && os.Getenv("TF_ACC") == "" {
-			t.Fatal("CI requires B2_TEST_PACKAGED_BINDINGS pointing to the one-file PyInstaller fixture")
+		if os.Getenv("B2_REQUIRE_PACKAGED_BINDINGS") != "" {
+			t.Fatal("B2_REQUIRE_PACKAGED_BINDINGS requires B2_TEST_PACKAGED_BINDINGS pointing to the one-file PyInstaller fixture")
 		}
 		t.Skip("PyInstaller packaging check: set B2_TEST_PACKAGED_BINDINGS to the one-file fixture built in CI")
 	}
