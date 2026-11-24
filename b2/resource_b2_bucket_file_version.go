@@ -13,11 +13,14 @@ package b2
 import (
 	"context"
 	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"io"
 	"os"
 	"strings"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -130,6 +133,9 @@ func resourceB2BucketFileVersionDiff(ctx context.Context, d *schema.ResourceDiff
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	if err := ssecKeyRotationDiff(d); err != nil {
+		return err
+	}
 	if d.Id() == "" || !d.NewValueKnown("source") || d.HasChange("source") {
 		return nil
 	}
@@ -209,6 +215,7 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	d.SetId(output.FileId)
+	setSSECKeyState(d, &output)
 
 	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
@@ -239,6 +246,7 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	// These fields are not returned by the API but are needed for the resource
 	output.BucketId = d.Get("bucket_id").(string)
 	output.Source = d.Get("source").(string)
+	setSSECKeyState(d, &output)
 
 	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
@@ -246,6 +254,84 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	return nil
+}
+
+// The service never returns customer key material. Keep only its fingerprint
+// and public identifier, preserving an absent legacy fingerprint on refresh.
+func setSSECKeyState(d *schema.ResourceData, output *BucketFileVersionOutput) {
+	enc := output.ServerSideEncryption
+	if enc == nil || enc.Mode != "SSE-C" {
+		return
+	}
+	enc.Key = nil
+	enc.KeyFingerprint = d.Get("server_side_encryption.0.key_fingerprint").(string)
+	for _, item := range d.Get("server_side_encryption.0.key").([]interface{}) {
+		key := item.(map[string]interface{})
+		if secret := key["secret_b64"].(string); secret != "" {
+			if decoded, err := base64.StdEncoding.DecodeString(secret); err == nil {
+				sum := sha256.Sum256(decoded)
+				enc.KeyFingerprint = hex.EncodeToString(sum[:])
+			}
+		}
+		enc.Key = append(enc.Key, ResourceFileEncryptionKey{KeyId: key["key_id"].(string)})
+	}
+}
+
+// Configuration is compared separately against the fingerprint; never plan to
+// store the configured secret or manufacture an update for its blank state.
+func suppressSSECKeyStateDiff(_, _, _ string, d *schema.ResourceData) bool { return d.Id() != "" }
+
+func ssecKeyRotationDiff(d *schema.ResourceDiff) error {
+	if d.Id() == "" {
+		return nil
+	}
+	const field = "server_side_encryption.0.key_fingerprint"
+	prior, _ := d.GetChange(field)
+	oldFingerprint, _ := prior.(string)
+	config := d.GetRawConfig()
+	if config.IsNull() || !config.IsKnown() || !config.Type().HasAttribute("server_side_encryption") {
+		return nil
+	}
+	enc := config.GetAttr("server_side_encryption")
+	if enc.IsNull() || !enc.IsKnown() || enc.LengthInt() != 1 {
+		return nil
+	}
+	var entry = enc.Index(cty.NumberIntVal(0))
+	if !entry.IsKnown() || !entry.Type().HasAttribute("key") {
+		return nil
+	}
+	keys := entry.GetAttr("key")
+	if keys.IsNull() || !keys.IsWhollyKnown() || keys.LengthInt() != 1 {
+		return nil
+	}
+	key := keys.Index(cty.NumberIntVal(0))
+	secret := key.GetAttr("secret_b64")
+	if secret.IsNull() || secret.AsString() == "" {
+		return nil
+	}
+	decoded, err := base64.StdEncoding.DecodeString(secret.AsString())
+	if err != nil {
+		return err
+	}
+	sum := sha256.Sum256(decoded)
+	fingerprint := hex.EncodeToString(sum[:])
+	// Legacy states cannot establish whether the configured key is a rotation.
+	if oldFingerprint == "" {
+		return nil
+	}
+	oldID, _ := d.GetChange("server_side_encryption.0.key.0.key_id")
+	id := key.GetAttr("key_id")
+	newID := ""
+	if !id.IsNull() {
+		newID = id.AsString()
+	}
+	if oldFingerprint == fingerprint && oldID == newID {
+		return nil
+	}
+	if err := d.SetNewComputed("file_id"); err != nil {
+		return err
+	}
+	return d.ForceNew("file_id")
 }
 
 func resourceB2BucketFileVersionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
