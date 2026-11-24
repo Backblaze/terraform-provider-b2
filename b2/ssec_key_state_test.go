@@ -18,7 +18,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
 	"strings"
 	"testing"
 	"time"
@@ -52,7 +51,7 @@ func TestSSECKeyRotationPlan(t *testing.T) {
 	}
 	oldKey := base64.StdEncoding.EncodeToString([]byte(strings.Repeat("a", 32)))
 	newKey := base64.StdEncoding.EncodeToString([]byte(strings.Repeat("b", 32)))
-	for _, operation := range []string{"create", "read"} {
+	for _, operation := range []string{"create", "read", "legacy"} {
 		t.Run(operation, func(t *testing.T) {
 			r := resourceB2BucketFileVersion()
 			d := schema.TestResourceDataRaw(t, r.Schema, map[string]interface{}{
@@ -61,7 +60,12 @@ func TestSSECKeyRotationPlan(t *testing.T) {
 			})
 			// The real API returns encryption mode/algorithm, never the supplied key.
 			client := newFakeClient(t, `cat >/dev/null; printf '%s' '{"fileId":"file-1","bucketId":"bucket-1","fileName":"file.txt","source":"missing-audit-source","contentSha1":"none","serverSideEncryption":{"mode":"SSE-C","algorithm":"AES256"}}'`)
-			if operation == "read" {
+			if operation == "legacy" {
+				if err := d.Set("server_side_encryption", []interface{}{map[string]interface{}{"mode": "SSE-C", "algorithm": "AES256", "key": []interface{}{}}}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if operation == "read" || operation == "legacy" {
 				d.SetId("file-1")
 				if diags := resourceB2BucketFileVersionRead(context.Background(), d, client); diags.HasError() {
 					t.Fatal(diags)
@@ -70,6 +74,12 @@ func TestSSECKeyRotationPlan(t *testing.T) {
 				if diags := resourceB2BucketFileVersionCreate(context.Background(), d, client); diags.HasError() {
 					t.Fatal(diags)
 				}
+			}
+			if d.State().Attributes["server_side_encryption.0.key.0.secret_b64"] != "" {
+				t.Fatal("raw key must never be populated into state")
+			}
+			if operation != "legacy" && d.Get("server_side_encryption.0.key_fingerprint") != "3ba3f5f43b92602683c19aee62a20342b084dd5971ddd33808d81a328879a547" {
+				t.Fatal("missing key fingerprint")
 			}
 			attrs := map[string]interface{}{"id": d.Id()}
 			for k := range r.Schema {
@@ -164,7 +174,7 @@ resource "b2_bucket_file_version" "test" {
 					}
 					actions := strings.Join(result.Changes[0].Change.Actions, ",")
 					want := "no-op"
-					if tc.replace {
+					if tc.replace && operation != "legacy" {
 						want = "delete,create"
 					}
 					if actions != want {
@@ -176,7 +186,7 @@ resource "b2_bucket_file_version" "test" {
 	}
 }
 
-func TestFileVersionReadRetainsOnlySSECKey(t *testing.T) {
+func TestFileVersionReadStoresOnlySSECFingerprint(t *testing.T) {
 	for _, mode := range []string{"SSE-C", "SSE-B2"} {
 		t.Run(mode, func(t *testing.T) {
 			r := resourceB2BucketFileVersion()
@@ -188,8 +198,8 @@ func TestFileVersionReadRetainsOnlySSECKey(t *testing.T) {
 			}
 			keys := d.Get("server_side_encryption.0.key").([]interface{})
 			if mode == "SSE-C" {
-				if len(keys) != 1 || keys[0].(map[string]interface{})["key_id"] != "configured-id" || keys[0].(map[string]interface{})["secret_b64"] != base64.StdEncoding.EncodeToString([]byte(strings.Repeat("a", 32))) {
-					t.Fatal("configured SSE-C key was not preserved")
+				if len(keys) != 1 || keys[0].(map[string]interface{})["key_id"] != "configured-id" || keys[0].(map[string]interface{})["secret_b64"] != "" || d.Get("server_side_encryption.0.key_fingerprint") != "3ba3f5f43b92602683c19aee62a20342b084dd5971ddd33808d81a328879a547" {
+					t.Fatal("SSE-C state must retain only fingerprint and identifier")
 				}
 			} else if len(keys) != 0 {
 				t.Fatal("stale SSE-C key was kept for SSE-B2")

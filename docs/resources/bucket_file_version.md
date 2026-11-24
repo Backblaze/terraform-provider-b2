@@ -43,13 +43,17 @@ B2 bucket file version resource.
 Optional:
 
 - `algorithm` (String) Server-side encryption algorithm. AES256 is the only one supported.
-- `key` (Block List, Max: 1) Key used in SSE-C mode. **Modifying this attribute will force creation of a new resource.** (see [below for nested schema](#nestedblock--server_side_encryption--key))
+- `key` (Block List, Max: 1) Key used in SSE-C mode. (see [below for nested schema](#nestedblock--server_side_encryption--key))
 - `mode` (String) Server-side encryption mode. SSE-B2 and SSE-C are supported.
+
+Read-Only:
+
+- `key_fingerprint` (String) SHA-256 fingerprint of the SSE-C key; the key itself is not stored in state.
 
 <a id="nestedblock--server_side_encryption--key"></a>
 ### Nested Schema for `server_side_encryption.key`
 
 Optional:
 
-- `key_id` (String) Key identifier stored in file info metadata. **Modifying this attribute will force creation of a new resource.**
-- `secret_b64` (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648). **Modifying this attribute will force creation of a new resource.**
+- `key_id` (String) Key identifier stored in file info metadata.
+- `secret_b64` (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648).

@@ -109,9 +109,10 @@ type ResourceFileEncryptionKey struct {
 }
 
 type ResourceFileEncryption struct {
-	Algorithm string                      `json:"algorithm"`
-	Key       []ResourceFileEncryptionKey `json:"key"`
-	Mode      string                      `json:"mode"`
+	KeyFingerprint string                      `json:"keyFingerprint"`
+	Algorithm      string                      `json:"algorithm"`
+	Key            []ResourceFileEncryptionKey `json:"key"`
+	Mode           string                      `json:"mode"`
 }
 
 // AccountInfo

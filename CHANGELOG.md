@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-* Preserve SSE-C key settings across file-version creation and refresh, and replace file versions when key material or key identifiers change.
 * Derive `b2_bucket_file` and `b2_bucket_files` data-source IDs from bucket and path instead of provider credentials. IDs change on the next refresh.
 * Bound `b2_bucket_files` listings with `max_results` (default 10000, maximum 100000); reads exceeding the limit now fail instead of returning an incomplete list. Increase the limit or narrow `folder_name` for larger listings.
 * Advertise the provider registry address in debug reattach configuration.
@@ -29,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Length-validation errors now report the field's length instead of its value.
 
 ### Changed
+* SSE-C key changes are detected using a computed SHA-256 `key_fingerprint`; raw `secret_b64` is cleared from resource state. Once a fingerprint exists, changing the key or key ID replaces the file version. Legacy state without a fingerprint is not automatically replaced and cannot detect rotations until a deliberate replacement establishes a baseline. On upgrade, review `terraform plan`; confirm the local source is available before using `terraform apply -replace=<resource address>` to opt in. Consider `create_before_destroy` to upload the replacement before deleting the old version. Treat existing state backups and saved plans as sensitive.
 * **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
 
 ### Infrastructure
