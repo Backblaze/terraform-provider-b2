@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Length-validation errors now report the field's length instead of its value.
 
 ### Changed
+* **Breaking change:** Webhook custom header values in `b2_bucket_notification_rules` resources and data sources are sensitive and redacted in normal Terraform output. Outputs exposing them must declare `sensitive = true`; Terraform state still stores the values in plaintext.
 * **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
 
 ### Infrastructure

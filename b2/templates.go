@@ -439,8 +439,9 @@ func getNotificationRulesElem(ds bool) *schema.Resource {
 										ValidateFunc: If(ds, nil, validation.NoZeroValues),
 									},
 									"value": {
-										Description:  "Value of the header.",
+										Description:  "Value of the header. Sensitive values are redacted from normal CLI output but remain in Terraform state.",
 										Type:         schema.TypeString,
+										Sensitive:    true,
 										Computed:     If(ds, true, false),
 										Required:     If(ds, false, true),
 										ValidateFunc: If(ds, nil, validation.NoZeroValues),

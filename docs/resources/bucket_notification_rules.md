@@ -62,4 +62,4 @@ Optional:
 Required:
 
 - `name` (String) Name of the header.
-- `value` (String) Value of the header.
+- `value` (String, Sensitive) Value of the header. Sensitive values are redacted from normal CLI output but remain in Terraform state.
