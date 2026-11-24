@@ -57,11 +57,18 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"bucket_id"},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// Suppress diff if bucket_id is set in config (backward compatibility)
-					if _, ok := d.GetOk("bucket_id"); ok {
-						return true
+					// Only hide the mirrored set when it represents the configured legacy ID.
+					config := d.GetRawConfig()
+					if config.IsNull() || !config.IsKnown() || !config.Type().HasAttribute("bucket_id") {
+						return false
 					}
-					return false
+					id := config.GetAttr("bucket_id")
+					if id.IsNull() || !id.IsKnown() || id.AsString() == "" {
+						return false
+					}
+					previous, _ := d.GetChange("bucket_ids")
+					buckets := previous.(*schema.Set)
+					return buckets.Len() == 1 && buckets.Contains(id.AsString())
 				},
 			},
 			"name_prefix": {
@@ -108,9 +115,21 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"bucket_ids"},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// Suppress diff if bucket_ids is set (bucket_id is auto-populated from bucket_ids)
-					if _, ok := d.GetOk("bucket_ids"); ok {
-						return true
+					// The deprecated alias is populated from the first allowed bucket on read.
+					// Consult configuration so a stale alias cannot hide a restriction edit.
+					config := d.GetRawConfig()
+					if new != "" || old == "" || config.IsNull() || !config.IsKnown() || !config.Type().HasAttribute("bucket_ids") {
+						return false
+					}
+					ids := config.GetAttr("bucket_ids")
+					if ids.IsNull() || !ids.IsWhollyKnown() {
+						return false
+					}
+					for it := ids.ElementIterator(); it.Next(); {
+						_, id := it.Element()
+						if !id.IsNull() && id.AsString() == old {
+							return true
+						}
 					}
 					return false
 				},
