@@ -17,8 +17,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // TestWebhookHeaderPlanRedaction exercises Terraform's actual human-readable plan
@@ -83,16 +81,27 @@ resource "b2_bucket_notification_rules" "test" {
 	}
 }
 
-func TestWebhookHeaderValueSensitiveInResourceAndDataSource(t *testing.T) {
-	for _, ds := range []bool{false, true} {
-		rules := getNotificationRulesElem(ds)
-		target := rules.Schema["target_configuration"].Elem.(*schema.Resource)
-		headers := target.Schema["custom_headers"].Elem.(*schema.Resource)
-		if !headers.Schema["value"].Sensitive {
-			t.Errorf("custom header value must be sensitive (data source: %t)", ds)
-		}
-		if headers.Schema["name"].Sensitive {
-			t.Errorf("custom header name should remain visible (data source: %t)", ds)
-		}
+func TestWebhookHeaderValueSensitiveInResourceSchema(t *testing.T) {
+	// Pin what Terraform actually receives (CoreConfigSchema), not the Go struct flag.
+	// In the resource, custom_headers is a nested block whose `value` is sensitive.
+	provider := New("test", "unused")()
+	headers := provider.ResourcesMap["b2_bucket_notification_rules"].CoreConfigSchema().
+		BlockTypes["notification_rules"].Block.
+		BlockTypes["target_configuration"].Block.
+		BlockTypes["custom_headers"].Block
+	if !headers.Attributes["value"].Sensitive {
+		t.Error("resource custom header value must be sensitive in the protocol schema")
+	}
+	if headers.Attributes["name"].Sensitive {
+		t.Error("resource custom header name should remain visible")
+	}
+
+	// In the data source, notification_rules is computed-only, so Plugin SDK v2 sends it
+	// as one list(object) attribute and drops nested Sensitive flags: the header value is
+	// NOT redacted there. This test documents that known limitation (see CHANGELOG); the
+	// fix is scoped to the resource.
+	dataSource := provider.DataSourcesMap["b2_bucket_notification_rules"].CoreConfigSchema()
+	if dataSource.Attributes["notification_rules"].Sensitive {
+		t.Error("data source notification_rules unexpectedly became sensitive; update the changelog and docs")
 	}
 }

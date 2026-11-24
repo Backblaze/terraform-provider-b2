@@ -80,6 +80,9 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_wrapper: false
       - name: Build packaged cancellation fixture
         run: |
           python -m pip install --upgrade -r python-bindings/requirements-bootstrap.txt

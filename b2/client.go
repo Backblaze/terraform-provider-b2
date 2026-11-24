@@ -202,9 +202,11 @@ type logSanitizer struct {
 }
 
 // sanitizeForLog copies inputs or outputs, recursively masking Sensitive schema
-// fields, signed_url, and custom_headers[].value. The last two are log-only masks
-// to preserve Terraform output compatibility. Schema-Sensitive strings are also
-// collected for redactText.
+// fields, signed_url, and custom_headers[].value. The resource custom_headers[].value
+// is now Sensitive in the schema, but the log sanitizer matches on key names, so this
+// branch still masks the value for the data source (where the protocol schema cannot
+// carry nested sensitivity) and signed_url, regardless of the schema flag. Schema-
+// Sensitive strings are also collected for redactText.
 func (s *logSanitizer) sanitizeForLog(output interface{}, schemaMap map[string]*schema.Schema) map[string]interface{} {
 	outputMap, ok := output.(map[string]interface{})
 	if !ok {

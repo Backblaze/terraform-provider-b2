@@ -439,7 +439,7 @@ func getNotificationRulesElem(ds bool) *schema.Resource {
 										ValidateFunc: If(ds, nil, validation.NoZeroValues),
 									},
 									"value": {
-										Description:  "Value of the header. Sensitive values are redacted from normal CLI output but remain in Terraform state.",
+										Description:  "Value of the header. In the resource it is redacted from plan and CLI output; it is stored in plaintext in Terraform state. (In the data source, Plugin SDK v2 cannot redact a nested computed value, so it is not hidden there.)",
 										Type:         schema.TypeString,
 										Sensitive:    true,
 										Computed:     If(ds, true, false),
