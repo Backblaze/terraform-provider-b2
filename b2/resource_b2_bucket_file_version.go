@@ -209,6 +209,7 @@ func resourceB2BucketFileVersionCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	d.SetId(output.FileId)
+	retainSSECKey(d, &output)
 
 	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
@@ -239,6 +240,7 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	// These fields are not returned by the API but are needed for the resource
 	output.BucketId = d.Get("bucket_id").(string)
 	output.Source = d.Get("source").(string)
+	retainSSECKey(d, &output)
 
 	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
@@ -246,6 +248,20 @@ func resourceB2BucketFileVersionRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	return nil
+}
+
+// B2 returns encryption metadata but never the supplied customer key. Preserve
+// the configured key so unchanged plans converge and rotations remain visible.
+func retainSSECKey(d *schema.ResourceData, output *BucketFileVersionOutput) {
+	if output.ServerSideEncryption == nil || output.ServerSideEncryption.Mode != "SSE-C" {
+		return
+	}
+	for _, item := range d.Get("server_side_encryption.0.key").([]interface{}) {
+		key := item.(map[string]interface{})
+		output.ServerSideEncryption.Key = append(output.ServerSideEncryption.Key, ResourceFileEncryptionKey{
+			KeyId: key["key_id"].(string), SecretB64: key["secret_b64"].(string),
+		})
+	}
 }
 
 func resourceB2BucketFileVersionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

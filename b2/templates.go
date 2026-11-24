@@ -154,6 +154,7 @@ func getResourceFileEncryptionElem() *schema.Resource {
 				Description: "Key used in SSE-C mode.",
 				Type:        schema.TypeList,
 				Optional:    true,
+				ForceNew:    true,
 				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -162,21 +163,16 @@ func getResourceFileEncryptionElem() *schema.Resource {
 							Type:         schema.TypeString,
 							Optional:     true,
 							Sensitive:    true,
+							ForceNew:     true,
 							ValidateFunc: validateBase64Key,
 						},
 						"key_id": {
 							Description: "Key identifier stored in file info metadata",
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 						},
 					},
-				},
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// The API does not return the key, so we need to suppress diff for existing resources
-					if k == "server_side_encryption.0.key.#" && d.Id() != "" {
-						return true
-					}
-					return false
 				},
 			},
 		},
