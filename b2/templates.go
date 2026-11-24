@@ -150,33 +150,33 @@ func getResourceFileEncryptionElem() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AES256"}, false),
 			},
+			"key_fingerprint": {
+				Description: "SHA-256 fingerprint of the SSE-C key; the key itself is not stored in state.",
+				Type:        schema.TypeString, Computed: true,
+			},
 			"key": {
-				Description: "Key used in SSE-C mode.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
+				Description:      "Key used in SSE-C mode.",
+				Type:             schema.TypeList,
+				Optional:         true,
+				MaxItems:         1,
+				DiffSuppressFunc: suppressSSECKeyStateDiff,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"secret_b64": {
-							Description:  "Secret key value, in standard Base 64 encoding (RFC 4648)",
-							Type:         schema.TypeString,
-							Optional:     true,
-							Sensitive:    true,
-							ValidateFunc: validateBase64Key,
+							Description:      "Secret key value, in standard Base 64 encoding (RFC 4648)",
+							Type:             schema.TypeString,
+							Optional:         true,
+							Sensitive:        true,
+							ValidateFunc:     validateBase64Key,
+							DiffSuppressFunc: suppressSSECKeyStateDiff,
 						},
 						"key_id": {
-							Description: "Key identifier stored in file info metadata",
-							Type:        schema.TypeString,
-							Optional:    true,
+							Description:      "Key identifier stored in file info metadata",
+							DiffSuppressFunc: suppressSSECKeyStateDiff,
+							Type:             schema.TypeString,
+							Optional:         true,
 						},
 					},
-				},
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// The API does not return the key, so we need to suppress diff for existing resources
-					if k == "server_side_encryption.0.key.#" && d.Id() != "" {
-						return true
-					}
-					return false
 				},
 			},
 		},

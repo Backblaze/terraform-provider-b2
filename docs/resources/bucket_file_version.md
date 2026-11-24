@@ -46,6 +46,10 @@ Optional:
 - `key` (Block List, Max: 1) Key used in SSE-C mode. (see [below for nested schema](#nestedblock--server_side_encryption--key))
 - `mode` (String) Server-side encryption mode. SSE-B2 and SSE-C are supported.
 
+Read-Only:
+
+- `key_fingerprint` (String) SHA-256 fingerprint of the SSE-C key; the key itself is not stored in state.
+
 <a id="nestedblock--server_side_encryption--key"></a>
 ### Nested Schema for `server_side_encryption.key`
 

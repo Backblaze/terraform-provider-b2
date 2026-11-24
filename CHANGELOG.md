@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Length-validation errors now report the field's length instead of its value.
 
 ### Changed
+* SSE-C key changes are detected using a computed SHA-256 `key_fingerprint`; raw `secret_b64` is cleared from resource state. Once a fingerprint exists, changing the key or key ID replaces the file version. Legacy state without a fingerprint is not automatically replaced and cannot detect rotations until a deliberate replacement establishes a baseline. On upgrade, review `terraform plan`; confirm the local source is available before using `terraform apply -replace=<resource address>` to opt in. Consider `create_before_destroy` to upload the replacement before deleting the old version. Treat existing state backups and saved plans as sensitive.
 * **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
 
 ### Infrastructure
