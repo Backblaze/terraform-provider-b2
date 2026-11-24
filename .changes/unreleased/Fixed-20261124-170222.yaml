@@ -1,0 +1,3 @@
+kind: Fixed
+body: Preserve application-key replacement plans when bucket restrictions change, including narrowing access; suppress only equivalent bucket-alias migration values.
+time: 2026-11-24T17:02:22.066653-05:00
