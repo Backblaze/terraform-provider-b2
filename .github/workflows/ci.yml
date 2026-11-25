@@ -107,8 +107,9 @@ jobs:
       matrix:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
-          - { runner: macos-14-large, os: darwin, arch: amd64 }
-          - { runner: macos-14, os: darwin, arch: arm64 }
+          # macOS legs temporarily removed: the macos-14-large / macos-14 runners are
+          # reported as an unsupported configuration and are cancelled, which blocks the
+          # `testacc` job (it `needs: build`). Re-add once the runners are restored (#231).
           - { runner: windows-2022, os: windows, arch: amd64 }
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -153,9 +154,8 @@ jobs:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.14.*' }
           - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.13.*'  }
-          # for macOS, the latest terraform is enough for ACC tests
-          - { runner: macos-14-large, os: darwin, arch: amd64, terraform: '1.14.*' }
-          - { runner: macos-14, os: darwin, arch: arm64, terraform: '1.14.*' }
+          # macOS legs temporarily removed (unsupported runner configuration, see #231);
+          # re-add once the runners are restored.
           # for Windows, the latest terraform is enough for ACC tests
           - { runner: windows-2022, os: windows, arch: amd64, terraform: '1.14.*' }
     steps:
