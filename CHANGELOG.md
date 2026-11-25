@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
 
 ### Infrastructure
+* Pin CI jobs to `ubuntu-24.04` so the `deadsnakes` Python 3.13 install keeps working after `ubuntu-latest` moved to a runner image the PPA does not serve.
 * Strengthen data-source acceptance test assertions to compare collection counts and concrete values (bucket IDs, capabilities, options, file-version collections) instead of absent root keys.
 * Allow offline CI runs without a packaged bindings fixture while requiring it in the provider CI.
 * Pin Python build dependencies, run Python bindings tests in CI, and validate SDK harness rows without relying on their order or count.
