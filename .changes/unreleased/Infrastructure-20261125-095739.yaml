@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Strengthen data-source acceptance test assertions to compare collection counts and concrete values (bucket IDs, capabilities, options, file-version collections) instead of absent root keys.
+time: 2026-11-25T09:57:39.022486-05:00
