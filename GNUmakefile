@@ -7,10 +7,11 @@ OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 CHANGIE_VERSION=v1.24.0
 CHANGIE=go run github.com/miniscruff/changie@$(CHANGIE_VERSION)
 BASE_REF?=origin/master
+GOVULNCHECK_VERSION=v1.3.0
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint vulncheck test test-known-defects testacc clean build install docs docs-lint ci changelog-check changelog-new release-check review-metrics
+.PHONY: _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint ci changelog-check changelog-new release-check review-metrics
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -19,13 +20,12 @@ else
 	$(info Skipping python bindings (NOPYBINDINGS is defined))
 endif
 
-deps: _pybindings
+deps: _pybindings vulncheck-deps
 	@go mod download
 	@go mod tidy
 	@cd tools && go mod download
 	@cd tools && go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 	@cd tools && go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
-	@cd tools && go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
 	@cd tools && go mod tidy
 
 deps-check:
@@ -44,6 +44,10 @@ lint: _pybindings
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@go vet ./...
 	@golangci-lint run ./...
+
+# Installs only govulncheck, at the pinned version; used by `deps` and by the Security workflow.
+vulncheck-deps:
+	@cd tools && go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
 
 vulncheck:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go

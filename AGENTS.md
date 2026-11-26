@@ -13,7 +13,7 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
   `golangci-lint`, `go vet`, Python `ruff`), `test`, `docs-lint` and `changelog-check`.
 - Unit tests, no credentials: `make test`. Acceptance tests against real B2 (create resources, cost money):
   `B2_TEST_APPLICATION_KEY_ID=... B2_TEST_APPLICATION_KEY=... make testacc TESTARGS='-run TestAccX'`.
-- Use the Go toolchain in `go.mod` (`GOTOOLCHAIN=go1.26.10`); a newer local Go breaks `golangci-lint`.
+- Use the Go toolchain in `go.mod` (`GOTOOLCHAIN=go1.26.11`); a newer local Go breaks `golangci-lint`.
 - Format: `make format` (`golangci-lint fmt`, `terraform fmt` on `examples/`, `ruff format`).
 - Docs: `make docs` regenerates `docs/` from schemas, `templates/` and `examples/`. Never hand-edit `docs/`.
 - Changelog entry: `make changelog-new` (changie). See [CONTRIBUTING.md](CONTRIBUTING.md#changelog-entries).
