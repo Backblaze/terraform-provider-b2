@@ -1,0 +1,1 @@
+terraform import b2_application_key.example APPLICATION_KEY_ID

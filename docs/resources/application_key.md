@@ -34,3 +34,11 @@ B2 application key resource.
 - `expiration_timestamp` (Number) When present, says when this key will expire, in milliseconds since 1970.
 - `id` (String) The ID of this resource.
 - `options` (Set of String) The application key options returned by B2.
+
+## Import
+
+Import an application key by its application key ID. The `application_key` secret is not available after import.
+
+```shell
+terraform import b2_application_key.example APPLICATION_KEY_ID
+```
