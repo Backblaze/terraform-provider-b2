@@ -6,6 +6,10 @@ Terraform provider for Backblaze B2.
 
 The provider is written in go, but it uses official [B2 python SDK](https://github.com/Backblaze/b2-sdk-python/) embedded into the binary.
 
+## Related projects
+
+- **[b2-mcp](https://github.com/backblaze-labs/b2-mcp)** — a Model Context Protocol server for B2.
+
 Requirements
 ------------
 
