@@ -17,21 +17,21 @@ B2 bucket data source.
 
 ### Required
 
-- `bucket_name` (String) The name of the bucket.
+- `bucket_name` (String) The name of the bucket to read.
 
 ### Read-Only
 
 - `account_id` (String) Account ID that the bucket belongs to.
 - `bucket_id` (String) The ID of the bucket.
 - `bucket_info` (Map of String) User-defined information stored with the bucket. Keys are returned in lower case, as B2 converts them when they are stored.
-- `bucket_type` (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
-- `cors_rules` (List of Object) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedatt--cors_rules))
+- `bucket_type` (String) The bucket type returned by B2, such as 'allPublic' or 'allPrivate'.
+- `cors_rules` (List of Object) The CORS rules for this bucket. (see [below for nested schema](#nestedatt--cors_rules))
 - `default_server_side_encryption` (List of Object) The default server-side encryption settings of this bucket. (see [below for nested schema](#nestedatt--default_server_side_encryption))
-- `file_lock_configuration` (List of Object) The default File Lock retention settings for this bucket. (see [below for nested schema](#nestedatt--file_lock_configuration))
+- `file_lock_configuration` (List of Object) The File Lock enabled flag and default retention settings for this bucket. (see [below for nested schema](#nestedatt--file_lock_configuration))
 - `id` (String) The ID of this resource.
-- `lifecycle_rules` (List of Object) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedatt--lifecycle_rules))
-- `options` (Set of String) List of bucket options.
-- `revision` (Number) Bucket revision.
+- `lifecycle_rules` (List of Object) The lifecycle rules for this bucket. (see [below for nested schema](#nestedatt--lifecycle_rules))
+- `options` (Set of String) Bucket options returned by B2, such as S3 API access.
+- `revision` (Number) The bucket revision counter, updated when the bucket changes.
 
 <a id="nestedatt--cors_rules"></a>
 ### Nested Schema for `cors_rules`

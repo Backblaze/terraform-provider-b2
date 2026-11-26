@@ -7,10 +7,22 @@ description: |-
 
 Terraform provider for [Backblaze B2](https://www.backblaze.com/b2/).
 
-The provider is written in go, but it uses official [B2 python SDK](https://github.com/Backblaze/b2-sdk-python) embedded into the binary.
+The provider is written in Go. The binary embeds the official [B2 Python SDK](https://github.com/Backblaze/b2-sdk-python).
+
+## Authentication
+
+Set the `application_key_id` and `application_key` provider arguments, or set the `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` environment variables. The example below reads credentials from the environment.
+
+Set the `endpoint` provider argument or `B2_ENDPOINT` environment variable to select an endpoint.
 
 ## Example Usage
 ```terraform
+# Bucket names must be unique across all B2 accounts.
+variable "bucket_name" {
+  description = "A globally unique B2 bucket name"
+  type        = string
+}
+
 terraform {
   required_version = ">= 1.0.0"
   required_providers {
@@ -29,7 +41,7 @@ resource "b2_application_key" "example_key" {
 }
 
 resource "b2_bucket" "example_bucket" {
-  bucket_name = "my-b2-bucket"
+  bucket_name = var.bucket_name
   bucket_type = "allPublic"
 }
 ```

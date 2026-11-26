@@ -37,12 +37,12 @@ func dataSourceB2BucketFiles() *schema.Resource {
 				Optional:    true,
 			},
 			"show_versions": {
-				Description: "Show all file versions.",
+				Description: "Return all file versions when true; otherwise return the latest version of each file. The default is false.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"recursive": {
-				Description: "Recursive mode.",
+				Description: "List files in all subfolders when true; otherwise list the files directly in the folder and the immediate subfolder prefixes. The default is false.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},

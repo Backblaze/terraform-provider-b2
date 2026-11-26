@@ -18,7 +18,7 @@ B2 bucket notification rules resource.
 ### Required
 
 - `bucket_id` (String) The ID of the bucket. **Modifying this attribute will force creation of a new resource.**
-- `notification_rules` (Block List, Min: 1) An array of Event Notification Rules. (see [below for nested schema](#nestedblock--notification_rules))
+- `notification_rules` (Block List, Min: 1) Event notification rules for the bucket. At least one rule is required. (see [below for nested schema](#nestedblock--notification_rules))
 
 ### Read-Only
 
@@ -29,7 +29,7 @@ B2 bucket notification rules resource.
 
 Required:
 
-- `event_types` (List of String) The list of event types for the event notification rule.
+- `event_types` (List of String) Event types for the rule. Accepted values: b2:ObjectCreated:*, b2:ObjectCreated:Upload, b2:ObjectCreated:MultipartUpload, b2:ObjectCreated:Copy, b2:ObjectCreated:Replica, b2:ObjectCreated:MultipartReplica, b2:ObjectDeleted:*, b2:ObjectDeleted:Delete, b2:ObjectDeleted:LifecycleRule, b2:HideMarkerCreated:*, b2:HideMarkerCreated:Hide, b2:HideMarkerCreated:LifecycleRule, b2:MultipartUploadCreated:*, and b2:MultipartUploadCreated:LiveRead. A wildcard matches all event types in its category, including future types.
 - `name` (String) A name for the event notification rule. The name must be unique among the bucket's notification rules.
 - `target_configuration` (Block List, Min: 1, Max: 1) The target configuration for the event notification rule. (see [below for nested schema](#nestedblock--notification_rules--target_configuration))
 
@@ -49,12 +49,12 @@ Read-Only:
 Required:
 
 - `target_type` (String) The type of the target configuration, currently "webhook" only.
-- `url` (String) The URL for the webhook.
+- `url` (String) The HTTPS URL for the webhook.
 
 Optional:
 
-- `custom_headers` (Block List, Max: 10) When present, additional header name/value pairs to be sent on the webhook invocation. (see [below for nested schema](#nestedblock--notification_rules--target_configuration--custom_headers))
-- `hmac_sha256_signing_secret` (String, Sensitive) The signing secret for use in verifying the X-Bz-Event-Notification-Signature.
+- `custom_headers` (Block List, Max: 10) Additional header name/value pairs sent with webhook requests. At most 10 headers are allowed. (see [below for nested schema](#nestedblock--notification_rules--target_configuration--custom_headers))
+- `hmac_sha256_signing_secret` (String, Sensitive) The signing secret used to verify X-Bz-Event-Notification-Signature. It must be exactly 32 bytes long.
 
 <a id="nestedblock--notification_rules--target_configuration--custom_headers"></a>
 ### Nested Schema for `notification_rules.target_configuration.custom_headers`
@@ -63,3 +63,7 @@ Required:
 
 - `name` (String) Name of the header.
 - `value` (String) Value of the header.
+
+## Import
+
+This resource does not support import.

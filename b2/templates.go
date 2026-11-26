@@ -29,7 +29,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Computed:    true,
 			},
 			"content_sha1": {
-				Description: "SHA1 hash of the content.",
+				Description: "SHA1 hash of the content. For large files this is `none`; a full-file SHA1 may be in `file_info.large_file_sha1`.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -58,7 +58,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Computed:    true,
 			},
 			"size": {
-				Description: "The file size.",
+				Description: "The file size in bytes.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
@@ -69,7 +69,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Computed:    true,
 			},
 			"upload_timestamp": {
-				Description: "This is a UTC time when this file was uploaded.",
+				Description: "Upload time in milliseconds since January 1, 1970 UTC.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
@@ -233,13 +233,13 @@ func getCorsRulesElem(ds bool) *schema.Resource {
 				Required: If(ds, false, true),
 			},
 			"max_age_seconds": {
-				Description: "This specifies the maximum number of seconds that a browser may cache the response to a preflight request.",
+				Description: "The maximum number of seconds that a browser may cache the response to a preflight request.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Required:    If(ds, false, true),
 			},
 			"allowed_headers": {
-				Description: "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
+				Description: "If present, the list of headers allowed in a preflight OPTIONS request's Access-Control-Request-Headers header value.",
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -248,7 +248,7 @@ func getCorsRulesElem(ds bool) *schema.Resource {
 				Optional: If(ds, false, true),
 			},
 			"expose_headers": {
-				Description: "If present, this is a list of headers that may be exposed to an application inside the client.",
+				Description: "If present, the list of headers that may be exposed to an application inside the client.",
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -300,7 +300,7 @@ func getFileLockConfigurationElem(ds bool) *schema.Resource {
 							ValidateFunc: If(ds, nil, validation.StringInSlice([]string{"compliance", "governance", "none"}, false)),
 						},
 						"period": {
-							Description: "How long for to make files immutable. Omit when default retention mode is none",
+							Description: "How long files remain immutable. Omit when default retention mode is none.",
 							Type:        schema.TypeList,
 							MaxItems:    If(ds, 0, 1),
 							Computed:    If(ds, true, false),
@@ -308,7 +308,7 @@ func getFileLockConfigurationElem(ds bool) *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"duration": {
-										Description: "Duration",
+										Description: "Retention duration in the specified unit of days or years.",
 										Type:        schema.TypeInt,
 										Computed:    If(ds, true, false),
 										Required:    If(ds, false, true),
@@ -334,25 +334,25 @@ func getLifecycleRulesElem(ds bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"file_name_prefix": {
-				Description: "It specifies which files in the bucket it applies to.",
+				Description: "The file name prefix matched by this lifecycle rule.",
 				Type:        schema.TypeString,
 				Computed:    If(ds, true, false),
 				Required:    If(ds, false, true),
 			},
 			"days_from_hiding_to_deleting": {
-				Description: "It says how long to keep file versions that are not the current version.",
+				Description: "Number of days from hiding a file version until deleting it.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),
 			},
 			"days_from_uploading_to_hiding": {
-				Description: "It causes files to be hidden automatically after the given number of days.",
+				Description: "Number of days from upload until hiding a file.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),
 			},
 			"days_from_starting_to_canceling_unfinished_large_files": {
-				Description: "It cancels any unfinished large file versions after a given number of days.",
+				Description: "Number of days from starting an unfinished large file until canceling it.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),
@@ -365,7 +365,7 @@ func getNotificationRulesElem(ds bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"event_types": {
-				Description: "The list of event types for the event notification rule.",
+				Description: "Event types for the rule. Accepted values: b2:ObjectCreated:*, b2:ObjectCreated:Upload, b2:ObjectCreated:MultipartUpload, b2:ObjectCreated:Copy, b2:ObjectCreated:Replica, b2:ObjectCreated:MultipartReplica, b2:ObjectDeleted:*, b2:ObjectDeleted:Delete, b2:ObjectDeleted:LifecycleRule, b2:HideMarkerCreated:*, b2:HideMarkerCreated:Hide, b2:HideMarkerCreated:LifecycleRule, b2:MultipartUploadCreated:*, and b2:MultipartUploadCreated:LiveRead. A wildcard matches all event types in its category, including future types.",
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -420,14 +420,14 @@ func getNotificationRulesElem(ds bool) *schema.Resource {
 							ValidateFunc: If(ds, nil, validation.StringInSlice([]string{"webhook"}, false)),
 						},
 						"url": {
-							Description:  "The URL for the webhook.",
+							Description:  "The HTTPS URL for the webhook.",
 							Type:         schema.TypeString,
 							Computed:     If(ds, true, false),
 							Required:     If(ds, false, true),
 							ValidateFunc: If(ds, nil, validation.IsURLWithHTTPS),
 						},
 						"custom_headers": {
-							Description: "When present, additional header name/value pairs to be sent on the webhook invocation.",
+							Description: "Additional header name/value pairs sent with webhook requests. At most 10 headers are allowed.",
 							Type:        schema.TypeList,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -452,7 +452,7 @@ func getNotificationRulesElem(ds bool) *schema.Resource {
 							MaxItems: If(ds, 0, 10),
 						},
 						"hmac_sha256_signing_secret": {
-							Description:  "The signing secret for use in verifying the X-Bz-Event-Notification-Signature.",
+							Description:  "The signing secret used to verify X-Bz-Event-Notification-Signature. It must be exactly 32 bytes long.",
 							Type:         schema.TypeString,
 							Sensitive:    true,
 							Computed:     If(ds, true, false),

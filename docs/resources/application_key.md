@@ -17,7 +17,7 @@ B2 application key resource.
 
 ### Required
 
-- `capabilities` (Set of String) A set of strings, each one naming a capability the key has. **Modifying this attribute will force creation of a new resource.**
+- `capabilities` (Set of String) The key capabilities. See https://www.backblaze.com/docs/cloud-storage-application-key-capabilities for valid names. **Modifying this attribute will force creation of a new resource.**
 - `key_name` (String) The name of the key. **Modifying this attribute will force creation of a new resource.**
 
 ### Optional
@@ -25,12 +25,20 @@ B2 application key resource.
 - `bucket_id` (String, Deprecated) When present, restricts access to one bucket. Conflicts with `bucket_ids`. **Modifying this attribute will force creation of a new resource.**
 - `bucket_ids` (Set of String) When provided, the new key can only access the specified buckets. Conflicts with `bucket_id`. **Modifying this attribute will force creation of a new resource.**
 - `name_prefix` (String) When present, restricts access to files whose names start with the prefix. **Modifying this attribute will force creation of a new resource.**
-- `valid_duration_in_seconds` (Number) When provided, the key will expire after the given number of seconds, and will have expirationTimestamp set. Value must be a positive integer, and must be less than 1000 days (in seconds). **Modifying this attribute will force creation of a new resource.**
+- `valid_duration_in_seconds` (Number) The key lifetime in seconds, from 1 to 86400000. When set, `expiration_timestamp` gives the expiry time. **Modifying this attribute will force creation of a new resource.**
 
 ### Read-Only
 
-- `application_key` (String, Sensitive) The key.
-- `application_key_id` (String) The ID of the newly created key.
+- `application_key` (String, Sensitive) The secret key, returned only when created and stored in Terraform state. It is empty after import.
+- `application_key_id` (String) The ID of the key.
 - `expiration_timestamp` (Number) When present, says when this key will expire, in milliseconds since 1970.
 - `id` (String) The ID of this resource.
-- `options` (Set of String) List of application key options.
+- `options` (Set of String) The application key options returned by B2.
+
+## Import
+
+Import an application key by its application key ID. The `application_key` secret is not available after import.
+
+```shell
+terraform import b2_application_key.example APPLICATION_KEY_ID
+```

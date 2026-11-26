@@ -39,7 +39,7 @@ func dataSourceB2BucketFileSignedUrl() *schema.Resource {
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"duration": {
-				Description: "The duration in seconds for which the presigned URL is valid.",
+				Description: "The lifetime of the download authorization token in seconds. B2 allows a maximum of 604800 seconds.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     86400,

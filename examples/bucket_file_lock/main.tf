@@ -1,3 +1,9 @@
+# Bucket names must be unique across all B2 accounts.
+variable "bucket_name" {
+  description = "A globally unique B2 bucket name"
+  type        = string
+}
+
 terraform {
   required_version = ">= 1.0.0"
   required_providers {
@@ -12,7 +18,7 @@ provider "b2" {
 }
 
 resource "b2_bucket" "example" {
-  bucket_name = "test-b2-lock"
+  bucket_name = var.bucket_name
   bucket_type = "allPublic"
   file_lock_configuration {
     is_file_lock_enabled = true

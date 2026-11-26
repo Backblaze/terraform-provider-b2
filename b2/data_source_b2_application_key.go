@@ -45,7 +45,7 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Computed: true,
 			},
 			"capabilities": {
-				Description: "A set of strings, each one naming a capability the key has.",
+				Description: "The key capabilities. See https://www.backblaze.com/docs/cloud-storage-application-key-capabilities for valid names.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -63,7 +63,7 @@ func dataSourceB2ApplicationKey() *schema.Resource {
 				Computed:    true,
 			},
 			"options": {
-				Description: "A list of application key options.",
+				Description: "The application key options returned by B2.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,

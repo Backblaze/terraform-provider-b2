@@ -11,7 +11,7 @@ GOVULNCHECK_VERSION=v1.3.0
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint ci changelog-check changelog-new release-check review-metrics
+.PHONY: _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint docs-prose-lint examples-check ci changelog-check changelog-new release-check review-metrics
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -53,6 +53,9 @@ vulncheck:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@govulncheck ./...
 
+examples-check:
+	@./scripts/examples-check.sh
+
 test:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@go test ./... -v -count 1 -skip '^TestAcc' $(TESTARGS)
@@ -84,6 +87,9 @@ docs: build
 	# We clear B2 application key env variables to not include them in docs. DO NOT REMOVE IT!
 	# Provider name is passed explicitly, otherwise tfplugindocs derives it from the directory name (breaks in git worktrees).
 	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs generate --provider-name ${BINARY}
+
+docs-prose-lint:
+	@./scripts/docs-prose-lint.sh --warn-only
 
 docs-lint: build
 	@tfplugindocs validate --provider-name ${BINARY}

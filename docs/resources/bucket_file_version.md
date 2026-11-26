@@ -31,11 +31,11 @@ B2 bucket file version resource.
 
 - `action` (String) One of 'start', 'upload', 'hide', 'folder', or other values added in the future.
 - `content_md5` (String) MD5 sum of the content.
-- `content_sha1` (String) SHA1 hash of the content.
+- `content_sha1` (String) SHA1 hash of the content. For large files this is `none`; a full-file SHA1 may be in `file_info.large_file_sha1`.
 - `file_id` (String) The unique identifier for this version of this file.
 - `id` (String) The ID of this resource.
-- `size` (Number) The file size.
-- `upload_timestamp` (Number) This is a UTC time when this file was uploaded.
+- `size` (Number) The file size in bytes.
+- `upload_timestamp` (Number) Upload time in milliseconds since January 1, 1970 UTC.
 
 <a id="nestedblock--server_side_encryption"></a>
 ### Nested Schema for `server_side_encryption`
@@ -57,3 +57,7 @@ Optional:
 
 - `key_id` (String) Key identifier stored in file info metadata.
 - `secret_b64` (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648).
+
+## Import
+
+This resource does not support import.

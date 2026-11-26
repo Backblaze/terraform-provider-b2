@@ -23,8 +23,8 @@ B2 bucket files data source. The ID is `<bucket_id>/<folder_name>`.
 
 - `folder_name` (String) The folder name (B2 file name prefix).
 - `max_results` (Number) Maximum number of file versions and folder entries to return (1 to 100000). The read fails if more entries match; increase this value or narrow `folder_name`. Defaults to `10000`.
-- `recursive` (Boolean) Recursive mode.
-- `show_versions` (Boolean) Show all file versions.
+- `recursive` (Boolean) List files in all subfolders when true; otherwise list the files directly in the folder and the immediate subfolder prefixes. The default is false.
+- `show_versions` (Boolean) Return all file versions when true; otherwise return the latest version of each file. The default is false.
 
 ### Read-Only
 

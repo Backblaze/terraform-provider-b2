@@ -17,24 +17,24 @@ B2 bucket resource.
 
 ### Required
 
-- `bucket_name` (String) The name of the bucket. **Modifying this attribute will force creation of a new resource.**
-- `bucket_type` (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
+- `bucket_name` (String) The bucket name. Names must be globally unique across B2 accounts. See https://www.backblaze.com/apidocs/b2-create-bucket for the naming rules. **Modifying this attribute will force creation of a new resource.**
+- `bucket_type` (String) The bucket type. Either 'allPublic', meaning that anybody can download files in this bucket, or 'allPrivate'. B2 validates the value when the bucket is created or updated.
 
 ### Optional
 
 - `bucket_info` (Map of String) User-defined information to be stored with the bucket. B2 converts keys to lower case, so they are stored and returned in lower case. Each key can be up to 50 bytes long, keys starting with 'b2-' are reserved, and all values together can take up to 10000 bytes.
-- `cors_rules` (Block List) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
+- `cors_rules` (Block List) The CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
 - `default_server_side_encryption` (Block List, Max: 1) The default server-side encryption settings for this bucket. (see [below for nested schema](#nestedblock--default_server_side_encryption))
 - `file_lock_configuration` (Block List) File lock enabled flag, and default retention settings. (see [below for nested schema](#nestedblock--file_lock_configuration))
-- `lifecycle_rules` (Block List) The initial list of lifecycle rules for this bucket. (see [below for nested schema](#nestedblock--lifecycle_rules))
+- `lifecycle_rules` (Block List) The lifecycle rules for this bucket. (see [below for nested schema](#nestedblock--lifecycle_rules))
 
 ### Read-Only
 
 - `account_id` (String) Account ID that the bucket belongs to.
 - `bucket_id` (String) The ID of the bucket.
 - `id` (String) The ID of this resource.
-- `options` (Set of String) List of bucket options.
-- `revision` (Number) Bucket revision.
+- `options` (Set of String) Bucket options returned by B2, such as S3 API access.
+- `revision` (Number) The bucket revision counter, updated when the bucket changes.
 
 <a id="nestedblock--cors_rules"></a>
 ### Nested Schema for `cors_rules`
@@ -44,12 +44,12 @@ Required:
 - `allowed_operations` (List of String) A list specifying which operations the rule allows.
 - `allowed_origins` (List of String) A non-empty list specifying which origins the rule covers.
 - `cors_rule_name` (String) A name for humans to recognize the rule in a user interface.
-- `max_age_seconds` (Number) This specifies the maximum number of seconds that a browser may cache the response to a preflight request.
+- `max_age_seconds` (Number) The maximum number of seconds that a browser may cache the response to a preflight request.
 
 Optional:
 
-- `allowed_headers` (List of String) If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.
-- `expose_headers` (List of String) If present, this is a list of headers that may be exposed to an application inside the client.
+- `allowed_headers` (List of String) If present, the list of headers allowed in a preflight OPTIONS request's Access-Control-Request-Headers header value.
+- `expose_headers` (List of String) If present, the list of headers that may be exposed to an application inside the client.
 
 
 <a id="nestedblock--default_server_side_encryption"></a>
@@ -78,14 +78,14 @@ Required:
 
 Optional:
 
-- `period` (Block List, Max: 1) How long for to make files immutable. Omit when default retention mode is none. (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
+- `period` (Block List, Max: 1) How long files remain immutable. Omit when default retention mode is none. (see [below for nested schema](#nestedblock--file_lock_configuration--default_retention--period))
 
 <a id="nestedblock--file_lock_configuration--default_retention--period"></a>
 ### Nested Schema for `file_lock_configuration.default_retention.period`
 
 Required:
 
-- `duration` (Number) Duration.
+- `duration` (Number) Retention duration in the specified unit of days or years.
 - `unit` (String) Unit for duration (days|years).
 
 
@@ -96,10 +96,20 @@ Required:
 
 Required:
 
-- `file_name_prefix` (String) It specifies which files in the bucket it applies to.
+- `file_name_prefix` (String) The file name prefix matched by this lifecycle rule.
 
 Optional:
 
-- `days_from_hiding_to_deleting` (Number) It says how long to keep file versions that are not the current version.
-- `days_from_starting_to_canceling_unfinished_large_files` (Number) It cancels any unfinished large file versions after a given number of days.
-- `days_from_uploading_to_hiding` (Number) It causes files to be hidden automatically after the given number of days.
+- `days_from_hiding_to_deleting` (Number) Number of days from hiding a file version until deleting it.
+- `days_from_starting_to_canceling_unfinished_large_files` (Number) Number of days from starting an unfinished large file until canceling it.
+- `days_from_uploading_to_hiding` (Number) Number of days from upload until hiding a file.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import b2_bucket.example BUCKET_ID
+```

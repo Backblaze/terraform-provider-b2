@@ -37,7 +37,7 @@ func resourceB2BucketNotificationRules() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"notification_rules": {
-				Description: "An array of Event Notification Rules.",
+				Description: "Event notification rules for the bucket. At least one rule is required.",
 				Type:        schema.TypeList,
 				Elem:        getNotificationRulesElem(false),
 				Required:    true,

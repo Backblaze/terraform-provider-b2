@@ -22,7 +22,7 @@ B2 bucket file data source. The ID is `<bucket_id>/<file_name>`.
 
 ### Optional
 
-- `show_versions` (Boolean) Show all file versions.
+- `show_versions` (Boolean) Return all file versions when true; otherwise return the latest version. The default is false.
 
 ### Read-Only
 
