@@ -20,7 +20,7 @@ B2 signed URL for a bucket file data source.
 
 ### Optional
 
-- `duration` (Number) The duration in seconds for which the presigned URL is valid. Defaults to `86400`.
+- `duration` (Number) The lifetime of the download authorization token in seconds. B2 allows a maximum of 604800 seconds. Defaults to `86400`.
 
 ### Read-Only
 
