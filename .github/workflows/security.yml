@@ -1,0 +1,45 @@
+name: Security
+
+on:
+  push:
+    branches: [master, release/*]
+    paths-ignore:
+      - '.github/no-response.yml'
+      - '.github/workflows/cd.yml'
+      - 'LICENSE'
+      - 'README.md'
+      - 'README.release.md'
+  pull_request:
+    branches: [master, release/*]
+  schedule:
+    # Weekly, so newly published advisories surface without a code change.
+    - cron: '23 5 * * 1'
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Set up Go (version from go.mod toolchain line)
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Install govulncheck (version pinned in GNUmakefile)
+        run: |
+          cd tools
+          go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
+      - name: Audit dependencies for known vulnerabilities
+        run: |
+          make vulncheck
