@@ -8,7 +8,7 @@ GOVULNCHECK_VERSION=v1.3.0
 
 default: build
 
-.PHONY: examples-check _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint
+.PHONY: docs-prose-lint examples-check _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -84,6 +84,9 @@ docs: build
 	# We clear B2 application key env variables to not include them in docs. DO NOT REMOVE IT!
 	# Provider name is passed explicitly, otherwise tfplugindocs derives it from the directory name (breaks in git worktrees).
 	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs generate --provider-name ${BINARY}
+
+docs-prose-lint:
+	@./scripts/docs-prose-lint.sh --warn-only
 
 docs-lint: build
 	@tfplugindocs validate --provider-name ${BINARY}
