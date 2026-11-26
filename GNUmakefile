@@ -8,7 +8,7 @@ GOVULNCHECK_VERSION=v1.3.0
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint
+.PHONY: examples-check _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -49,6 +49,9 @@ vulncheck-deps:
 vulncheck:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@govulncheck ./...
+
+examples-check:
+	@./scripts/examples-check.sh
 
 test:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go

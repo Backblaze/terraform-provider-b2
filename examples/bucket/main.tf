@@ -1,3 +1,9 @@
+# Bucket names must be unique across all B2 accounts.
+variable "bucket_name" {
+  description = "A globally unique B2 bucket name"
+  type        = string
+}
+
 terraform {
   required_version = ">= 1.0.0"
   required_providers {
@@ -11,14 +17,15 @@ provider "b2" {
 }
 
 resource "b2_bucket" "example" {
-  bucket_name = "test-b2-tfp-0000000000000000000"
+  bucket_name = var.bucket_name
   bucket_type = "allPublic"
 }
 
 resource "b2_bucket_file_version" "example1" {
   bucket_id = b2_bucket.example.id
   file_name = "example.txt"
-  source    = "example.txt"
+  # This path is relative to the Terraform working directory.
+  source = "example.txt"
 }
 
 resource "b2_bucket_file_version" "example2" {
