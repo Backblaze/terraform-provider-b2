@@ -29,7 +29,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Computed:    true,
 			},
 			"content_sha1": {
-				Description: "SHA1 hash of the content.",
+				Description: "SHA1 hash of the content. For large files this is `none`; a full-file SHA1 may be in `file_info.large_file_sha1`.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -58,7 +58,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Computed:    true,
 			},
 			"size": {
-				Description: "The file size.",
+				Description: "The file size in bytes.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
@@ -69,7 +69,7 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Computed:    true,
 			},
 			"upload_timestamp": {
-				Description: "This is a UTC time when this file was uploaded.",
+				Description: "Upload time in milliseconds since January 1, 1970 UTC.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},

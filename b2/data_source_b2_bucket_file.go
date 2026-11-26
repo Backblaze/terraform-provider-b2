@@ -38,7 +38,7 @@ func dataSourceB2BucketFile() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"show_versions": {
-				Description: "Show all file versions.",
+				Description: "Return all file versions when true; otherwise return the latest version. The default is false.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
