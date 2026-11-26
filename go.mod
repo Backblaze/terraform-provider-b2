@@ -2,7 +2,7 @@ module github.com/Backblaze/terraform-provider-b2
 
 go 1.26.0
 
-toolchain go1.26.10
+toolchain go1.26.11
 
 require github.com/hashicorp/terraform-plugin-log v0.9.0
 
@@ -53,7 +53,7 @@ require (
 	github.com/zclconf/go-cty v1.16.2 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/mod v0.42.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/tools v0.51.0 // indirect
