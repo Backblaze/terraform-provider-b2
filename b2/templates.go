@@ -233,13 +233,13 @@ func getCorsRulesElem(ds bool) *schema.Resource {
 				Required: If(ds, false, true),
 			},
 			"max_age_seconds": {
-				Description: "This specifies the maximum number of seconds that a browser may cache the response to a preflight request.",
+				Description: "The maximum number of seconds that a browser may cache the response to a preflight request.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Required:    If(ds, false, true),
 			},
 			"allowed_headers": {
-				Description: "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
+				Description: "If present, the list of headers allowed in a preflight OPTIONS request's Access-Control-Request-Headers header value.",
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -248,7 +248,7 @@ func getCorsRulesElem(ds bool) *schema.Resource {
 				Optional: If(ds, false, true),
 			},
 			"expose_headers": {
-				Description: "If present, this is a list of headers that may be exposed to an application inside the client.",
+				Description: "If present, the list of headers that may be exposed to an application inside the client.",
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
