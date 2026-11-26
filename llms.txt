@@ -1,0 +1,38 @@
+# Terraform Provider B2
+
+> Terraform provider for Backblaze B2.
+
+## Start here
+
+- [README](https://github.com/Backblaze/terraform-provider-b2/blob/master/README.md): Read requirements, installation, building, testing, and debugging instructions.
+- [Terraform Registry](https://registry.terraform.io/providers/Backblaze/b2): Find the provider on the Terraform Registry.
+
+## Resources
+
+- [b2_application_key](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/resources/application_key.md): Review the application key resource schema.
+- [b2_bucket](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/resources/bucket.md): Review the bucket resource schema.
+- [b2_bucket_file_version](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/resources/bucket_file_version.md): Review the bucket file version resource schema.
+- [b2_bucket_notification_rules](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/resources/bucket_notification_rules.md): Review the bucket notification rules resource schema.
+
+## Data sources
+
+- [b2_account_info](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/data-sources/account_info.md): Review the account info data source schema.
+- [b2_application_key](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/data-sources/application_key.md): Review the application key data source schema.
+- [b2_bucket](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/data-sources/bucket.md): Review the bucket data source schema.
+- [b2_bucket_file](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/data-sources/bucket_file.md): Review the bucket file data source schema.
+- [b2_bucket_file_signed_url](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/data-sources/bucket_file_signed_url.md): Review the signed URL data source schema.
+- [b2_bucket_files](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/data-sources/bucket_files.md): Review the bucket files data source schema.
+- [b2_bucket_notification_rules](https://github.com/Backblaze/terraform-provider-b2/blob/master/docs/data-sources/bucket_notification_rules.md): Review the bucket notification rules data source schema.
+
+## Examples
+
+- [Application key](https://github.com/Backblaze/terraform-provider-b2/tree/master/examples/application_key): See an application key example.
+- [Bucket](https://github.com/Backblaze/terraform-provider-b2/tree/master/examples/bucket): See a bucket example.
+- [Bucket file lock](https://github.com/Backblaze/terraform-provider-b2/tree/master/examples/bucket_file_lock): See a bucket file lock example.
+- [Bucket notification rules](https://github.com/Backblaze/terraform-provider-b2/tree/master/examples/bucket_notification_rules): See a bucket notification rules example.
+- [File version SSE-C](https://github.com/Backblaze/terraform-provider-b2/tree/master/examples/file_version_sse_c): See a file version with SSE-C example.
+- [Provider](https://github.com/Backblaze/terraform-provider-b2/tree/master/examples/provider): See provider configuration.
+
+## Changelog
+
+- [Changelog](https://github.com/Backblaze/terraform-provider-b2/blob/master/CHANGELOG.md): Review the release history.
