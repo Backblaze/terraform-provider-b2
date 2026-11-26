@@ -54,14 +54,14 @@ func resourceB2Bucket() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
-				Description:  "The name of the bucket.",
+				Description:  "The bucket name. Names must be globally unique across B2 accounts. See https://www.backblaze.com/apidocs/b2-create-bucket for the naming rules.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_type": {
-				Description:  "The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.",
+				Description:  "The bucket type. Either 'allPublic', meaning that anybody can download files in this bucket, or 'allPrivate'. B2 validates the value when the bucket is created or updated.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
@@ -79,7 +79,7 @@ func resourceB2Bucket() *schema.Resource {
 				DiffSuppressFunc: suppressMapKeyCaseDiff("bucket_info"),
 			},
 			"cors_rules": {
-				Description: "The initial list of CORS rules for this bucket.",
+				Description: "The CORS rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getCorsRulesElem(false),
 				Optional:    true,
@@ -106,7 +106,7 @@ func resourceB2Bucket() *schema.Resource {
 				MaxItems:    1,
 			},
 			"lifecycle_rules": {
-				Description: "The initial list of lifecycle rules for this bucket.",
+				Description: "The lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getLifecycleRulesElem(false),
 				Optional:    true,
@@ -122,7 +122,7 @@ func resourceB2Bucket() *schema.Resource {
 				Computed:    true,
 			},
 			"options": {
-				Description: "List of bucket options.",
+				Description: "Bucket options returned by B2, such as S3 API access.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -130,7 +130,7 @@ func resourceB2Bucket() *schema.Resource {
 				Computed: true,
 			},
 			"revision": {
-				Description: "Bucket revision.",
+				Description: "The bucket revision counter, updated when the bucket changes.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},

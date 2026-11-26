@@ -300,7 +300,7 @@ func getFileLockConfigurationElem(ds bool) *schema.Resource {
 							ValidateFunc: If(ds, nil, validation.StringInSlice([]string{"compliance", "governance", "none"}, false)),
 						},
 						"period": {
-							Description: "How long for to make files immutable. Omit when default retention mode is none",
+							Description: "How long files remain immutable. Omit when default retention mode is none.",
 							Type:        schema.TypeList,
 							MaxItems:    If(ds, 0, 1),
 							Computed:    If(ds, true, false),
@@ -308,7 +308,7 @@ func getFileLockConfigurationElem(ds bool) *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"duration": {
-										Description: "Duration",
+										Description: "Retention duration in the specified unit of days or years.",
 										Type:        schema.TypeInt,
 										Computed:    If(ds, true, false),
 										Required:    If(ds, false, true),
@@ -334,25 +334,25 @@ func getLifecycleRulesElem(ds bool) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"file_name_prefix": {
-				Description: "It specifies which files in the bucket it applies to.",
+				Description: "The file name prefix matched by this lifecycle rule.",
 				Type:        schema.TypeString,
 				Computed:    If(ds, true, false),
 				Required:    If(ds, false, true),
 			},
 			"days_from_hiding_to_deleting": {
-				Description: "It says how long to keep file versions that are not the current version.",
+				Description: "Number of days from hiding a file version until deleting it.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),
 			},
 			"days_from_uploading_to_hiding": {
-				Description: "It causes files to be hidden automatically after the given number of days.",
+				Description: "Number of days from upload until hiding a file.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),
 			},
 			"days_from_starting_to_canceling_unfinished_large_files": {
-				Description: "It cancels any unfinished large file versions after a given number of days.",
+				Description: "Number of days from starting an unfinished large file until canceling it.",
 				Type:        schema.TypeInt,
 				Computed:    If(ds, true, false),
 				Optional:    If(ds, false, true),

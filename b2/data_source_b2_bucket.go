@@ -26,7 +26,7 @@ func dataSourceB2Bucket() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"bucket_name": {
-				Description:  "The name of the bucket.",
+				Description:  "The name of the bucket to read.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.NoZeroValues,
@@ -51,18 +51,18 @@ func dataSourceB2Bucket() *schema.Resource {
 				Computed: true,
 			},
 			"bucket_type": {
-				Description: "The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.",
+				Description: "The bucket type returned by B2, such as 'allPublic' or 'allPrivate'.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
 			"cors_rules": {
-				Description: "The initial list of CORS rules for this bucket.",
+				Description: "The CORS rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getCorsRulesElem(true),
 				Computed:    true,
 			},
 			"file_lock_configuration": {
-				Description: "The default File Lock retention settings for this bucket.",
+				Description: "The File Lock enabled flag and default retention settings for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getFileLockConfigurationElem(true),
 				Computed:    true,
@@ -74,13 +74,13 @@ func dataSourceB2Bucket() *schema.Resource {
 				Computed:    true,
 			},
 			"lifecycle_rules": {
-				Description: "The initial list of lifecycle rules for this bucket.",
+				Description: "The lifecycle rules for this bucket.",
 				Type:        schema.TypeList,
 				Elem:        getLifecycleRulesElem(true),
 				Computed:    true,
 			},
 			"options": {
-				Description: "List of bucket options.",
+				Description: "Bucket options returned by B2, such as S3 API access.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -88,7 +88,7 @@ func dataSourceB2Bucket() *schema.Resource {
 				Computed: true,
 			},
 			"revision": {
-				Description: "Bucket revision.",
+				Description: "The bucket revision counter, updated when the bucket changes.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
