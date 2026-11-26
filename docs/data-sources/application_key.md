@@ -24,8 +24,8 @@ B2 application key data source.
 - `application_key_id` (String) The ID of the key.
 - `bucket_id` (String, Deprecated) When present, restricts access to one bucket.
 - `bucket_ids` (Set of String) When present, restricts access to specified buckets.
-- `capabilities` (Set of String) A set of strings, each one naming a capability the key has.
+- `capabilities` (Set of String) The key capabilities. See https://www.backblaze.com/docs/cloud-storage-application-key-capabilities for valid names.
 - `expiration_timestamp` (Number) When present, says when this key will expire, in milliseconds since 1970.
 - `id` (String) The ID of this resource.
 - `name_prefix` (String) When present, restricts access to files whose names start with the prefix.
-- `options` (Set of String) A list of application key options.
+- `options` (Set of String) The application key options returned by B2.

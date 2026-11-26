@@ -32,7 +32,7 @@ func resourceB2ApplicationKey() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"capabilities": {
-				Description: "A set of strings, each one naming a capability the key has.",
+				Description: "The key capabilities. See https://www.backblaze.com/docs/cloud-storage-application-key-capabilities for valid names.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -78,13 +78,13 @@ func resourceB2ApplicationKey() *schema.Resource {
 				ForceNew:    true,
 			},
 			"application_key": {
-				Description: "The key.",
+				Description: "The secret key, returned only when created and stored in Terraform state. It is empty after import.",
 				Type:        schema.TypeString,
 				Computed:    true,
 				Sensitive:   true,
 			},
 			"application_key_id": {
-				Description: "The ID of the newly created key.",
+				Description: "The ID of the key.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -94,7 +94,7 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Computed:    true,
 			},
 			"options": {
-				Description: "List of application key options.",
+				Description: "The application key options returned by B2.",
 				Type:        schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -102,7 +102,7 @@ func resourceB2ApplicationKey() *schema.Resource {
 				Computed: true,
 			},
 			"valid_duration_in_seconds": {
-				Description:  "When provided, the key will expire after the given number of seconds, and will have expirationTimestamp set. Value must be a positive integer, and must be less than 1000 days (in seconds).",
+				Description:  "The key lifetime in seconds, from 1 to 86400000. When set, `expiration_timestamp` gives the expiry time.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,
