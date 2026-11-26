@@ -44,12 +44,12 @@ Required:
 - `allowed_operations` (List of String) A list specifying which operations the rule allows.
 - `allowed_origins` (List of String) A non-empty list specifying which origins the rule covers.
 - `cors_rule_name` (String) A name for humans to recognize the rule in a user interface.
-- `max_age_seconds` (Number) This specifies the maximum number of seconds that a browser may cache the response to a preflight request.
+- `max_age_seconds` (Number) The maximum number of seconds that a browser may cache the response to a preflight request.
 
 Optional:
 
-- `allowed_headers` (List of String) If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.
-- `expose_headers` (List of String) If present, this is a list of headers that may be exposed to an application inside the client.
+- `allowed_headers` (List of String) If present, the list of headers allowed in a preflight OPTIONS request's Access-Control-Request-Headers header value.
+- `expose_headers` (List of String) If present, the list of headers that may be exposed to an application inside the client.
 
 
 <a id="nestedblock--default_server_side_encryption"></a>

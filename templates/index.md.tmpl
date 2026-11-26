@@ -7,7 +7,7 @@ description: |-
 
 Terraform provider for [Backblaze B2](https://www.backblaze.com/b2/).
 
-The provider is written in go, but it uses official [B2 python SDK](https://github.com/Backblaze/b2-sdk-python) embedded into the binary.
+The provider is written in Go. The binary embeds the official [B2 Python SDK](https://github.com/Backblaze/b2-sdk-python).
 
 ## Authentication
 
