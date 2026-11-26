@@ -103,3 +103,13 @@ Optional:
 - `days_from_hiding_to_deleting` (Number) Number of days from hiding a file version until deleting it.
 - `days_from_starting_to_canceling_unfinished_large_files` (Number) Number of days from starting an unfinished large file until canceling it.
 - `days_from_uploading_to_hiding` (Number) Number of days from upload until hiding a file.
+
+## Import
+
+Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
+```shell
+terraform import b2_bucket.example BUCKET_ID
+```

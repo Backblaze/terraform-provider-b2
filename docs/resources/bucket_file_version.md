@@ -57,3 +57,7 @@ Optional:
 
 - `key_id` (String) Key identifier stored in file info metadata.
 - `secret_b64` (String, Sensitive) Secret key value, in standard Base 64 encoding (RFC 4648).
+
+## Import
+
+This resource does not support import.

@@ -63,3 +63,7 @@ Required:
 
 - `name` (String) Name of the header.
 - `value` (String) Value of the header.
+
+## Import
+
+This resource does not support import.
