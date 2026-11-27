@@ -22,8 +22,7 @@ jobs:
       contents: read
       pull-requests: read
     secrets:
-      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
-      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_TEST_APPLICATION_KEY_ID }}
+      SIMULATOR_DEPLOY_KEY: ${{ secrets.SIMULATOR_DEPLOY_KEY }}
 
   build-pybindings:
     needs: [ci]

@@ -3,10 +3,8 @@ name: Continuous Integration
 on:
   workflow_call:
     secrets:
-      B2_TEST_APPLICATION_KEY:
-        required: false
-      B2_TEST_APPLICATION_KEY_ID:
-        required: false
+      SIMULATOR_DEPLOY_KEY:
+        required: true
   push:
     branches: [master, release/*]
     paths-ignore:
@@ -142,8 +140,8 @@ jobs:
   testacc:
     needs: build
     env:
-      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
-      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_TEST_APPLICATION_KEY_ID }}
+      B2_TEST_APPLICATION_KEY: sim-test-secret
+      B2_TEST_APPLICATION_KEY_ID: sim-test-id
       NOPYBINDINGS: 1  # do not build python buildings
     runs-on: ${{ matrix.conf.runner }}
     timeout-minutes: 120
@@ -159,26 +157,72 @@ jobs:
           # for Windows, the latest terraform is enough for ACC tests
           - { runner: windows-2022, os: windows, arch: amd64, terraform: '1.14.*' }
     steps:
+      - name: Require the private Simulator deploy key
+        env:
+          SIMULATOR_DEPLOY_KEY: ${{ secrets.SIMULATOR_DEPLOY_KEY }}
+        run: |
+          if [ -z "$SIMULATOR_DEPLOY_KEY" ]; then
+            echo "SIMULATOR_DEPLOY_KEY is required because acceptance testing is mandatory."
+            exit 1
+          fi
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          path: provider
+      - name: Check out the pinned private Simulator
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: backblaze-labs/b2-simulator
+          ref: 529721037901412b7b24fdc18498631d298295c5
+          ssh-key: ${{ secrets.SIMULATOR_DEPLOY_KEY }}
+          persist-credentials: false
+          path: simulator
+      - name: Verify the Simulator revision
+        run: |
+          test "$(git -C simulator rev-parse HEAD)" = "529721037901412b7b24fdc18498631d298295c5"
+          test -z "$(git -C simulator status --short)"
+      - name: Set up Node.js 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
+          cache-dependency-path: provider/go.sum
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         name: Set up Terraform ${{ matrix.conf.terraform }}
         with:
           terraform_version: ${{ matrix.conf.terraform }}
           terraform_wrapper: false
       - name: Download python bindings for given OS
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: ci-py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
-          path: python-bindings/dist/
+          path: provider/python-bindings/dist/
+      - name: Start B2 Simulator
+        run: |
+          simulator_log="$RUNNER_TEMP/b2-simulator.log"
+          node simulator/bin/simulator/serve.mjs --custom-upload-timestamps >"$simulator_log" 2>&1 &
+          simulator_pid=$!
+          B2_ENDPOINT=""
+          for _ in $(seq 1 150); do
+            B2_ENDPOINT="$(sed -n 's|^SIMULATOR-LISTENING \(https://127\.0\.0\.1:[0-9][0-9]*\)$|\1|p' "$simulator_log" | head -1)"
+            if [ -n "$B2_ENDPOINT" ]; then break; fi
+            if ! kill -0 "$simulator_pid" 2>/dev/null; then cat "$simulator_log"; exit 1; fi
+            sleep 0.2
+          done
+          if [ -z "$B2_ENDPOINT" ]; then cat "$simulator_log"; exit 1; fi
+          simulator_ca_bundle="$RUNNER_TEMP/b2-simulator-ca.pem"
+          cp simulator/bin/simulator/loopback-cert.pem "$simulator_ca_bundle"
+          echo "B2_ENDPOINT=$B2_ENDPOINT" >> "$GITHUB_ENV"
+          echo "REQUESTS_CA_BUNDLE=$simulator_ca_bundle" >> "$GITHUB_ENV"
+          echo "SSL_CERT_FILE=$simulator_ca_bundle" >> "$GITHUB_ENV"
+          echo "SIMULATOR_PID=$simulator_pid" >> "$GITHUB_ENV"
       - name: Run acceptance tests with Intel-Mac DNS retry
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' && matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64' }}
+        if: ${{ matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64' }}
         timeout-minutes: 120
+        working-directory: provider
         run: |
           max_attempts=3
           for attempt in $(seq 1 "$max_attempts"); do
@@ -205,7 +249,15 @@ jobs:
             sleep "$delay"
           done
       - name: Run acceptance tests
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' && !(matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64') }}
+        if: ${{ !(matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64') }}
         timeout-minutes: 120
+        working-directory: provider
         run: |
           make testacc
+      - name: Stop B2 Simulator
+        if: always()
+        run: |
+          if [ -n "$SIMULATOR_PID" ]; then
+            kill "$SIMULATOR_PID" 2>/dev/null || true
+            wait "$SIMULATOR_PID" 2>/dev/null || true
+          fi
