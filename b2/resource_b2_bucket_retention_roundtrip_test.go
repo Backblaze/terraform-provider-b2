@@ -67,8 +67,12 @@ func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 	if os.Getenv("TF_ACC") != "1" {
 		t.Skip("acceptance test requires TF_ACC=1")
 	}
-	// The simulator holds all state in memory; the helper is only for acceptance
-	// testing and calls the actual Python bindings and b2sdk RawSimulator.
+	// The helper is only for acceptance testing: it calls the actual Python bindings
+	// against a b2-simulator it starts from B2_SIMULATOR_DIR (v0.6.0 or later), whose
+	// virtual clock lets cleanup delete files under compliance retention.
+	if os.Getenv("B2_SIMULATOR_DIR") == "" {
+		t.Fatal("B2_SIMULATOR_DIR must point to a checkout of backblaze-labs/b2-simulator")
+	}
 	script, err := filepath.Abs("testdata/retention_simulator.py")
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +90,7 @@ func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 	t.Cleanup(func() { _ = cmd.Process.Kill(); _ = cmd.Wait() })
 	line, err := bufio.NewReader(stdout).ReadString('\n')
 	if err != nil {
-		t.Fatalf("start b2sdk simulator: %v (%s)", err, stderr.String())
+		t.Fatalf("start the retention simulator helper: %v (%s)", err, stderr.String())
 	}
 	port, err := strconv.Atoi(strings.TrimSpace(line))
 	if err != nil || port < 1 || port > 65535 {

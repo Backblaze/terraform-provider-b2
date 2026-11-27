@@ -71,9 +71,10 @@ func TestReleaseRequiresCIForTaggedCommit(t *testing.T) {
 		t.Error("release CI job must call this revision's CI workflow")
 	} else {
 		secrets := workflowMap(t, ciJob["secrets"], "release CI secrets")
-		if len(secrets) != 2 || secrets["B2_TEST_APPLICATION_KEY"] != "${{ secrets.B2_TEST_APPLICATION_KEY }}" ||
-			secrets["B2_TEST_APPLICATION_KEY_ID"] != "${{ secrets.B2_TEST_APPLICATION_KEY_ID }}" {
-			t.Error("release CI must receive only its two acceptance-test secrets")
+		if len(secrets) != 3 || secrets["B2_TEST_APPLICATION_KEY"] != "${{ secrets.B2_TEST_APPLICATION_KEY }}" ||
+			secrets["B2_TEST_APPLICATION_KEY_ID"] != "${{ secrets.B2_TEST_APPLICATION_KEY_ID }}" ||
+			secrets["SIMULATOR_DEPLOY_KEY"] != "${{ secrets.SIMULATOR_DEPLOY_KEY }}" {
+			t.Error("release CI must receive only its two acceptance-test secrets and the B2 Simulator deploy key")
 		}
 	}
 	build := workflowMap(t, jobs["build-pybindings"], "bindings build job")

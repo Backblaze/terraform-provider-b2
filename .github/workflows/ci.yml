@@ -7,6 +7,8 @@ on:
         required: false
       B2_TEST_APPLICATION_KEY_ID:
         required: false
+      SIMULATOR_DEPLOY_KEY:
+        required: false
   push:
     branches: [master, release/*]
     paths-ignore:
@@ -28,6 +30,9 @@ defaults:
 env:
   PYTHON_DEFAULT_VERSION: '3.13'
   GO_DEFAULT_VERSION: '1.26.11'
+  # The backblaze-labs/b2-simulator commit that the Python bindings tests and the retention round-trip
+  # acceptance test start locally (B2_SIMULATOR_DIR). State it only here.
+  SIMULATOR_REVISION: '4052c6f8f45350486460d19bc796866cbdcdd3bc'  # v0.6.0
 
 jobs:
   lint:
@@ -94,7 +99,21 @@ jobs:
         env:
           B2_REQUIRE_PACKAGED_BINDINGS: "1"
         run: make test
+      - name: Check out the pinned B2 Simulator
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: backblaze-labs/b2-simulator
+          ref: ${{ env.SIMULATOR_REVISION }}
+          ssh-key: ${{ secrets.SIMULATOR_DEPLOY_KEY }}
+          persist-credentials: false
+          path: .b2-simulator
+      - name: Set up Node.js 22 for the B2 Simulator
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
       - name: Run Python bindings tests
+        env:
+          B2_SIMULATOR_DIR: ${{ github.workspace }}/.b2-simulator
         run: |
           python -m pip install -r python-bindings/requirements.txt pytest
           python -m pytest python-bindings/tests
@@ -144,6 +163,8 @@ jobs:
     env:
       B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
       B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_TEST_APPLICATION_KEY_ID }}
+      # TestAccResourceB2BucketDefaultRetentionNoneRoundTrip starts this simulator for its helper.
+      B2_SIMULATOR_DIR: ${{ github.workspace }}/.b2-simulator
       NOPYBINDINGS: 1  # do not build python buildings
     runs-on: ${{ matrix.conf.runner }}
     timeout-minutes: 120
@@ -176,6 +197,20 @@ jobs:
         with:
           name: ci-py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
           path: python-bindings/dist/
+      - name: Check out the pinned B2 Simulator
+        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: backblaze-labs/b2-simulator
+          ref: ${{ env.SIMULATOR_REVISION }}
+          ssh-key: ${{ secrets.SIMULATOR_DEPLOY_KEY }}
+          persist-credentials: false
+          path: .b2-simulator
+      - name: Set up Node.js 22 for the B2 Simulator
+        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
       - name: Run acceptance tests with Intel-Mac DNS retry
         if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' && matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64' }}
         timeout-minutes: 120

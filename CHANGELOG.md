@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Infrastructure
 * Make the examples self-contained and add an offline validation target.
+* Run the Python bindings tests and the default-retention round-trip acceptance test against a local b2-simulator (backblaze-labs/b2-simulator, `B2_SIMULATOR_DIR`) instead of b2sdk's in-process `RawSimulator`; the retention test's cleanup advances the simulator's virtual clock instead of editing stored retention.
 * Strengthen data-source acceptance test assertions to compare collection counts and concrete values (bucket IDs, capabilities, options, file-version collections) instead of absent root keys.
 * Allow offline CI runs without a packaged bindings fixture while requiring it in the provider CI.
 * Pin Python build dependencies, run Python bindings tests in CI, and validate SDK harness rows without relying on their order or count.
