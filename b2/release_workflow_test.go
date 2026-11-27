@@ -142,14 +142,30 @@ func TestReusableCIArtifactsDoNotCollideWithReleaseArtifacts(t *testing.T) {
 	cd := readWorkflow(t, "cd.yml")
 	ciJobs := workflowMap(t, ci["jobs"], "CI jobs")
 	cdJobs := workflowMap(t, cd["jobs"], "release jobs")
-	ciUpload := artifactName(t, ciJobs["build"], "actions/upload-artifact@")
-	ciDownload := artifactName(t, ciJobs["testacc"], "actions/download-artifact@")
 	cdUpload := artifactName(t, cdJobs["build-pybindings"], "actions/upload-artifact@")
-	if ciUpload == "" || ciUpload != ciDownload {
-		t.Errorf("CI upload and acceptance download must use the same artifact name: %q, %q", ciUpload, ciDownload)
+	checked := 0
+	for name, rawJob := range ciJobs {
+		if !strings.HasPrefix(name, "testacc") {
+			continue
+		}
+		job := workflowMap(t, rawJob, name)
+		for _, need := range jobNeeds(job) {
+			if !strings.HasPrefix(need, "build") {
+				continue
+			}
+			checked++
+			ciUpload := artifactName(t, ciJobs[need], "actions/upload-artifact@")
+			ciDownload := artifactName(t, rawJob, "actions/download-artifact@")
+			if ciUpload == "" || ciUpload != ciDownload {
+				t.Errorf("CI upload (%s) and acceptance download (%s) must use the same artifact name: %q, %q", need, name, ciUpload, ciDownload)
+			}
+			if ciUpload == cdUpload {
+				t.Errorf("reusable CI and release builds upload the same artifact name: %q", ciUpload)
+			}
+		}
 	}
-	if ciUpload == cdUpload {
-		t.Errorf("reusable CI and release builds upload the same artifact name: %q", ciUpload)
+	if checked == 0 {
+		t.Error("no CI acceptance job downloads the bindings from a build job it needs")
 	}
 	deploy := workflowMap(t, cdJobs["build-and-deploy"], "publication job")
 	steps, _ := deploy["steps"].([]interface{})
