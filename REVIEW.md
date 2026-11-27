@@ -27,7 +27,8 @@ Match the depth to what a missed bug would cost. The change sets the depth, not 
 1. Read the linked issue and, if present, `intent/<slug>/spec.md` and `plan.md`.
 2. Check out the PR merged onto current `master` and run `make ci`. Say what you ran.
 3. For each behavior the PR claims to fix or add, revert that line and confirm a test fails. Name any
-   behavior no test pins, and whether its acceptance tests ran.
+   behavior no test pins, and whether its acceptance tests ran. Check the evidence against
+   [contributing/testing.md](contributing/testing.md).
 
 ## Passes
 
@@ -47,9 +48,9 @@ Tag each finding with its pass.
   static and runnable on older glibc and Alpine.
 - **Security**: new secrets are `Sensitive` and kept out of `tflog`, errors and warnings; credentials go to
   the bindings on stdin only; workflow changes keep secrets away from fork and Dependabot PRs.
-- **Compatibility**: removed or renamed arguments, new `ForceNew`, changed defaults and changed `Computed`
+- **Compatibility**: run `make schema-compat` (see [contributing/schema-compat.md](contributing/schema-compat.md)); removed or renamed arguments, new `ForceNew`, changed defaults and changed `Computed`
   behavior each need a `Changed` or `Removed` entry that says what users must do.
-- **Compliance**: the change matches the issue, `spec.md` and `plan.md`; the PR description matches the
+- **Compliance**: schema descriptions and Markdown follow [contributing/writing-style.md](contributing/writing-style.md); the change matches the issue, `spec.md` and `plan.md`; the PR description matches the
   code; a `.changes/unreleased` entry exists and reads well for users; schema descriptions and `docs/`
   agree; `AGENTS.md` is updated when the change makes it stale.
 

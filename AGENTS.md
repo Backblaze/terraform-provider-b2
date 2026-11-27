@@ -5,6 +5,10 @@ Plugin SDK v2) defines schemas and diffs; every B2 call is made by embedded Pyth
 [b2-sdk-python](https://github.com/Backblaze/b2-sdk-python). This file is the map for coding agents and new
 contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link out for detail.
 
+## Related projects
+
+- **[b2-mcp](https://github.com/backblaze-labs/b2-mcp)** — a Model Context Protocol server for B2.
+
 ## Commands
 
 - Setup, once per environment (Python 3.13 virtualenv, Go from `go.mod`, Terraform): `make deps`. It also
@@ -17,6 +21,12 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 - Use the Go toolchain in `go.mod` (`GOTOOLCHAIN=go1.26.11`); a newer local Go breaks `golangci-lint`.
 - Format: `make format` (`golangci-lint fmt`, `terraform fmt` on `examples/`, `ruff format`).
 - Docs: `make docs` regenerates `docs/` from schemas, `templates/` and `examples/`. Never hand-edit `docs/`.
+- `make docs-prose-lint`: checks the Markdown you changed against the prose rules, in warning-only mode.
+- `make examples-check`: validates `examples/` against a locally built provider, with no credentials.
+- `make schema-compat`: compares the provider schema with the base ref (default origin/master) and reports breaking changes.
+- Guides: [writing style](contributing/writing-style.md), [testing](contributing/testing.md),
+  [schema compatibility](contributing/schema-compat.md) and
+  [internal reference guard](contributing/internal-reference-guard.md).
 - Changelog entry: `make changelog-new` (changie). See [CONTRIBUTING.md](CONTRIBUTING.md#changelog-entries).
 - Release gate: `make release-check`. See [RELEASE.md](RELEASE.md#security-and-quality-gate).
 - Review metrics: `make review-metrics` (approvals, rounds, wait time, reverts, how findings were answered).
@@ -38,7 +48,7 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 | `.sdkharness/` | Contract checks run by the central SDK harness against the B2 simulator on loopback. See its README. |
 | `.changes/` | changie entries; `CHANGELOG.md` is generated from them. |
 | `intent/` | Per-change `intent.md`, `spec.md`, `plan.md` (see Workflow). |
-| `contributing/` | Contributor docs (kept out of `docs/`, which is generated and published): review lessons and reviewer evals. |
+| `contributing/` | Contributor guides on testing, writing style, schema compatibility and the internal reference guard, plus review lessons and reviewer evals; kept out of `docs/`. |
 
 A change to what is sent to B2 usually touches both sides: the Go input struct and schema, and the Python
 handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; only `make testacc` does.
