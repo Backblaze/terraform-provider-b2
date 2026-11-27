@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-27
+
+### Changed
+* SSE-C key changes are detected using a computed SHA-256 `key_fingerprint`; raw `secret_b64` is cleared from resource state. Once a fingerprint exists, changing the key or key ID replaces the file version. Legacy state without a fingerprint is not automatically replaced and cannot detect rotations until a deliberate replacement establishes a baseline. On upgrade, review `terraform plan`; confirm the local source is available before using `terraform apply -replace=<resource address>` to opt in. Consider `create_before_destroy` to upload the replacement before deleting the old version. Treat existing state backups and saved plans as sensitive.
+* **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
+* **Breaking change:** The `id` of `b2_bucket_file_signed_url` no longer holds the signed URL; read `signed_url` instead. Its non-credential ID is `<bucket_id>/<file_name>/<duration>`.
+* A failed call to the Python bindings now returns the operation and the reported error (for example `unauthorized`) instead of the helper's full Python traceback.
+
 ### Fixed
 * Preserve application-key replacement plans when bucket restrictions change, including narrowing access; suppress only equivalent bucket-alias migration values.
 * Derive `b2_bucket_file` and `b2_bucket_files` data-source IDs from bucket and path instead of provider credentials. IDs change on the next refresh.
@@ -27,10 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Detect `b2_bucket_file_version` source content changes when a B2 checksum and readable local source are available, and replace the file version when they differ.
 * Default omitted `duration` in `b2_bucket_file_signed_url` to 86400 seconds (one day) instead of sending zero seconds
 * Length-validation errors now report the field's length instead of its value.
-
-### Changed
-* SSE-C key changes are detected using a computed SHA-256 `key_fingerprint`; raw `secret_b64` is cleared from resource state. Once a fingerprint exists, changing the key or key ID replaces the file version. Legacy state without a fingerprint is not automatically replaced and cannot detect rotations until a deliberate replacement establishes a baseline. On upgrade, review `terraform plan`; confirm the local source is available before using `terraform apply -replace=<resource address>` to opt in. Consider `create_before_destroy` to upload the replacement before deleting the old version. Treat existing state backups and saved plans as sensitive.
-* **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
+* Redact sensitive values from debug logs and returned Python bindings errors, and redact signed URLs and webhook custom header values from debug logs. Debug logs retain the full redacted bindings stderr; only the returned Terraform error is reduced.
 
 ### Infrastructure
 * Make the examples self-contained and add an offline validation target.
@@ -43,17 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgrade golang.org/x/net to v0.62.0 (GO-2026-6860, GO-2026-6866)
 * Upgrade the Go toolchain and CI/release builds to Go 1.26.11 to fix a reachable net/http vulnerability (GO-2026-6859)
 * The repository-owned `upload.stall` resilience check now stalls the upload for 130 s instead of 60 s, just above the 128 s upload timeout of the pinned b2sdk, so the client abandons the stalled request, gets a new upload URL and retries
-
-## [0.15.0] - 2026-11-06
-
-### Changed
-* **Breaking change:** The `id` of `b2_bucket_file_signed_url` no longer holds the signed URL; read `signed_url` instead. Its non-credential ID is `<bucket_id>/<file_name>/<duration>`.
-* A failed call to the Python bindings now returns the operation and the reported error (for example `unauthorized`) instead of the helper's full Python traceback.
-
-### Fixed
-* Redact sensitive values from debug logs and returned Python bindings errors, and redact signed URLs and webhook custom header values from debug logs. Debug logs retain the full redacted bindings stderr; only the returned Terraform error is reduced.
-
-### Infrastructure
 * Remove the `auth.clock_expiry` resilience check from the repository-owned `.sdkharness` registry: no provider operation outlives its own authorization, because every operation runs as a fresh process with in-memory account info
 
 ## [0.14.1] - 2026-10-23
@@ -363,7 +357,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.2...v0.14.0
 [0.13.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.13.1...v0.13.2
