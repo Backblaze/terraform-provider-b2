@@ -1,0 +1,39 @@
+{
+ "format_version": "1.0",
+ "provider_schemas": {
+  "registry.terraform.io/backblaze/b2": {
+   "provider": {
+    "version": 0,
+    "block": {}
+   },
+   "resource_schemas": {
+    "b2_a": {
+     "version": 0,
+     "block": {
+      "attributes": {
+       "name": {
+        "type": "string",
+        "required": true
+       }
+      },
+      "block_types": {
+       "rule": {
+        "nesting_mode": "list",
+        "block": {
+         "attributes": {
+          "x": {
+           "type": "string",
+           "optional": true
+          }
+         }
+        },
+        "max_items": 3
+       }
+      }
+     }
+    }
+   },
+   "data_source_schemas": {}
+  }
+ }
+}
