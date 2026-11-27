@@ -15,7 +15,7 @@ import io
 import json
 
 import pytest
-from b2sdk.v3.exception import FileNotPresent, ServiceError, Unauthorized
+from b2sdk.v3.exception import ServiceError, Unauthorized
 
 from b2_terraform import provider_tool
 from b2_terraform.provider_tool import B2Provider, Bucket, BucketFiles, BucketFileVersion
@@ -72,22 +72,11 @@ def test_bucket_delete_propagates_lookup_errors(tool, monkeypatch):
     assert caught.value is error
 
 
-def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool, monkeypatch):
+def test_C4_read_of_file_version_deleted_out_of_band_does_not_fail(tool):
     """C4: refresh must tolerate a file version deleted outside Terraform (return an empty result).
 
-    The simulator raises a bare KeyError for an unknown file id; real B2 answers 404 file_not_present, which
-    b2sdk raises as FileNotPresent. The wrapper below makes the simulator behave like the service.
+    B2 answers b2_get_file_info for a deleted file id with 404 not_found, which b2sdk raises as FileNotPresent.
     """
-    raw_api = tool.api.session.raw_api
-    original = raw_api.get_file_info_by_id
-
-    def like_the_service(api_url, account_auth_token, file_id):
-        try:
-            return original(api_url, account_auth_token, file_id)
-        except KeyError:
-            raise FileNotPresent(file_id_or_name=file_id) from None
-
-    monkeypatch.setattr(raw_api, 'get_file_info_by_id', like_the_service)
     bucket = make_bucket(tool, 'bucket-c4')
     version = upload(tool, bucket['bucketId'], 'f.txt')
     tool.api.delete_file_version(version.id_, 'f.txt')

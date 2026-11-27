@@ -8,12 +8,14 @@
 # License https://www.backblaze.com/using_b2_code.html
 #
 ######################################################################
-"""Persistent b2sdk simulator for the Terraform retention acceptance test.
+"""Test helper server for the Terraform retention acceptance test.
 
-RawSimulator has no default-retention inheritance on upload. The test therefore
-creates a file with explicit retention and compares its server-side mode and
-timestamp before and after changing the bucket default. After the assertions,
-cleanup expires the simulator's file retention to allow deletion.
+It serves the provider's Bucket operations and the test's file hooks from a
+b2sdk B2Api connected to a standalone b2-simulator (backblaze-labs/b2-simulator,
+v0.6.0 or later), which it starts from B2_SIMULATOR_DIR. The test creates a file
+with explicit retention and compares its server-side mode and timestamp before
+and after changing the bucket default. After the assertions, cleanup advances
+the simulator's virtual clock past the file's retention to allow deletion.
 """
 
 import json
@@ -27,39 +29,39 @@ from types import SimpleNamespace
 
 from b2sdk.v3 import (
     B2Api,
-    B2HttpApiConfig,
     DummyCache,
     FileRetentionSetting,
     InMemoryAccountInfo,
-    RawSimulator,
     RetentionMode,
 )
 
-sys.path.insert(
-    0, os.path.join(os.path.dirname(__file__), "..", "..", "python-bindings")
-)
+_BINDINGS = os.path.join(os.path.dirname(__file__), "..", "..", "python-bindings")
+sys.path.insert(0, _BINDINGS)
+sys.path.insert(0, os.path.join(_BINDINGS, "tests"))
+from b2_simulator import KEY, KEY_ID, B2Simulator
 from b2_terraform.provider_tool import Bucket, ProviderTool
 
 
 def serve():
+    simulator = B2Simulator()
     tool = ProviderTool()
-    api = B2Api(
-        account_info=InMemoryAccountInfo(),
-        cache=DummyCache(),
-        api_config=B2HttpApiConfig(_raw_api_class=RawSimulator),
-    )
-    key_id, key = api.session.raw_api.create_account()
-    api.authorize_account(key_id, key)
+    api = B2Api(account_info=InMemoryAccountInfo(), cache=DummyCache())
+    api.authorize_account(KEY_ID, KEY, realm=simulator.api_url)
     tool.__dict__["api"] = api
     files = {}
+    # How far the simulator's virtual clock is ahead of real time.
+    clock_offset_ms = [0]
 
-    def delete_test_file(bucket_id, file_id, name):
-        # Test cleanup only: the real service cannot expire compliance retention.
-        stored = api.session.raw_api.bucket_id_to_bucket[bucket_id].file_id_to_file[
-            file_id
-        ]
-        # RawSimulator's deletion check compares this timestamp with seconds.
-        stored.file_retention.retain_until = int(time.time()) - 1
+    def virtual_now_ms():
+        return int(time.time() * 1000) + clock_offset_ms[0]
+
+    def delete_test_file(bucket_id, file_id, name, retain_until):
+        # Test cleanup only: the real service cannot expire compliance retention, so
+        # advance the simulator's virtual clock past the file's retain-until time.
+        advance = retain_until - virtual_now_ms() + 1000
+        if advance > 0:
+            simulator.advance_clock(advance)
+            clock_offset_ms[0] += advance
         api.get_bucket_by_id(bucket_id).delete_file_version(file_id, name)
 
     class Handler(BaseHTTPRequestHandler):
@@ -83,7 +85,8 @@ def serve():
                     )
                 elif action == "create_file":
                     bucket = api.get_bucket_by_id(request["bucket_id"])
-                    retain_until = int(time.time() * 1000) + 3600000
+                    # A new retain-until must be after the simulator's virtual now.
+                    retain_until = virtual_now_ms() + 3600000
                     version = bucket.upload_bytes(
                         b"retention test",
                         "retention-test.txt",
@@ -91,7 +94,7 @@ def serve():
                             RetentionMode(request["mode"]), retain_until
                         ),
                     )
-                    files[version.id_] = (bucket.id_, version.file_name)
+                    files[version.id_] = (bucket.id_, version.file_name, retain_until)
                     result = {
                         "file_id": version.id_,
                         "retention": api.get_file_info(
@@ -107,8 +110,8 @@ def serve():
                         request["bucket_id"]
                     ).default_retention.as_dict()
                 elif action == "delete_file":
-                    bucket_id, name = files[request["file_id"]]
-                    delete_test_file(bucket_id, request["file_id"], name)
+                    bucket_id, name, retain_until = files[request["file_id"]]
+                    delete_test_file(bucket_id, request["file_id"], name, retain_until)
                     del files[request["file_id"]]
                     result = {"deleted": True}
                 elif action == "bucket_exists":
@@ -125,9 +128,9 @@ def serve():
                     bucket_id = request["bucket_id"]
                     try:
                         bucket = api.get_bucket_by_id(bucket_id)
-                        for file_id, (owner, name) in list(files.items()):
+                        for file_id, (owner, name, retain_until) in list(files.items()):
                             if owner == bucket_id:
-                                delete_test_file(bucket_id, file_id, name)
+                                delete_test_file(bucket_id, file_id, name, retain_until)
                                 del files[file_id]
                         api.delete_bucket(bucket)
                     except BucketIdNotFound:
@@ -147,7 +150,10 @@ def serve():
 
     server = HTTPServer(("127.0.0.1", 0), Handler)
     print(server.server_port, flush=True)
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    finally:
+        simulator.stop()
 
 
 def invoke(url, data):
