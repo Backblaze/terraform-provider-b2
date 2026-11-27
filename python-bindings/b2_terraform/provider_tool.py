@@ -85,7 +85,7 @@ class Command:
 
             subparsers = parser.add_subparsers(prog=parser.prog, title='usages', dest='CMD')
             subparsers.required = True
-            for subcommand in cls.subcommands_registry.values():
+            for subcommand in cls.subcommands_registry.classes():
                 subcommand.get_parser(subparsers=subparsers, parents=parents)
 
         return parser

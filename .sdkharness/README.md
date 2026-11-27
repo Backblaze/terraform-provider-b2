@@ -46,7 +46,7 @@ orchestration, evidence retention, and fleet reporting.
 - Go as declared in `go.mod` (1.26.x), `make`, Terraform (any release that supports `dev_overrides`; the provider's own CI matrix
   (`.github/workflows/ci.yml`) tests 1.13.* and 1.14.*, and the central SDK harness workflows run
   these checks with 1.12.2), `python3`, `jq`.
-- To build the provider: Python 3.10+ with `python-bindings/requirements.txt` and
+- To build the provider: Python 3.12+ with `python-bindings/requirements.txt` and
   `requirements-dev.txt` installed (the provider embeds a PyInstaller-built b2sdk binding).
   On Linux under CI interpreters such as `actions/setup-python`, pass `STATICX=0`: the
   Makefile's `staticx` wrapper rejects those interpreters and only matters for shipping the

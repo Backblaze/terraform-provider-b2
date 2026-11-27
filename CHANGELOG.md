@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Upgrade golang.org/x/net to v0.62.0 (GO-2026-6860, GO-2026-6866)
 * Upgrade the Go toolchain and CI/release builds to Go 1.26.11 to fix a reachable net/http vulnerability (GO-2026-6859)
 * The repository-owned `upload.stall` resilience check now stalls the upload for 130 s instead of 60 s, just above the 128 s upload timeout of the pinned b2sdk, so the client abandons the stalled request, gets a new upload URL and retries
+* Upgrade phx-class-registry to 6.0.0; building the Python bindings now requires Python 3.12 or newer.
 
 ## [0.15.0] - 2026-11-06
 
