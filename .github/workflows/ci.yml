@@ -31,7 +31,7 @@ env:
 
 jobs:
   # Fork pull requests cannot read SIMULATOR_DEPLOY_KEY, so the acceptance tests cannot run for them.
-  # Fail at once with a clear message instead of after the builds.
+  # Fail at once with a clear message, instead of only when the acceptance jobs start after the builds.
   simulator-access-policy:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -39,7 +39,8 @@ jobs:
       - name: Require a branch in this repository
         env:
           EVENT_NAME: ${{ github.event_name }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          # Empty when the fork was deleted; that is treated as a fork.
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
             echo "::error::Acceptance testing against the B2 Simulator is mandatory. Push this change to a branch in $GITHUB_REPOSITORY so the private Simulator can be fetched without exposing its deploy key."

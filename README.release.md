@@ -20,6 +20,7 @@
 - Run the live B2 acceptance tests on that commit and wait for them to pass:
   - `gh workflow run live-b2.yml --ref master`
   - The CD workflow refuses to publish a release unless `live-b2.yml` has succeeded on the tagged commit. If `master` moved on before the run started, push the tag first, run `gh workflow run live-b2.yml --ref vx.x.x`, then re-run the failed CD jobs.
+  - Live runs share one B2 account and queue one at a time; GitHub keeps only the newest waiting run, so do not dispatch another while the release run is waiting.
 - Tag in git and push tag to `origin`.  (Version tags look like `v0.4.6`.)
   - `git tag vx.x.x`
   - `git push origin vx.x.x`

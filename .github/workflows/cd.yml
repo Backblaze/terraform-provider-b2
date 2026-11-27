@@ -38,9 +38,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ github.sha }}
         run: |
+          # Count only the weekly schedule or a manual dispatch; a run started by any other event does not count.
           runs="$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/live-b2.yml/runs" \
-            -f head_sha="$RELEASE_SHA" -f status=success --jq '.total_count')"
-          if [ "${runs:-0}" -lt 1 ]; then
+            -f head_sha="$RELEASE_SHA" -f status=success -f per_page=100 \
+            --jq '[.workflow_runs[] | select(.event == "schedule" or .event == "workflow_dispatch")] | length')" || {
+            echo "::error::Could not list live-b2.yml runs. The workflow must exist on the default branch."
+            exit 1
+          }
+          if ! [[ "$runs" =~ ^[0-9]+$ ]] || [ "$runs" -lt 1 ]; then
             echo "::error::No successful Weekly Live B2 Acceptance run on $RELEASE_SHA. Dispatch live-b2.yml on this commit, wait for it to pass, then re-run this workflow."
             exit 1
           fi

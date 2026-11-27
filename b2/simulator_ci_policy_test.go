@@ -13,6 +13,7 @@ package b2
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -241,7 +242,13 @@ func TestAcceptanceJobsNeedOnlyTheirOwnPlatformBuild(t *testing.T) {
 func TestAcceptanceGateFailsUnlessEveryAcceptanceJobSucceeded(t *testing.T) {
 	jobs := workflowJobs(t, "ci.yml")
 	acceptance := acceptanceJobs(t, jobs)
-	for name, job := range jobs {
+	var names []string
+	for name := range jobs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		job := jobs[name]
 		needs := strings.Join(jobNeeds(job), " ")
 		covers := true
 		for _, acc := range acceptance {
@@ -249,7 +256,7 @@ func TestAcceptanceGateFailsUnlessEveryAcceptanceJobSucceeded(t *testing.T) {
 				covers = false
 			}
 		}
-		if !covers || !strings.Contains(fmt.Sprint(job["if"]), "always()") {
+		if !covers || job["if"] != "always()" {
 			continue
 		}
 		for _, step := range jobStepList(job) {
@@ -267,8 +274,6 @@ func TestAcceptanceGateFailsUnlessEveryAcceptanceJobSucceeded(t *testing.T) {
 				return
 			}
 		}
-		t.Errorf("gate job %s does not fail when an acceptance job fails, is cancelled or is skipped", name)
-		return
 	}
 	t.Errorf("no job with if: always() needs every acceptance job %v and fails unless all succeeded", acceptance)
 }
@@ -368,6 +373,12 @@ func TestForkPullRequestsFailEarlyWithClearMessage(t *testing.T) {
 	}
 	if policy == "" {
 		t.Fatal("ci.yml has no first-stage job that fails pull requests from forks with a message")
+	}
+	for _, step := range jobStepList(jobs[policy]) {
+		// A deleted fork has no head repository; falling back to this repository would let it pass.
+		if strings.Contains(fmt.Sprint(step["env"]), "|| github.repository") {
+			t.Errorf("fork check %s treats a pull request without a head repository as this repository", policy)
+		}
 	}
 	for _, name := range acceptanceJobs(t, jobs) {
 		found := false
@@ -494,6 +505,16 @@ func TestReleaseRequiresGreenLiveB2RunForTaggedCommit(t *testing.T) {
 				strings.Contains(script, "status=success") && exitOne.MatchString(script) &&
 				fmt.Sprint(env["RELEASE_SHA"]) == "${{ github.sha }}" && job["if"] == nil {
 				gate = name
+				// Only the weekly schedule or a manual dispatch of live-b2.yml counts, and an answer that is not
+				// a number (an API error or a changed response) must fail the gate, not pass it.
+				for _, event := range []string{`"schedule"`, `"workflow_dispatch"`} {
+					if !strings.Contains(script, ".event == "+event) {
+						t.Errorf("live B2 gate does not count only %s runs", event)
+					}
+				}
+				if !strings.Contains(script, `=~ ^[0-9]+$`) {
+					t.Error("live B2 gate does not reject a run count that is not a number")
+				}
 			}
 		}
 	}
