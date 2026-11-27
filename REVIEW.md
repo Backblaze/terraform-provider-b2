@@ -41,7 +41,7 @@ Tag each finding with its pass.
   changes the user made; omitted optional arguments send nothing; `Computed` values B2 owns are not
   diffed; import and read produce the same state as create; existing state keeps working (or a state
   upgrade exists); data source variants of shared blocks are `Computed`.
-- **Bindings**: Go input structs, `convert.go` and the Python handler agree on field names and shapes;
+- **Bindings**: Go input structs, `b2/convert.go` and the Python handler agree on field names and shapes;
   validation lives in Go; b2sdk is called the way its docs describe, and pins are released versions.
 - **Build**: changes to runners, Python setup, PyInstaller, staticx or goreleaser keep the release binary
   static and runnable on older glibc and Alpine.

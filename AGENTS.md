@@ -7,7 +7,8 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 
 ## Commands
 
-- Setup, once per environment (Python 3.13 virtualenv, Go from `go.mod`, Terraform): `make deps`.
+- Setup, once per environment (Python 3.13 virtualenv, Go from `go.mod`, Terraform): `make deps`. It also
+  runs `go mod tidy`, which can change `go.mod` and `go.sum`.
 - Full local gate (mirrors the `lint` and `test` jobs in `ci.yml` and `changelog.yml`): `make ci`. Run it
   before every push and paste the tail in the PR. It runs `deps-check`, `lint` (license headers,
   `golangci-lint`, `go vet`, Python `ruff`), `test`, `docs-lint` and `changelog-check`.
@@ -33,6 +34,7 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 | `python-bindings/requirements*.txt` | Pinned b2sdk, certifi and build tools, bundled into every release binary. |
 | `templates/`, `examples/`, `docs/` | tfplugindocs input and its generated output (published on the Registry). |
 | `tools/` | Separate module pinning tfplugindocs and other dev tools. |
+| `scripts/` | Repository checks and helpers, such as `scripts/check-headers.py`. |
 | `.sdkharness/` | Contract checks run by the central SDK harness against the B2 simulator on loopback. See its README. |
 | `.changes/` | changie entries; `CHANGELOG.md` is generated from them. |
 | `intent/` | Per-change `intent.md`, `spec.md`, `plan.md` (see Workflow). |
@@ -44,7 +46,7 @@ handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; 
 ## Conventions
 
 - Every `.go` and `.py` file starts with the Backblaze license header naming its own path
-  (`scripts/check-headers.py`). The Claude hook in `.claude/hooks/` checks it after each edit.
+  (`scripts/check-headers.py`, run by `make lint`). The Claude hook in `.claude/hooks/` checks it after each edit.
 - Schema `Description` text is the user documentation. Take wording from the b2sdk docstrings or B2 docs.
 - Keep the Python bindings thin: map input to b2sdk calls and shape output. Validation, defaults and diff
   logic live in Go.
@@ -75,7 +77,8 @@ is in [contributing/review-lessons.md](contributing/review-lessons.md).
 7. **Tests that do not pin the fix.** Revert the change and the test must fail. Say which test and paste
    the failure. Pure helpers get unit tests that `make test` runs without credentials.
 8. **Claimed coverage that did not run.** CI runs acceptance tests only with repository secrets, and never
-   runs `.sdkharness`. List what you ran (`make testacc` filter, harness scenarios) and what you did not.
+   runs the `.sdkharness` simulator scenarios (only the `TestSDKHarnessContract` unit test runs in
+   `make test`). List what you ran (`make testacc` filter, harness scenarios) and what you did not.
    A skipped check is NOT RUN, never PASS.
 9. **Secrets.** New secret attributes are `Sensitive`; never put a key, SSE-C secret or signing secret in
    a log line, error, warning or example. Check `tflog` calls on both the input and output paths.
@@ -88,7 +91,8 @@ is in [contributing/review-lessons.md](contributing/review-lessons.md).
     ones; a removed, renamed or re-typed argument needs a `Changed` entry with upgrade steps.
 14. **Resource and data source variants.** Shared blocks in `b2/templates.go` serve both; the data source
     side needs `Computed: true` (`If(ds, ...)`) or it never gets the value.
-15. **Bindings style.** In `provider_tool.py`, raise `RuntimeError`, keep imports sorted, give helpers a
+15. **Bindings style.** In `python-bindings/b2_terraform/provider_tool.py`, raise `RuntimeError` for failed
+    operations (`ValueError` for invalid input), keep imports sorted, give helpers a
     one-line docstring, drop leftover parameters, and comment code that depends on b2sdk internals.
 16. **Binary portability.** The bindings are frozen with PyInstaller and made static with staticx (Linux
     uses `deadsnakes`, not `setup-python`) so the provider runs on older glibc and Alpine. Do not change
