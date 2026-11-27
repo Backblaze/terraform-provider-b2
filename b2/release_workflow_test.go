@@ -50,11 +50,12 @@ func TestReleaseRequiresCIForTaggedCommit(t *testing.T) {
 		t.Error("CI must be callable by the release workflow")
 	} else {
 		secrets := workflowMap(t, ciCall["secrets"], "callable CI secrets")
-		for _, name := range []string{"B2_TEST_APPLICATION_KEY", "B2_TEST_APPLICATION_KEY_ID"} {
-			secret := workflowMap(t, secrets[name], "callable CI secret "+name)
-			if secret["required"] != false {
-				t.Errorf("callable CI secret %s must remain optional", name)
-			}
+		if len(secrets) != 1 {
+			t.Error("callable CI must receive only the Simulator deploy key")
+		}
+		secret := workflowMap(t, secrets["SIMULATOR_DEPLOY_KEY"], "Simulator deploy key")
+		if secret["required"] != true {
+			t.Error("Simulator deploy key must be required for callable CI")
 		}
 	}
 
@@ -71,9 +72,8 @@ func TestReleaseRequiresCIForTaggedCommit(t *testing.T) {
 		t.Error("release CI job must call this revision's CI workflow")
 	} else {
 		secrets := workflowMap(t, ciJob["secrets"], "release CI secrets")
-		if len(secrets) != 2 || secrets["B2_TEST_APPLICATION_KEY"] != "${{ secrets.B2_TEST_APPLICATION_KEY }}" ||
-			secrets["B2_TEST_APPLICATION_KEY_ID"] != "${{ secrets.B2_TEST_APPLICATION_KEY_ID }}" {
-			t.Error("release CI must receive only its two acceptance-test secrets")
+		if len(secrets) != 1 || secrets["SIMULATOR_DEPLOY_KEY"] != "${{ secrets.SIMULATOR_DEPLOY_KEY }}" {
+			t.Error("release CI must receive only the Simulator deploy key")
 		}
 	}
 	build := workflowMap(t, jobs["build-pybindings"], "bindings build job")
@@ -102,7 +102,7 @@ func needsJob(value interface{}, name string) bool {
 
 func TestWorkflowPermissionsAndActionPins(t *testing.T) {
 	pin := regexp.MustCompile(`^[^@]+@[0-9a-f]{40}$`)
-	for _, name := range []string{"ci.yml", "cd.yml"} {
+	for _, name := range []string{"ci.yml", "cd.yml", "live-b2.yml"} {
 		t.Run(name, func(t *testing.T) {
 			workflow := readWorkflow(t, name)
 			permissions := workflowMap(t, workflow["permissions"], "workflow permissions")
@@ -142,14 +142,30 @@ func TestReusableCIArtifactsDoNotCollideWithReleaseArtifacts(t *testing.T) {
 	cd := readWorkflow(t, "cd.yml")
 	ciJobs := workflowMap(t, ci["jobs"], "CI jobs")
 	cdJobs := workflowMap(t, cd["jobs"], "release jobs")
-	ciUpload := artifactName(t, ciJobs["build"], "actions/upload-artifact@")
-	ciDownload := artifactName(t, ciJobs["testacc"], "actions/download-artifact@")
 	cdUpload := artifactName(t, cdJobs["build-pybindings"], "actions/upload-artifact@")
-	if ciUpload == "" || ciUpload != ciDownload {
-		t.Errorf("CI upload and acceptance download must use the same artifact name: %q, %q", ciUpload, ciDownload)
+	checked := 0
+	for name, rawJob := range ciJobs {
+		if !strings.HasPrefix(name, "testacc") {
+			continue
+		}
+		job := workflowMap(t, rawJob, name)
+		for _, need := range jobNeeds(job) {
+			if !strings.HasPrefix(need, "build") {
+				continue
+			}
+			checked++
+			ciUpload := artifactName(t, ciJobs[need], "actions/upload-artifact@")
+			ciDownload := artifactName(t, rawJob, "actions/download-artifact@")
+			if ciUpload == "" || ciUpload != ciDownload {
+				t.Errorf("CI upload (%s) and acceptance download (%s) must use the same artifact name: %q, %q", need, name, ciUpload, ciDownload)
+			}
+			if ciUpload == cdUpload {
+				t.Errorf("reusable CI and release builds upload the same artifact name: %q", ciUpload)
+			}
+		}
 	}
-	if ciUpload == cdUpload {
-		t.Errorf("reusable CI and release builds upload the same artifact name: %q", ciUpload)
+	if checked == 0 {
+		t.Error("no CI acceptance job downloads the bindings from a build job it needs")
 	}
 	deploy := workflowMap(t, cdJobs["build-and-deploy"], "publication job")
 	steps, _ := deploy["steps"].([]interface{})

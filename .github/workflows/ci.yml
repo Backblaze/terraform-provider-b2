@@ -3,10 +3,8 @@ name: Continuous Integration
 on:
   workflow_call:
     secrets:
-      B2_TEST_APPLICATION_KEY:
-        required: false
-      B2_TEST_APPLICATION_KEY_ID:
-        required: false
+      SIMULATOR_DEPLOY_KEY:
+        required: true
   push:
     branches: [master, release/*]
     paths-ignore:
@@ -28,8 +26,26 @@ defaults:
 env:
   PYTHON_DEFAULT_VERSION: '3.13'
   GO_DEFAULT_VERSION: '1.26.11'
+  # The backblaze-labs/b2-simulator commit used by the acceptance tests. State it only here.
+  SIMULATOR_REVISION: '4052c6f8f45350486460d19bc796866cbdcdd3bc'
 
 jobs:
+  # Fork pull requests cannot read SIMULATOR_DEPLOY_KEY, so the acceptance tests cannot run for them.
+  # Fail at once with a clear message, instead of only when the acceptance jobs start after the builds.
+  simulator-access-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require a branch in this repository
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          # Empty when the fork was deleted; that is treated as a fork.
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::Acceptance testing against the B2 Simulator is mandatory. Push this change to a branch in $GITHUB_REPOSITORY so the private Simulator can be fetched without exposing its deploy key."
+            exit 1
+          fi
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -98,19 +114,17 @@ jobs:
         run: |
           python -m pip install -r python-bindings/requirements.txt pytest
           python -m pytest python-bindings/tests
-  build:
+  # One build job per platform, so that each acceptance job waits only for the build it uses.
+  # The jobs share their steps through YAML anchors.
+  build-linux-amd64:
     needs: [lint, test]
     runs-on: ${{ matrix.conf.runner }}
     timeout-minutes: 60
     strategy:
-      fail-fast: false
       matrix:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
-          - { runner: macos-14-large, os: darwin, arch: amd64 }
-          - { runner: macos-14, os: darwin, arch: arm64 }
-          - { runner: windows-2022, os: windows, arch: amd64 }
-    steps:
+    steps: &build-steps
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }} (ubuntu-latest)
         if: matrix.conf.os == 'linux'
@@ -139,11 +153,41 @@ jobs:
           path: python-bindings/dist/py-terraform-provider-b2
           if-no-files-found: error
           retention-days: 1
-  testacc:
-    needs: build
-    env:
-      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
-      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_TEST_APPLICATION_KEY_ID }}
+  build-darwin-amd64:
+    needs: [lint, test]
+    runs-on: ${{ matrix.conf.runner }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        conf:
+          # GitHub retired the macOS 14 images; macos-15-intel is the supported Intel label.
+          - { runner: macos-15-intel, os: darwin, arch: amd64 }
+    steps: *build-steps
+  build-darwin-arm64:
+    needs: [lint, test]
+    runs-on: ${{ matrix.conf.runner }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        conf:
+          - { runner: macos-15, os: darwin, arch: arm64 }
+    steps: *build-steps
+  build-windows-amd64:
+    needs: [lint, test]
+    runs-on: ${{ matrix.conf.runner }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        conf:
+          - { runner: windows-2022, os: windows, arch: amd64 }
+    steps: *build-steps
+  testacc-linux-amd64:
+    needs: [simulator-access-policy, build-linux-amd64]
+    env: &testacc-env
+      # Only a true/false value; the deploy key itself is passed to actions/checkout alone.
+      HAS_SIMULATOR_DEPLOY_KEY: ${{ secrets.SIMULATOR_DEPLOY_KEY != '' }}
+      B2_TEST_APPLICATION_KEY: sim-test-secret
+      B2_TEST_APPLICATION_KEY_ID: sim-test-id
       NOPYBINDINGS: 1  # do not build python buildings
     runs-on: ${{ matrix.conf.runner }}
     timeout-minutes: 120
@@ -153,35 +197,87 @@ jobs:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.14.*' }
           - { runner: ubuntu-latest, os: linux, arch: amd64, terraform: '1.13.*'  }
-          # for macOS, the latest terraform is enough for ACC tests
-          - { runner: macos-14-large, os: darwin, arch: amd64, terraform: '1.14.*' }
-          - { runner: macos-14, os: darwin, arch: arm64, terraform: '1.14.*' }
-          # for Windows, the latest terraform is enough for ACC tests
-          - { runner: windows-2022, os: windows, arch: amd64, terraform: '1.14.*' }
-    steps:
+    steps: &testacc-steps
+      - name: Require the private Simulator deploy key
+        if: env.HAS_SIMULATOR_DEPLOY_KEY != 'true'
+        run: |
+          echo "::error::SIMULATOR_DEPLOY_KEY is required because acceptance testing is mandatory."
+          exit 1
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          path: provider
+      - name: Check out the pinned private Simulator
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: backblaze-labs/b2-simulator
+          ref: ${{ env.SIMULATOR_REVISION }}
+          ssh-key: ${{ secrets.SIMULATOR_DEPLOY_KEY }}
+          persist-credentials: false
+          path: simulator
+      - name: Verify the Simulator revision
+        run: |
+          test "$(git -C simulator rev-parse HEAD)" = "$SIMULATOR_REVISION"
+          test -z "$(git -C simulator status --short)"
+      - name: Set up Node.js 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Set up Python ${{ env.PYTHON_DEFAULT_VERSION }}
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ env.PYTHON_DEFAULT_VERSION }}
+      - name: Install the bindings requirements for the b2sdk test helper
+        # TestAccResourceB2BucketDefaultRetentionNoneRoundTrip runs testdata/retention_simulator.py with python3.
+        run: |
+          python -m pip install -r provider/python-bindings/requirements.txt
       - name: Set up Go ${{ env.GO_DEFAULT_VERSION }}
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ env.GO_DEFAULT_VERSION }}
+          cache-dependency-path: provider/go.sum
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         name: Set up Terraform ${{ matrix.conf.terraform }}
         with:
           terraform_version: ${{ matrix.conf.terraform }}
           terraform_wrapper: false
       - name: Download python bindings for given OS
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' }}
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: ci-py-terraform-provider-b2-${{ matrix.conf.os }}-${{ matrix.conf.arch }}
-          path: python-bindings/dist/
-      - name: Run acceptance tests with Intel-Mac DNS retry
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' && matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64' }}
+          path: provider/python-bindings/dist/
+      - name: Run acceptance tests against the B2 Simulator
         timeout-minutes: 120
+        env:
+          # Intel macOS runners have hit transient DNS failures; retry only those there.
+          MAX_ATTEMPTS: ${{ (matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64') && '3' || '1' }}
         run: |
-          max_attempts=3
-          for attempt in $(seq 1 "$max_attempts"); do
+          simulator_log="$RUNNER_TEMP/b2-simulator.log"
+          node simulator/bin/simulator/serve.mjs --custom-upload-timestamps >"$simulator_log" 2>&1 &
+          simulator_pid=$!
+          trap 'kill "$simulator_pid" 2>/dev/null || true; wait "$simulator_pid" 2>/dev/null || true' EXIT
+
+          B2_ENDPOINT=""
+          for _ in $(seq 1 150); do
+            B2_ENDPOINT="$(sed -n 's|^SIMULATOR-LISTENING \(https://127\.0\.0\.1:[0-9][0-9]*\)$|\1|p' "$simulator_log" | head -1)"
+            if [ -n "$B2_ENDPOINT" ]; then break; fi
+            if ! kill -0 "$simulator_pid" 2>/dev/null; then cat "$simulator_log"; exit 1; fi
+            sleep 0.2
+          done
+          if [ -z "$B2_ENDPOINT" ]; then cat "$simulator_log"; exit 1; fi
+          export B2_ENDPOINT
+
+          # Trust the Simulator's loopback certificate in addition to the public roots (Node's bundled
+          # Mozilla set), so other HTTPS calls in this step, such as Go module downloads, still verify.
+          simulator_ca_bundle="$RUNNER_TEMP/b2-simulator-ca.pem"
+          node -e 'process.stdout.write(require("tls").rootCertificates.join("\n") + "\n")' >"$simulator_ca_bundle"
+          cat simulator/bin/simulator/loopback-cert.pem >>"$simulator_ca_bundle"
+          REQUESTS_CA_BUNDLE="$simulator_ca_bundle"
+          SSL_CERT_FILE="$simulator_ca_bundle"
+          export REQUESTS_CA_BUNDLE SSL_CERT_FILE
+
+          cd provider
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
             set +e
             make testacc 2>&1 | tee testacc.log
             status=${PIPESTATUS[0]}
@@ -190,22 +286,61 @@ jobs:
             if [ "$status" -eq 0 ]; then
               exit 0
             fi
-
+            if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
+              exit "$status"
+            fi
             if ! grep -Eqi 'UnknownHost|NameResolutionError|[Gg]etaddrinfo|nodename nor servname' testacc.log; then
               exit "$status"
             fi
 
-            if [ "$attempt" -eq "$max_attempts" ]; then
-              echo "::error::Acceptance tests still hit a DNS-resolution error after ${max_attempts} attempts."
-              exit "$status"
-            fi
-
             delay=$((attempt * 15))
-            echo "Transient DNS-resolution failure; retrying in ${delay}s (attempt $((attempt + 1))/${max_attempts})."
+            echo "Transient DNS-resolution failure; retrying in ${delay}s (attempt $((attempt + 1))/${MAX_ATTEMPTS})."
             sleep "$delay"
           done
-      - name: Run acceptance tests
-        if: ${{ env.B2_TEST_APPLICATION_KEY != '' && env.B2_TEST_APPLICATION_KEY_ID != '' && !(matrix.conf.os == 'darwin' && matrix.conf.arch == 'amd64') }}
-        timeout-minutes: 120
+  testacc-darwin-amd64:
+    needs: [simulator-access-policy, build-darwin-amd64]
+    env: *testacc-env
+    runs-on: ${{ matrix.conf.runner }}
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        conf:
+          # for macOS, the latest terraform is enough for ACC tests
+          - { runner: macos-15-intel, os: darwin, arch: amd64, terraform: '1.14.*' }
+    steps: *testacc-steps
+  testacc-darwin-arm64:
+    needs: [simulator-access-policy, build-darwin-arm64]
+    env: *testacc-env
+    runs-on: ${{ matrix.conf.runner }}
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        conf:
+          - { runner: macos-15, os: darwin, arch: arm64, terraform: '1.14.*' }
+    steps: *testacc-steps
+  testacc-windows-amd64:
+    needs: [simulator-access-policy, build-windows-amd64]
+    env: *testacc-env
+    runs-on: ${{ matrix.conf.runner }}
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        conf:
+          # for Windows, the latest terraform is enough for ACC tests
+          - { runner: windows-2022, os: windows, arch: amd64, terraform: '1.14.*' }
+    steps: *testacc-steps
+  # A skipped or cancelled acceptance job (for example when a runner label is unavailable) fails here
+  # instead of leaving the run green.
+  acceptance:
+    if: always()
+    needs: [testacc-linux-amd64, testacc-darwin-amd64, testacc-darwin-arm64, testacc-windows-amd64]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every acceptance job to succeed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        env:
+          RESULTS: ${{ toJSON(needs) }}
         run: |
-          make testacc
+          echo "::error::An acceptance job did not succeed: $RESULTS"
+          exit 1

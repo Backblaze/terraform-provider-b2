@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Breaking change:** Mark `b2_bucket_file_signed_url.signed_url` as sensitive. Terraform outputs that expose this attribute must declare `sensitive = true`. Terraform state still stores the value in plaintext.
 
 ### Infrastructure
+* Run acceptance tests against the pinned B2 Simulator in pull-request and release CI, and run real-B2 acceptance tests weekly or on manual dispatch; the live run fails when its credentials are missing, and a failed scheduled run opens or updates an issue.
+* Require a successful real-B2 acceptance run on the tagged commit before publishing a release.
+* Run acceptance tests per platform, fail CI when any acceptance job is skipped, and move the macOS jobs from the retired macOS 14 runners to `macos-15` and `macos-15-intel`.
 * Make the examples self-contained and add an offline validation target.
 * Strengthen data-source acceptance test assertions to compare collection counts and concrete values (bucket IDs, capabilities, options, file-version collections) instead of absent root keys.
 * Allow offline CI runs without a packaged bindings fixture while requiring it in the provider CI.

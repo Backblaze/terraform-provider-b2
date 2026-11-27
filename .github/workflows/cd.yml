@@ -22,8 +22,34 @@ jobs:
       contents: read
       pull-requests: read
     secrets:
-      B2_TEST_APPLICATION_KEY: ${{ secrets.B2_TEST_APPLICATION_KEY }}
-      B2_TEST_APPLICATION_KEY_ID: ${{ secrets.B2_TEST_APPLICATION_KEY_ID }}
+      SIMULATOR_DEPLOY_KEY: ${{ secrets.SIMULATOR_DEPLOY_KEY }}
+
+  # Pull-request and release CI run the acceptance tests against the B2 Simulator only. A release also
+  # needs a successful run of the live B2 workflow (live-b2.yml) on the tagged commit: dispatch it on the
+  # commit before tagging (see README.release.md).
+  live-b2-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Require a successful live B2 run on the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          # Count only the weekly schedule or a manual dispatch; a run started by any other event does not count.
+          runs="$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/live-b2.yml/runs" \
+            -f head_sha="$RELEASE_SHA" -f status=success -f per_page=100 \
+            --jq '[.workflow_runs[] | select(.event == "schedule" or .event == "workflow_dispatch")] | length')" || {
+            echo "::error::Could not list live-b2.yml runs. The workflow must exist on the default branch."
+            exit 1
+          }
+          if ! [[ "$runs" =~ ^[0-9]+$ ]] || [ "$runs" -lt 1 ]; then
+            echo "::error::No successful Weekly Live B2 Acceptance run on $RELEASE_SHA. Dispatch live-b2.yml on this commit, wait for it to pass, then re-run this workflow."
+            exit 1
+          fi
+          echo "Found $runs successful live B2 run(s) on $RELEASE_SHA."
 
   build-pybindings:
     needs: [ci]
@@ -35,8 +61,9 @@ jobs:
         conf:
           - { runner: ubuntu-latest, os: linux, arch: amd64 }
           - { runner: ubuntu-latest, os: linux, arch: arm64 }
-          - { runner: macos-14-large, os: darwin, arch: amd64 }
-          - { runner: macos-14, os: darwin, arch: arm64 }
+          # GitHub retired the macOS 14 images; macos-15-intel is the supported Intel label.
+          - { runner: macos-15-intel, os: darwin, arch: amd64 }
+          - { runner: macos-15, os: darwin, arch: arm64 }
           - { runner: windows-2022, os: windows, arch: amd64 }
     outputs:
       version: ${{ steps.build.outputs.version }}
@@ -114,7 +141,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
   build-and-deploy:
-    needs: [build-pybindings]
+    needs: [build-pybindings, live-b2-gate]
     permissions:
       contents: write
     env:

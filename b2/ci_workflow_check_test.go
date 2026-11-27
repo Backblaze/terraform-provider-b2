@@ -130,7 +130,8 @@ func ciWorkflowFailsOnMissingKeys(workflow string) (bool, error) {
 	return true, nil
 }
 
-// Fixtures for the workflow checks used by TestKnownDefect_C25 (repo_policy_knowndefect_test.go). They prove that
+// Fixtures for the workflow checks used by TestLiveB2AcceptanceIsWeeklyManualAndFailsClosed and
+// TestCIWorkflowRunsPythonBindingsTests. They prove that
 // the checks look at executable steps: a comment or an unrelated `exit 1` must not satisfy them.
 
 const wfHeader = "name: ci\non: push\njobs:\n  testacc:\n    runs-on: ubuntu-latest\n    steps:\n"

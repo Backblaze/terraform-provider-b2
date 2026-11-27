@@ -21,6 +21,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -63,6 +64,27 @@ func (s retentionSimulator) call(action string, fields map[string]interface{}, o
 	return json.Unmarshal(response.Result, out)
 }
 
+// retentionSimulatorCommands returns the command that starts the helper server and the executable the
+// provider runs as its bindings. Windows cannot execute a .py file through its shebang: there the server is
+// started with python directly (so killing it kills python), and the provider runs a .cmd wrapper, whose
+// process tree the provider's Job Object ends.
+func retentionSimulatorCommands(t *testing.T, script string) (serve []string, bindings string) {
+	t.Helper()
+	if runtime.GOOS != "windows" {
+		return []string{script}, script
+	}
+	python, err := exec.LookPath("python")
+	if err != nil {
+		t.Fatalf("the retention simulator needs python on PATH: %v", err)
+	}
+	wrapper := filepath.Join(t.TempDir(), "retention_simulator.cmd")
+	content := fmt.Sprintf("@\"%s\" \"%s\" %%*\r\n", python, script)
+	if err := os.WriteFile(wrapper, []byte(content), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return []string{python, script}, wrapper
+}
+
 func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 	if os.Getenv("TF_ACC") != "1" {
 		t.Skip("acceptance test requires TF_ACC=1")
@@ -73,7 +95,10 @@ func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(script, "--serve")
+	serveCommand, bindings := retentionSimulatorCommands(t, script)
+	cmd := exec.Command(serveCommand[0], append(serveCommand[1:], "--serve")...)
+	// Do not let a child that still holds stderr block Wait in cleanup.
+	cmd.WaitDelay = 5 * time.Second
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatal(err)
@@ -98,7 +123,7 @@ func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 	for _, key := range []string{"B2_APPLICATION_KEY_ID", "B2_APPLICATION_KEY", "B2_TEST_APPLICATION_KEY_ID", "B2_TEST_APPLICATION_KEY"} {
 		t.Setenv(key, "")
 	}
-	factories := map[string]func() (*schema.Provider, error){"b2": func() (*schema.Provider, error) { return New("test", script)(), nil }}
+	factories := map[string]func() (*schema.Provider, error){"b2": func() (*schema.Provider, error) { return New("test", bindings)(), nil }}
 
 	for _, mode := range []string{"governance", "compliance"} {
 		t.Run(mode, func(t *testing.T) {
