@@ -5,7 +5,12 @@
 ## Start here
 
 - [README](https://github.com/Backblaze/terraform-provider-b2/blob/master/README.md): Read requirements, installation, building, testing, and debugging instructions.
+- [AGENTS.md](https://github.com/Backblaze/terraform-provider-b2/blob/master/AGENTS.md): Read the repository map, commands, and conventions for coding agents and contributors.
 - [Terraform Registry](https://registry.terraform.io/providers/Backblaze/b2): Find the provider on the Terraform Registry.
+
+## Related projects
+
+- **[b2-mcp](https://github.com/backblaze-labs/b2-mcp)** — a Model Context Protocol server for B2.
 
 ## Resources
 
