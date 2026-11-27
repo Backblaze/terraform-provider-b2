@@ -1,2 +1,4 @@
 .sdkharness/tests.tsv text eol=lf
 .sdkharness/tests/** text eol=lf
+.claude/hooks/*.sh text eol=lf
+scripts/*.sh text eol=lf

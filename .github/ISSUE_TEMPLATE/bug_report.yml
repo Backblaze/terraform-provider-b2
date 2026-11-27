@@ -1,0 +1,58 @@
+name: Bug report
+description: The B2 provider plans, applies or reads state incorrectly.
+labels: [bug]
+type: Bug
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider version
+      description: From `terraform version` or `.terraform.lock.hcl`.
+      placeholder: backblaze/b2 v0.14.1
+    validations:
+      required: true
+  - type: input
+    id: terraform
+    attributes:
+      label: Terraform or OpenTofu version and OS
+      placeholder: Terraform v1.14.0 on linux_amd64
+    validations:
+      required: true
+  - type: input
+    id: resources
+    attributes:
+      label: Affected resources or data sources
+      placeholder: b2_bucket, b2_bucket_file_version
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: For a perpetual diff, paste the plan output that should be empty.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Minimal configuration
+      description: The smallest configuration that reproduces it. Never paste application keys, SSE-C keys or state files with secrets.
+      render: hcl
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. terraform init
+        2. terraform apply
+        3. terraform plan
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Plan output, errors or debug log
+      description: "`TF_LOG=DEBUG` output helps. Redact keys, tokens and bucket names you consider private."
+      render: text

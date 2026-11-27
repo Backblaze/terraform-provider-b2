@@ -1,0 +1,3 @@
+kind: Fixed
+body: Explain bindings execution failures caused by permissions, noexec temporary directories, or an incompatible executable format.
+time: 2026-11-21T20:38:00.584048-05:00

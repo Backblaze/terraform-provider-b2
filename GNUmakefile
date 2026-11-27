@@ -4,11 +4,14 @@ NAME=b2
 BINARY=terraform-provider-${NAME}
 VERSION=$(shell git describe --tags --abbrev=0 | cut -c2-)
 OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
+CHANGIE_VERSION=v1.24.0
+CHANGIE=go run github.com/miniscruff/changie@$(CHANGIE_VERSION)
+BASE_REF?=origin/master
 GOVULNCHECK_VERSION=v1.3.0
 
 default: build
 
-.PHONY: schema-compat docs-prose-lint examples-check _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint
+.PHONY: _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint docs-prose-lint examples-check schema-compat ci changelog-check changelog-new release-check review-metrics
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -97,5 +100,34 @@ docs-lint: build
 	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs generate --provider-name ${BINARY}
 	@git diff --exit-code -- docs/ || \
 		(echo; echo "Unexpected difference in docs. Run 'make docs' command or revert any changes in the schema."; exit 1)
+
+# Local mirror of the lint, test and build jobs in ci.yml plus changelog.yml (no acceptance tests). Run `make deps` first.
+# Each step is its own make call: _pybindings forwards the goal names to python-bindings/GNUmakefile.
+ci:
+	@for target in deps-check lint test docs-lint changelog-check; do \
+		echo "==> make $$target"; $(MAKE) --no-print-directory $$target || exit 1; \
+	done
+	@echo "==> make ci: all checks passed"
+
+# A branch that changes anything outside the paths below must add a .changes/unreleased entry
+# (or a release's .changes/vX.Y.Z.md). Existing entries must parse.
+changelog-check:
+	@git rev-parse --verify --quiet $(BASE_REF) > /dev/null || { echo "BASE_REF $(BASE_REF) not found; run 'git fetch origin' or pass BASE_REF=<ref>."; exit 1; }
+	@if git diff --name-only $(BASE_REF)...HEAD -- . ':!*.md' ':!**/*.md' ':!*_test.go' ':!.changes/**' ':!intent/**' ':!.claude/**' ':!.github/ISSUE_TEMPLATE/**' ':!.editorconfig' | grep -q .; then \
+		git diff --name-only --diff-filter=A $(BASE_REF)...HEAD -- '.changes/unreleased/*.yaml' '.changes/v*.md' | grep -q . \
+		|| { echo "No changelog entry: run 'make changelog-new' (or label the PR -changelog)."; exit 1; }; \
+	fi
+	@if ls .changes/unreleased/*.yaml > /dev/null 2>&1; then $(CHANGIE) batch auto --dry-run > /dev/null; fi
+
+changelog-new:
+	@$(CHANGIE) new
+
+# Holds a release while solvable security or quality findings are open (see RELEASE.md).
+release-check:
+	@scripts/release-check.sh
+
+# Review health for merged PRs since SINCE (default: 90 days ago).
+review-metrics:
+	@scripts/review-metrics.sh $(SINCE)
 
 all: deps lint build testacc

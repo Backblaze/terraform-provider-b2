@@ -11,28 +11,25 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 
 ## Commands
 
-- Setup: `make deps` installs the Python bindings dependencies into the active Python environment (use a
-  virtualenv) and the Go and dev tools. Go and Terraform must already be installed. It also runs `go mod tidy`,
-  which can change `go.mod` and `go.sum`.
-- Local gate before every push: `make lint`, `make test` and `make deps-check`, plus `make docs-lint` when a
-  schema or documentation input changed. Paste the tail of their output in the PR. CI also builds a
-  packaged-bindings fixture and runs `python -m pytest python-bindings/tests`; run that pytest suite
-  yourself when you change the bindings.
-- `make lint` runs license-header checks, `golangci-lint`, `go vet` and Python `ruff`.
+- Setup, once per environment (Python 3.13 virtualenv, Go from `go.mod`, Terraform): `make deps`. It also
+  runs `go mod tidy`, which can change `go.mod` and `go.sum`.
+- Full local gate (mirrors the `lint` and `test` jobs in `ci.yml` and `changelog.yml`): `make ci`. Run it
+  before every push and paste the tail in the PR. It runs `deps-check`, `lint` (license headers,
+  `golangci-lint`, `go vet`, Python `ruff`), `test`, `docs-lint` and `changelog-check`.
 - Unit tests, no credentials: `make test`. Acceptance tests against real B2 (create resources, cost money):
   `B2_TEST_APPLICATION_KEY_ID=... B2_TEST_APPLICATION_KEY=... make testacc TESTARGS='-run TestAccX'`.
-- Go version: `go.mod` pins `toolchain go1.26.11`, the version CI uses.
+- Use the Go toolchain in `go.mod` (`GOTOOLCHAIN=go1.26.11`); a newer local Go breaks `golangci-lint`.
 - Format: `make format` (`golangci-lint fmt`, `terraform fmt` on `examples/`, `ruff format`).
 - Docs: `make docs` regenerates `docs/` from schemas, `templates/` and `examples/`. Never hand-edit `docs/`.
-- Dependency check: `make deps-check`. Vulnerabilities: `make vulncheck`.
 - `make docs-prose-lint`: checks the Markdown you changed against the prose rules, in warning-only mode.
 - `make examples-check`: validates `examples/` against a locally built provider, with no credentials.
 - `make schema-compat`: compares the provider schema with the base ref (default origin/master) and reports breaking changes.
 - Guides: [writing style](contributing/writing-style.md), [testing](contributing/testing.md),
   [schema compatibility](contributing/schema-compat.md) and
   [internal reference guard](contributing/internal-reference-guard.md).
-- Changelog: edit the `[Unreleased]` section of `CHANGELOG.md` by hand (see Conventions).
-- Releases: see [README.release.md](README.release.md).
+- Changelog entry: `make changelog-new` (changie). See [CONTRIBUTING.md](CONTRIBUTING.md#changelog-entries).
+- Release gate: `make release-check`. See [RELEASE.md](RELEASE.md#security-and-quality-gate).
+- Review metrics: `make review-metrics` (approvals, rounds, wait time, reverts, how findings were answered).
 
 ## Architecture
 
@@ -47,9 +44,11 @@ contributors; `CLAUDE.md` points here. Keep it under about 150 lines and link ou
 | `python-bindings/requirements*.txt` | Pinned b2sdk, certifi and build tools, bundled into every release binary. |
 | `templates/`, `examples/`, `docs/` | tfplugindocs input and its generated output (published on the Registry). |
 | `tools/` | Separate module pinning tfplugindocs and other dev tools. |
-| `.sdkharness/` | Contract checks run by the central SDK harness against the B2 simulator on loopback. See its README. |
 | `scripts/` | Repository checks and helpers, such as `scripts/check-headers.py`. |
-| `contributing/` | Contributor guides on testing, writing style, schema compatibility and the internal reference guard; kept out of `docs/`. |
+| `.sdkharness/` | Contract checks run by the central SDK harness against the B2 simulator on loopback. See its README. |
+| `.changes/` | changie entries; `CHANGELOG.md` is generated from them. |
+| `intent/` | Per-change `intent.md`, `spec.md`, `plan.md` (see Workflow). |
+| `contributing/` | Contributor guides on testing, writing style, schema compatibility and the internal reference guard, plus review lessons and reviewer evals; kept out of `docs/`. |
 
 A change to what is sent to B2 usually touches both sides: the Go input struct and schema, and the Python
 handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; only `make testacc` does.
@@ -57,23 +56,24 @@ handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; 
 ## Conventions
 
 - Every `.go` and `.py` file starts with the Backblaze license header naming its own path
-  (`scripts/check-headers.py`, run by `make lint`).
+  (`scripts/check-headers.py`, run by `make lint`). The Claude hook in `.claude/hooks/` checks it after each edit.
 - Schema `Description` text is the user documentation. Take wording from the b2sdk docstrings or B2 docs.
 - Keep the Python bindings thin: map input to b2sdk calls and shape output. Validation, defaults and diff
   logic live in Go.
 - Pin b2sdk and other Python dependencies to released versions, never a git branch.
-- A breaking change (a removed or renamed argument, a new `ForceNew`, a changed default) needs a `Changed`
-  or `Removed` entry that says what users must do before upgrading.
-- Changelog: add a bullet under `[Unreleased]` in `CHANGELOG.md`, in the matching `###` section (`Added`,
-  `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security` or `Infrastructure` for toolchain, dependency, CI
-  and test-harness changes). The changelog check in `.github/workflows/ci.yml`
-  fails a PR that changes other files without a `CHANGELOG.md` change. Markdown-only, test-only and docs-only PRs take the `-changelog` label instead.
+- A breaking change (a removed or renamed argument, a new `ForceNew`, a changed default) bumps the minor
+  version pre-1.0 and needs a `Changed` or `Removed` entry that says what users must do before upgrading.
+- Changelog kinds: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`, and `Infrastructure`
+  for toolchain, dependency, CI and test-harness changes.
 - Comments are short and explain non-obvious decisions.
 
 ## Things agents get wrong here
 
-1. **Missing changelog entry.** Every change outside Markdown and tests needs a `CHANGELOG.md` entry or
-   the `-changelog` label, including CI and `.sdkharness` work (`Infrastructure`).
+Each line comes from fixes, follow-up commits or review on at least two PRs. The full list, with PR links,
+is in [contributing/review-lessons.md](contributing/review-lessons.md).
+
+1. **Missing changelog entry.** Every change outside Markdown and tests needs a `.changes/unreleased`
+   entry, including CI and `.sdkharness` work (`Infrastructure`).
 2. **Hand-edited `docs/`.** Change the schema `Description`, `templates/` or `examples/`, then `make docs`.
 3. **Perpetual diffs.** After apply, the same configuration must plan empty. Fix the cause (B2 reorders
    lists, lowercases keys, adds computed keys) with a diff suppress or `CustomizeDiff`, and pin it with an
@@ -87,7 +87,8 @@ handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; 
 7. **Tests that do not pin the fix.** Revert the change and the test must fail. Say which test and paste
    the failure. Pure helpers get unit tests that `make test` runs without credentials.
 8. **Claimed coverage that did not run.** CI runs acceptance tests only with repository secrets, and never
-   runs the `.sdkharness` simulator scenarios (only the `TestSDKHarnessContract` unit test runs in `make test`). List what you ran (`make testacc` filter, harness scenarios) and what you did not.
+   runs the `.sdkharness` simulator scenarios (only the `TestSDKHarnessContract` unit test runs in
+   `make test`). List what you ran (`make testacc` filter, harness scenarios) and what you did not.
    A skipped check is NOT RUN, never PASS.
 9. **Secrets.** New secret attributes are `Sensitive`; never put a key, SSE-C secret or signing secret in
    a log line, error, warning or example. Check `tflog` calls on both the input and output paths.
@@ -100,26 +101,33 @@ handler that maps it to b2sdk. `make test` touches neither the bindings nor B2; 
     ones; a removed, renamed or re-typed argument needs a `Changed` entry with upgrade steps.
 14. **Resource and data source variants.** Shared blocks in `b2/templates.go` serve both; the data source
     side needs `Computed: true` (`If(ds, ...)`) or it never gets the value.
-15. **Bindings style.** In `python-bindings/b2_terraform/provider_tool.py`, raise `RuntimeError` for failed operations (the file uses `ValueError` for invalid input), keep imports sorted, give helpers a
+15. **Bindings style.** In `python-bindings/b2_terraform/provider_tool.py`, raise `RuntimeError` for failed
+    operations (`ValueError` for invalid input), keep imports sorted, give helpers a
     one-line docstring, drop leftover parameters, and comment code that depends on b2sdk internals.
 16. **Binary portability.** The bindings are frozen with PyInstaller and made static with staticx (Linux
     uses `deadsnakes`, not `setup-python`) so the provider runs on older glibc and Alpine. Do not change
     runners, Python setup or build tools without checking the binary still runs there.
 
-## Workflow
+## Workflow (AI-native SDLC)
 
+- Non-trivial changes start in `intent/<slug>/`: `intent.md` (problem) → `spec.md` (numbered requirements
+  R1..) → `plan.md` (steps cite R numbers). A human approves each before the next. Templates in
+  [`intent/README.md`](intent/README.md). Bug fixes with a linked issue may skip straight to a failing test.
 - Bug fixes: commit the failing regression test first, then the fix, without editing the test.
-- Before opening a PR, review your own diff in a fresh context (a subagent or session that did not write
-  the code) and fix or answer what it finds. Say in the PR what it reported.
+- Skills in `.claude/skills/` (`ai-native-sdlc` routes to the right one).
+- Before opening a PR, review your own diff in a fresh context (`/code-review` and `/security-review`, or a
+  subagent that did not write the code) and fix or answer what it finds. Say in the PR what it reported.
 - Review: [REVIEW.md](REVIEW.md). Every finding gets fixed or resolved with a reason. Agents never approve
   or merge their own PRs, and a PR is not merged by its author without another maintainer's review.
 - The person directing an agent owns its PR: they count as one of its reviewers and fix what it breaks.
 - Keep PRs small and reversible; the blast radius sets the review depth ([REVIEW.md](REVIEW.md#depth-by-risk)).
   If the direction looks wrong, say so early in the thread; closing a PR is cheap.
-- Security reports: [SECURITY.md](SECURITY.md).
+- When review misses a bug, ask what context was missing and add it here, to a skill or to a check, and
+  add the case to [contributing/review-evals.md](contributing/review-evals.md).
+- Releases: [RELEASE.md](RELEASE.md). Security reports: [SECURITY.md](SECURITY.md).
 
 ## Verifying your work
 
-Run `make lint` and `make test` and paste the tail of their output. If a test fails, fix the code, not the
-test. For changes to resources, data sources or the bindings, run the matching acceptance tests with
-`make testacc` and say which; if you have no test credentials, say the acceptance tests were NOT RUN.
+Run `make ci` and paste the tail of its output. If a test fails, fix the code, not the test. For changes
+to resources, data sources or the bindings, run the matching acceptance tests with `make testacc` and say
+which; if you have no test credentials, say the acceptance tests were NOT RUN.

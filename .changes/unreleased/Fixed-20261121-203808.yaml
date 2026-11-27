@@ -1,0 +1,3 @@
+kind: Fixed
+body: Bound `b2_bucket_files` listings with `max_results` (default 10000, maximum 100000); reads exceeding the limit now fail instead of returning an incomplete list. Increase the limit or narrow `folder_name` for larger listings.
+time: 2026-11-21T20:38:08.36041-05:00

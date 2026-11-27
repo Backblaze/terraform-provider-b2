@@ -1,0 +1,3 @@
+kind: Fixed
+body: Treat deletion of an already-deleted bucket as a successful no-op.
+time: 2026-11-21T16:10:55.0032-05:00

@@ -18,14 +18,14 @@ Match the depth to what a missed bug would cost. The change sets the depth, not 
 
 | Depth | When | What it means |
 | --- | --- | --- |
-| Quick | Markdown outside `docs/`, `*_test.go` only, `examples/` | Compliance pass; check claims against the diff |
+| Quick | Markdown outside `docs/`, `*_test.go` only, `.changes/`, `intent/`, `examples/` | Compliance pass; check claims against the diff |
 | Standard | `b2/` schemas and CRUD, `python-bindings/b2_terraform/`, `.sdkharness/` | All passes, revert-to-fail check for each claimed fix |
 | Deep | `b2/client.go`, `b2/bindings.go`, `b2/convert.go`, `python-bindings/requirements*.txt`, `.github/workflows/`, `.goreleaser.yml`, release PRs | All passes plus the Security pass line by line; a person always reviews |
 
 ## Before the passes
 
-1. Read the linked issue.
-2. Check out the PR merged onto current `master` and run `make lint` and `make test` (and `make docs-lint` for schema or docs changes). Say what you ran.
+1. Read the linked issue and, if present, `intent/<slug>/spec.md` and `plan.md`.
+2. Check out the PR merged onto current `master` and run `make ci`. Say what you ran.
 3. For each behavior the PR claims to fix or add, revert that line and confirm a test fails. Name any
    behavior no test pins, and whether its acceptance tests ran. Check the evidence against
    [contributing/testing.md](contributing/testing.md).
@@ -49,13 +49,13 @@ Tag each finding with its pass.
 - **Security**: new secrets are `Sensitive` and kept out of `tflog`, errors and warnings; credentials go to
   the bindings on stdin only; workflow changes keep secrets away from fork and Dependabot PRs.
 - **Compatibility**: run `make schema-compat` (see [contributing/schema-compat.md](contributing/schema-compat.md)); removed or renamed arguments, new `ForceNew`, changed defaults and changed `Computed`
-  behavior each need a `CHANGELOG.md` `Changed` or `Removed` entry that says what users must do.
-- **Compliance**: schema descriptions and Markdown follow [contributing/writing-style.md](contributing/writing-style.md); the change matches the issue; the PR description matches the
-  code; a `CHANGELOG.md` `[Unreleased]` entry exists and reads well for users, or the PR has the
-  `-changelog` label for a Markdown-only, test-only or docs-only change; schema descriptions and `docs/`
+  behavior each need a `Changed` or `Removed` entry that says what users must do.
+- **Compliance**: schema descriptions and Markdown follow [contributing/writing-style.md](contributing/writing-style.md); the change matches the issue, `spec.md` and `plan.md`; the PR description matches the
+  code; a `.changes/unreleased` entry exists and reads well for users; schema descriptions and `docs/`
   agree; `AGENTS.md` is updated when the change makes it stale.
 
-The recurring mistakes in [AGENTS.md](AGENTS.md#things-agents-get-wrong-here) double as a checklist; check the diff against them.
+Past findings and the PRs they came from are in
+[contributing/review-lessons.md](contributing/review-lessons.md); check the diff against them.
 
 ## Severity
 
@@ -83,7 +83,7 @@ acceptance tests, no simulator), say so.
 ## Answering findings
 
 Every finding gets an answer before merge: fix it, or resolve the thread with a one-line reason. Start the
-reply with one of these labels so it is clear how the finding was handled:
+reply with one of these labels so the reviewer's noise can be measured (`scripts/review-metrics.sh`):
 
 - `Fixed:` with the commit that fixes it.
 - `Wrong:` the finding is a false positive; say why.
@@ -91,18 +91,20 @@ reply with one of these labels so it is clear how the finding was handled:
 - `Didn't matter:` real but not worth changing; say why, or link an issue.
 
 Do not resolve a thread silently. When the same finding comes back on more than one PR, fix it at the
-source in the same PR: a rule in `AGENTS.md`, a test, or a lint rule.
+source in the same PR: a rule in `AGENTS.md`, a check in `make ci`, a hook or a lint rule, and a line in
+[contributing/review-lessons.md](contributing/review-lessons.md).
 
 ## Skip
 
 Do not review or report on generated or vendored files: `docs/` (check only that it matches the schema),
-released `CHANGELOG.md` sections, `go.sum` and `tools/go.sum`. Do not report what CI already enforces (formatting, vet, lint, license headers, docs
+`CHANGELOG.md` and released `.changes/v*.md`, `go.sum`, `tools/go.sum`, and the playbook skills in
+`.claude/skills/`. Do not report what CI already enforces (formatting, vet, lint, license headers, docs
 drift, changelog presence) or style-only cleanups.
 
 ## For the human approver
 
 An AI finding never approves and never fills a human slot. Before approving, read the evidence: the
-`make lint` and `make test` output, the tests named as pinning the change, the acceptance tests run, and the reviewer's
+`make ci` output, the tests named as pinning the change, the acceptance tests run, and the reviewer's
 findings and their answers. If you cannot say what those checks would miss, review the code properly
 instead of approving. New commits after your approval need another look.
 

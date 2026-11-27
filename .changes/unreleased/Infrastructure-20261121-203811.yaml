@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Gate tagged releases on CI, restrict workflow token permissions, and pin actions to commits.
+time: 2026-11-21T20:38:11.231972-05:00

@@ -1,0 +1,3 @@
+kind: Fixed
+body: Advertise the provider registry address in debug reattach configuration.
+time: 2026-11-21T20:38:06.984728-05:00

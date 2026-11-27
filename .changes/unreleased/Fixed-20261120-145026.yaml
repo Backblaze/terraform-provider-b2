@@ -1,0 +1,3 @@
+kind: Fixed
+body: Detect `b2_bucket_file_version` source content changes when a B2 checksum and readable local source are available, and replace the file version when they differ.
+time: 2026-11-20T14:50:26.513851-05:00

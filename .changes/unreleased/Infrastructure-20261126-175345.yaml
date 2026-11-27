@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Make the examples self-contained and add an offline validation target.
+time: 2026-11-26T17:53:45.225877-05:00

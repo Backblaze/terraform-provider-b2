@@ -1,0 +1,3 @@
+kind: Infrastructure
+body: Add `Security` (govulncheck via `make vulncheck`) and `CodeQL` (Go) GitHub Actions workflows for static security analysis
+time: 2026-11-26T03:14:26.544711-05:00
