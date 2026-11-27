@@ -11,7 +11,7 @@ GOVULNCHECK_VERSION=v1.3.0
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint docs-prose-lint examples-check ci changelog-check changelog-new release-check review-metrics
+.PHONY: _pybindings deps deps-check format lint vulncheck vulncheck-deps test test-known-defects testacc clean build install docs docs-lint docs-prose-lint examples-check schema-compat ci changelog-check changelog-new release-check review-metrics
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -90,6 +90,9 @@ docs: build
 
 docs-prose-lint:
 	@./scripts/docs-prose-lint.sh --warn-only
+
+schema-compat:
+	@./scripts/schema-compat.sh $(SCHEMA_COMPAT_ARGS)
 
 docs-lint: build
 	@tfplugindocs validate --provider-name ${BINARY}
