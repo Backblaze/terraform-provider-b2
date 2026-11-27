@@ -125,7 +125,23 @@ func testBindingsProcessTree(t *testing.T, executable string) {
 		t.Errorf("Apply error = %v, want context.Canceled", applyErr)
 	}
 	var b [1]byte
-	if _, err := conn.Read(b[:]); !errors.Is(err, io.EOF) && !errors.Is(err, syscall.ECONNRESET) {
+	if _, err := conn.Read(b[:]); !connectionClosed(err) {
 		t.Errorf("worker connection is still open after Apply returned: %v", err)
 	}
+}
+
+// connectionResetErrors are the errors a read returns when the peer process was killed; Windows adds
+// WSAECONNRESET, which syscall.ECONNRESET does not match there.
+var connectionResetErrors = []error{syscall.ECONNRESET}
+
+func connectionClosed(err error) bool {
+	if errors.Is(err, io.EOF) {
+		return true
+	}
+	for _, reset := range connectionResetErrors {
+		if errors.Is(err, reset) {
+			return true
+		}
+	}
+	return false
 }

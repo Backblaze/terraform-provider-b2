@@ -21,6 +21,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -63,6 +64,25 @@ func (s retentionSimulator) call(action string, fields map[string]interface{}, o
 	return json.Unmarshal(response.Result, out)
 }
 
+// retentionSimulatorExecutable returns a path that can be executed directly. Windows cannot execute a
+// .py file through its shebang, so there the helper is started by a .cmd wrapper that runs python.
+func retentionSimulatorExecutable(t *testing.T, script string) string {
+	t.Helper()
+	if runtime.GOOS != "windows" {
+		return script
+	}
+	python, err := exec.LookPath("python")
+	if err != nil {
+		t.Fatalf("the retention simulator needs python on PATH: %v", err)
+	}
+	wrapper := filepath.Join(t.TempDir(), "retention_simulator.cmd")
+	content := fmt.Sprintf("@\"%s\" \"%s\" %%*\r\n", python, script)
+	if err := os.WriteFile(wrapper, []byte(content), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return wrapper
+}
+
 func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 	if os.Getenv("TF_ACC") != "1" {
 		t.Skip("acceptance test requires TF_ACC=1")
@@ -73,6 +93,7 @@ func TestAccResourceB2BucketDefaultRetentionNoneRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	script = retentionSimulatorExecutable(t, script)
 	cmd := exec.Command(script, "--serve")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

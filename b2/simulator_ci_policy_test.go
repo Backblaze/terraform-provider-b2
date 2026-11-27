@@ -525,3 +525,24 @@ func TestReleaseRequiresGreenLiveB2RunForTaggedCommit(t *testing.T) {
 		t.Errorf("release publication does not need the live B2 gate %s", gate)
 	}
 }
+
+// TestAccResourceB2BucketDefaultRetentionNoneRoundTrip starts testdata/retention_simulator.py with the
+// runner's python3, which needs b2sdk; the acceptance jobs must install the bindings requirements for it.
+func TestAcceptanceJobsInstallBindingsRequirementsForTestHelpers(t *testing.T) {
+	jobs := workflowJobs(t, "ci.yml")
+	for _, name := range acceptanceJobs(t, jobs) {
+		python, installed := false, false
+		for _, step := range jobStepList(jobs[name]) {
+			if strings.HasPrefix(stepString(step, "uses"), "actions/setup-python@") {
+				python = true
+			}
+			script := executableScript(stepString(step, "run"))
+			if python && regexp.MustCompile(`pip install[^\n]*-r\s+\S*python-bindings/requirements\.txt`).MatchString(script) {
+				installed = true
+			}
+			if strings.Contains(script, "make testacc") && !installed {
+				t.Errorf("%s runs make testacc before setting up Python and installing python-bindings/requirements.txt", name)
+			}
+		}
+	}
+}

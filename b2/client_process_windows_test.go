@@ -13,7 +13,13 @@ package b2
 import (
 	"strings"
 	"testing"
+
+	"golang.org/x/sys/windows"
 )
+
+func init() {
+	connectionResetErrors = append(connectionResetErrors, windows.WSAECONNRESET)
+}
 
 func TestApplyStopsBindingsProcessTree(t *testing.T) {
 	t.Skip("plain Python launcher uses Unix process groups and PID probes; TestApplyStopsGoProcessTree covers the Windows Job Object")
